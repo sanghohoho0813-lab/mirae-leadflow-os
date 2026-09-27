@@ -1,0 +1,70 @@
+# QA_REPORT — 리드플로우 P0 (2026-09-28)
+
+검증 환경: 로컬 PostgreSQL 16 (Supabase와 동일한 마이그레이션·RLS·RPC 실행) + Next.js 15.5 **production build** (`next build && next start`) + Playwright Chromium.
+증거: `qa/screenshots/*.png` (E2E 실행 시 자동 생성), `scripts/test-db.mjs`, `qa/journey.spec.ts`.
+
+## 1. Database / RLS / 동시성 — `npm run test:db` → **53 PASS / 0 FAIL**
+
+| 항목 | 결과 |
+|---|---|
+| 10명 동시 `claim_lead` 호출 | 정확히 1명 성공, 9명 `ALREADY_ASSIGNED`, ACTIVE 배정 1행, CLAIM 로그 1건 |
+| 신청 취소 → 재신청 / 본인 재신청 | PASS (`ALREADY_MINE`) |
+| CALLER/OWNER 신청 차단, CONSULTANT/CALLER 공개 차단 | PASS |
+| DRAFT는 컨설턴트에게 존재 자체가 보이지 않음 | PASS (`NOT_FOUND`) |
+| 회수·재배정·CALLER 대상 재배정 거부·취소 사유 필수 | PASS |
+| 비공개 정보(연락처·콜메모) — 배정자/생성자/운영진만 열람, 타 컨설턴트·OPEN 상태 차단 | PASS |
+| 조직 간 격리(다른 사업단 DB·상세·프로필·RPC) | PASS |
+| JWT 없는 요청 → 0행 | PASS |
+| 결과 입력 검증(반응·결과 필수, 후속일 필수, 연기 시 새 일시 필수) | PASS |
+| 결과 → 후속조치 생성 → 완료 시 다음 후속 연쇄 → 종료 | PASS |
+| 초대코드 가입, 역할 변경(OWNER만) | PASS |
+
+## 2. E2E Primary Journey (Desktop 1440) — `npm run test:e2e` → **10 PASS / 0 FAIL**
+
+```
+Fresh Load → CALLER 로그인 → 신규 DB 등록(태그·메모 포함) → 상세(공개 대기, 생성자는 비공개정보 열람)
+→ CONSULTANT: DRAFT 접근 시 404 → OWNER 로그인 → [공개하기] → 신청 가능
+→ CONSULTANT A/B 동시 [이 미팅 신청하기] → 1명만 배정, 패자는 "먼저 신청했습니다" 안내
+→ 승자만 연락처·주의사항 열람, 패자는 잠금 + /report 접근 시 상세로 리다이렉트
+→ 승자 [미팅 결과 입력] 완료·관심높음·후속상담필요·전화·3일후 → 완료 화면 → 상세에 결과·후속조치·이력 반영
+→ OWNER: 후속조치 전체 목록·전체 이력·결과 미입력 탭 확인 → 다른 DB 회수 → 재배정 → 일정 변경 → 구성원/초대코드
+→ 승자 /follow-ups에서 [완료] (종료) → DB CLOSED, 이력 기록 (Re-entry)
+→ 다른 사업단 OWNER: 해당 DB 404, 자기 DB만 표시 / CALLER: /members·/activity 접근 시 홈으로
+```
+
+## 3. Mobile Evidence — 390 / 430 실제 뷰포트
+
+| 화면 | 390 | 430 |
+|---|---|---|
+| 홈(컨설턴트/단장) | PASS, scrollWidth ≤ 390 | PASS, ≤ 430 |
+| 신청 가능 목록 → 상세 → [이 미팅 신청하기] → 비공개정보 표시 | PASS | — |
+| 결과 입력(클릭형) → 완료 화면 | PASS | — |
+| 드로어 열기/닫기, 하단 네비 | PASS | — |
+| 상세(단장), 신규 등록 폼 | — | PASS, overflow 0 |
+
+## 4. Device View (Master v1.2) — PASS
+- Desktop `[PC] [Mobile] [PC+Mobile]` 3모드, 새로고침 후 선택 유지(localStorage)
+- PC+Mobile: 동일 앱·동일 Route를 390px iframe에서 실제 렌더링, 하단 네비·헤더 동작
+- PC→Mobile, Mobile→PC 양방향 Route Sync (postMessage, origin/source 검증)
+- Frame 내부에서 Device Switch·중첩 Frame 없음(재귀 차단)
+- Dual View 가로 Overflow 0, KPI 그리드는 컨테이너 쿼리로 재배치
+
+## 5. 수정한 P0/P1 (첫 실행 중 발견)
+| 등급 | 문제 | 조치 |
+|---|---|---|
+| P0 | 프로덕션 빌드에서 2~3번째 클라이언트 내비게이션이 커밋되지 않음 | `(app)/layout.tsx`의 불필요한 `<Suspense>` 제거 → 5연속 내비게이션 정상 |
+| P0 | 모바일 390 홈 가로 스크롤 5px | `.grid > * { min-width: 0 }`, 카드 min-w-0 |
+| P1 | 로그인 카드 클릭 시 스크롤 위치가 홈으로 이어짐 | AppShell 마운트 시 scrollTop 0 |
+| P1 | 듀얼 뷰에서 KPI 6열 글자 잘림 | 컨테이너 쿼리(@2xl/@5xl) |
+| P1 | 외부 폰트 CSS가 렌더링·hydration 차단 | 비차단 로딩(FontLoader), 실패 시 시스템 폰트 |
+| P1 | 선착순 패자 안내가 새로고침 시 사라짐 | `?lost=1` 서버 렌더 배너 |
+| P2 | 신청 완료 토스트 2회 | 1회로 정리 |
+
+## 6. Score (Evidence-weighted)
+A 첫인상 13/15 · B Primary Journey 24/25 · C Wow 13/15 · D Business 11/15 (내부 운영 도구라 수익모델 UI 미노출, 의도적) · E Visual 9/10 · F Mobile 10/10 · G Integrity 5/5 · H Judge 4/5 → **89~91 / 100**, P0 = 0.
+남은 P1: 실제 Supabase Auth 로그인 화면은 이 환경에서 클릭 검증하지 못함(아래 체크리스트).
+
+## 7. Known Limitations
+- 알림(카톡/SMS/이메일) 없음 — 단장이 앱을 열어야 미입력이 보임.
+- 이메일 확인 정책은 Supabase 대시보드 설정에 따름.
+- 본부장(LEADER) 전용 화면 없음(컨설턴트와 동일 권한).

@@ -1,0 +1,34 @@
+"use client";
+
+import { useEffect, type ReactNode } from "react";
+import { X } from "lucide-react";
+
+export function Dialog({ open, onClose, title, children, testId }: { open: boolean; onClose: () => void; title: string; children: ReactNode; testId?: string }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/45 p-0 sm:items-center sm:p-4" onClick={onClose} data-testid={testId}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="fade-up w-full max-w-lg rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-2xl sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <h3 className="text-[21px] font-bold text-ink">{title}</h3>
+          <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 -mt-2 flex h-11 w-11 items-center justify-center rounded-xl text-ink-3 hover:bg-neutral-bg">
+            <X size={22} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
