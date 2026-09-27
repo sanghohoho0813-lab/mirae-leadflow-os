@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { withService, withUser, toActionError } from "@/lib/db";
 import { isLocalAuth, LOCAL_COOKIE, signLocalSession } from "@/lib/auth/local";
@@ -61,7 +61,9 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
   if (!hasSupabaseEnv()) return { error: "인증 서버가 설정되지 않았습니다." };
   if (password.length < 8) return { error: "비밀번호는 8자 이상이어야 합니다." };
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000"}`;
+  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName }, emailRedirectTo: `${origin}/auth/callback?next=/onboarding` } });
   if (error) return { error: error.message.includes("already") ? "이미 가입된 이메일입니다." : "가입 중 문제가 생겼습니다: " + error.message };
   const store = await cookies();
   store.set("lf_pending_name", fullName, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 3600 });

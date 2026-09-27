@@ -10,8 +10,9 @@ import type { MemberRole } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (await getSession()) redirect("/");
+  const { error } = await searchParams;
 
   if (isLocalAuth()) {
     const users = await withService((tx) => tx<{ id: string; full_name: string; role: MemberRole; org: string }[]>`
@@ -47,6 +48,7 @@ export default async function LoginPage() {
 
   return (
     <div className="fade-up">
+      {error === "link" && <p className="mb-4 rounded-2xl border border-danger/30 bg-danger-bg px-4 py-3 text-[15px] font-medium text-danger">링크가 만료되었거나 올바르지 않습니다. 다시 시도해 주세요.</p>}
       <LoginForm />
       <p className="mt-6 text-center text-[15px] text-ink-3">
         처음이신가요? <Link href="/signup" className="font-semibold text-primary hover:underline">초대코드로 가입</Link>
