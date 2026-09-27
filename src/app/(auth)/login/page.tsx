@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { isLocalAuth } from "@/lib/auth/local";
+import { isDemoMode } from "@/lib/auth/mode";
 import { getSession } from "@/lib/auth/session";
 import { withService } from "@/lib/db";
+import { ensureDemoReady } from "@/lib/demo/setup";
 import { ROLE_LABEL } from "@/lib/labels";
 import { localLogin } from "@/lib/actions/auth";
 import { LoginForm } from "./LoginForm";
@@ -14,14 +15,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (await getSession()) redirect("/");
   const { error } = await searchParams;
 
-  if (isLocalAuth()) {
+  if (isDemoMode()) {
+    await ensureDemoReady();
     const users = await withService((tx) => tx<{ id: string; full_name: string; role: MemberRole; org: string }[]>`
       select p.id, p.full_name, p.role, o.name as org from profiles p join organizations o on o.id = p.organization_id
       where p.is_active order by o.id, case p.role when 'OWNER' then 0 when 'MANAGER' then 1 when 'CALLER' then 2 when 'LEADER' then 3 else 4 end, p.full_name limit 30`);
     return (
       <div className="fade-up">
         <div className="mb-4 rounded-2xl border border-warning/30 bg-warning-bg/70 px-4 py-3 text-[15px] text-warning">
-          <b>개발용 로그인</b> — 운영 환경에서는 이메일·비밀번호 로그인(Supabase Auth)이 사용됩니다.
+          <b>체험 모드</b> — 비밀번호 없이 누구의 화면으로 볼지 고르세요. 들어간 뒤에도 화면 위쪽에서 언제든 바꿀 수 있습니다.
         </div>
         <div className="grid gap-2" data-testid="local-users">
           {users.map((u) => (
@@ -34,7 +36,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                     <span className="block text-[14px] text-ink-3">{ROLE_LABEL[u.role]} · {u.org}</span>
                   </span>
                 </span>
-                <span className="text-[15px] font-semibold text-primary">로그인</span>
+                <span className="text-[15px] font-semibold text-primary">이 화면으로 보기</span>
               </button>
             </form>
           ))}

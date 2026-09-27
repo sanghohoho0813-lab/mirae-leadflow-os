@@ -1,16 +1,24 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { DEMO_COOKIE, isDemoMode } from "@/lib/auth/mode";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/onboarding", "/forgot-password", "/reset-password"];
+const PUBLIC_PATHS = ["/login", "/signup", "/auth", "/onboarding", "/forgot-password", "/reset-password", "/setup", "/demo"];
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
-  const localMode = process.env.AUTH_MODE === "local" && (process.env.NODE_ENV !== "production" || process.env.LOCAL_AUTH_UNSAFE_OK === "1");
 
-  if (localMode) {
-    const has = request.cookies.has("lf_local_session");
-    if (!has && !isPublic) return NextResponse.redirect(new URL("/login", request.url));
+  if (!process.env.DATABASE_URL) {
+    if (pathname !== "/setup") return NextResponse.redirect(new URL("/setup", request.url));
+    return NextResponse.next();
+  }
+
+  if (isDemoMode()) {
+    if (!request.cookies.has(DEMO_COOKIE) && !isPublic) {
+      const enter = new URL("/demo/enter", request.url);
+      enter.searchParams.set("next", pathname + search);
+      return NextResponse.redirect(enter);
+    }
     return NextResponse.next();
   }
 
@@ -33,10 +41,7 @@ export async function middleware(request: NextRequest) {
     },
   });
   const { data } = await supabase.auth.getUser();
-  if (!data.user && !isPublic) {
-    const redirect = NextResponse.redirect(new URL("/login", request.url));
-    return redirect;
-  }
+  if (!data.user && !isPublic) return NextResponse.redirect(new URL("/login", request.url));
   return response;
 }
 

@@ -148,6 +148,7 @@ function FrameChildSync() {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin || e.source !== window.parent) return;
       const data = e.data as { type?: string; path?: string };
+      if (data?.type === "lf:refresh") { router.refresh(); return; }
       if (data?.type !== "lf:navigate" || typeof data.path !== "string") return;
       const current = stripFrame(pathname + (search.toString() ? `?${search.toString()}` : ""));
       const target = stripFrame(data.path);

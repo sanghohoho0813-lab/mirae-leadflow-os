@@ -7,7 +7,7 @@
 - NEXT: 필요 시 supabase-js로 클라이언트 직접 조회를 추가해도 RLS가 같은 정책으로 보호한다.
 
 ## D-02 인증: Supabase Auth(운영) / Local Auth(개발·QA)
-- WHY: 운영에서는 비밀번호 재설정·이메일 확인 등을 Supabase Auth에 맡긴다. 개발 컨테이너에서는 GoTrue를 띄울 수 없어 `AUTH_MODE=local`일 때만 시드 사용자 선택 로그인을 제공한다(서명 쿠키, production에서는 강제 비활성).
+- WHY: 운영에서는 비밀번호 재설정·이메일 확인 등을 Supabase Auth에 맡긴다. Supabase 연동 전·개발 중에는 체험 모드(D-13)를 쓴다.
 - 위험: 실제 Supabase 로그인 화면은 이 세션에서 클릭 검증하지 못했다. 사용 전 체크리스트에 명시.
 
 ## D-03 가입은 “초대코드” 방식
@@ -40,5 +40,12 @@
 ## D-12 (app) 레이아웃에 Suspense를 두지 않는다
 - WHY: 프로덕션 빌드에서 레이아웃 레벨 `<Suspense>` + Link prefetch 조합이 2~3번째 클라이언트 내비게이션을 영구 대기시키는 현상을 E2E로 확인(개발 서버에서는 재현 안 됨). 모든 페이지가 `force-dynamic`이라 `useSearchParams` 때문에 Suspense가 필요하지도 않다. 페이지 단위 Suspense(QueryToast 등)는 문제없음.
 
-## D-13 로컬 인증은 프로덕션 빌드에서 `LOCAL_AUTH_UNSAFE_OK=1`일 때만
-- WHY: E2E는 실제 `next build` 결과물에서 돌려야 의미가 있다(개발 서버는 동시 Server Action에서 다른 동작). 이 변수는 QA 컨테이너에서만 쓰고 Vercel에는 절대 두지 않는다.
+## D-13 체험 모드(AUTH_MODE=demo): 로그인 없이 역할 전환
+- WHY: Supabase Auth 연동 전에도 배포 주소에서 바로 전체 흐름을 시연·검증해야 한다. 첫 접속은 사업단장으로 자동 입장, 상단 막대에서 클릭 한 번으로 단장/운영/콜/컨설턴트/본부장 화면 전환, [초기화]로 샘플 데이터·날짜 복원.
+- HOW: `AUTH_MODE=demo`이거나, `AUTH_MODE`가 비어 있고 Supabase 환경변수가 없으면 체험 모드. 서명 쿠키로 페르소나 유지(보안 경계 아님 — 누구나 모든 역할로 볼 수 있음). RLS·선착순·권한 규칙은 체험 모드에서도 실제 DB에서 그대로 작동.
+- 위험: 공개 주소에서 누구나 데이터 수정 가능 → **실제 고객 정보 입력 금지**. 실사용 전 `AUTH_MODE=supabase`로 전환.
+
+## D-14 첫 접속 시 스키마·샘플 데이터 자동 생성
+- WHY: 비개발자가 SQL Editor를 쓰지 않고 Vercel에서 DB만 연결하면 끝나도록.
+- HOW: 마이그레이션 SQL을 빌드에 문자열로 포함(webpack asset/source), 체험 모드 첫 요청에서 advisory lock 안에서 적용 후 조직이 없으면 시드. `scripts/migrate.mjs`와 같은 `_migrations` 테이블 사용.
+- Neon 등 비슈퍼유저 소유자 대응: shim에서 BYPASSRLS 제거, PG16의 `grant authenticated to <owner> with set true` 자동 부여(매 시작 시 재확인). 새 클러스터 + 비슈퍼유저 계정으로 첫 접속·선착순·RLS 53개 검사 통과 확인.

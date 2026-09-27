@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { withUser } from "@/lib/db";
 import type { Organization, Profile } from "@/lib/types";
-import { isLocalAuth, LOCAL_COOKIE, verifyLocalSession } from "./local";
+import { isDemoMode, LOCAL_COOKIE, verifyLocalSession } from "./local";
+import { ensureDemoReady } from "@/lib/demo/setup";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 
 export interface Session {
@@ -12,7 +13,7 @@ export interface Session {
 }
 
 export const getSession = cache(async (): Promise<Session | null> => {
-  if (isLocalAuth()) {
+  if (isDemoMode()) {
     const store = await cookies();
     const userId = verifyLocalSession(store.get(LOCAL_COOKIE)?.value);
     return userId ? { userId, email: null } : null;
@@ -33,6 +34,7 @@ export interface Viewer {
 export const getViewer = cache(async (): Promise<Viewer | null> => {
   const session = await getSession();
   if (!session) return null;
+  if (isDemoMode()) await ensureDemoReady();
   const result = await withUser(session.userId, async (tx) => {
     const [profile] = await tx<Profile[]>`select * from profiles where id = ${session.userId}`;
     if (!profile) return null;

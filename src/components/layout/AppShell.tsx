@@ -52,7 +52,7 @@ function navFor(role: MemberRole): { primary: NavItem[]; more: NavItem[]; cta?: 
   };
 }
 
-export function AppShell({ user, children }: { user: ShellUser; children: ReactNode }) {
+export function AppShell({ user, children, demo = false, topBar }: { user: ShellUser; children: ReactNode; demo?: boolean; topBar?: ReactNode }) {
   const pathname = usePathname();
   const search = useSearchParams();
   const [drawer, setDrawer] = useState(false);
@@ -108,15 +108,18 @@ export function AppShell({ user, children }: { user: ShellUser; children: ReactN
               <div className="text-[13.5px] text-[#aeb7c3]">{ROLE_LABEL[user.role]} · {user.orgName}</div>
             </div>
           </div>
-          <form action={logout}>
-            <button type="submit" className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/15 text-[14.5px] font-semibold text-[#e5e7eb] transition-base hover:bg-white/10">
-              <LogOut size={16} /> 로그아웃
-            </button>
-          </form>
+          {!demo && (
+            <form action={logout}>
+              <button type="submit" className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/15 text-[14.5px] font-semibold text-[#e5e7eb] transition-base hover:bg-white/10">
+                <LogOut size={16} /> 로그아웃
+              </button>
+            </form>
+          )}
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {topBar}
         {/* Top header */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-white/95 px-4 backdrop-blur lg:h-[68px] lg:px-8">
           <div className="flex items-center gap-2.5 lg:hidden">
@@ -186,11 +189,13 @@ export function AppShell({ user, children }: { user: ShellUser; children: ReactN
                   {item.label}
                 </Link>
               ))}
-              <form action={logout}>
-                <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 text-[16px] font-semibold text-ink-2 hover:bg-neutral-bg" style={{ height: 52 }}>
-                  <span className="icon-tile" style={{ background: "var(--neutral-canvas)", color: "var(--neutral-text-secondary)" }}><LogOut size={20} /></span> 로그아웃
-                </button>
-              </form>
+              {!demo && (
+                <form action={logout}>
+                  <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 text-[16px] font-semibold text-ink-2 hover:bg-neutral-bg" style={{ height: 52 }}>
+                    <span className="icon-tile" style={{ background: "var(--neutral-canvas)", color: "var(--neutral-text-secondary)" }}><LogOut size={20} /></span> 로그아웃
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>

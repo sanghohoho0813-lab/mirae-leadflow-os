@@ -1,6 +1,10 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { DEMO_COOKIE } from "./mode";
 
-export const LOCAL_COOKIE = "lf_local_session";
+export { isDemoMode } from "./mode";
+export const LOCAL_COOKIE = DEMO_COOKIE;
+
+export const LOCAL_COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax" as const, path: "/", maxAge: 60 * 60 * 24 * 30 };
 
 function secret() {
   return process.env.AUTH_SECRET || "local-dev-secret";
@@ -18,14 +22,4 @@ export function verifyLocalSession(value: string | undefined): string | null {
   const expected = createHmac("sha256", secret()).update(userId).digest("hex");
   if (expected.length !== mac.length) return null;
   return timingSafeEqual(Buffer.from(expected), Buffer.from(mac)) ? userId : null;
-}
-
-/**
- * Local auth is a development/QA convenience. It is disabled in production
- * builds unless LOCAL_AUTH_UNSAFE_OK=1 is set explicitly (used only to run the
- * E2E suite against `next start`). Never set that variable on a real deployment.
- */
-export function isLocalAuth(): boolean {
-  if (process.env.AUTH_MODE !== "local") return false;
-  return process.env.NODE_ENV !== "production" || process.env.LOCAL_AUTH_UNSAFE_OK === "1";
 }

@@ -1,10 +1,20 @@
--- Local-only shim: emulates the parts of Supabase that RLS depends on.
--- Never run on a real Supabase project (auth schema already exists there).
+-- Shim for plain Postgres (local, Neon, …): emulates the parts of Supabase that
+-- RLS depends on. Never run on a real Supabase project (auth schema exists there).
+-- Must work for a non-superuser owner, so no BYPASSRLS.
 do $$
 begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
   if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
-  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin; end if;
+  -- The app connects as the DB owner and does `SET LOCAL ROLE authenticated` per request.
+  -- PG16+: the creator's implicit membership has SET disabled, so grant it explicitly.
+  if current_setting('server_version_num')::int >= 160000 then
+    if not pg_has_role(current_user, 'authenticated', 'SET') then
+      execute format('grant authenticated to %I with set true', current_user);
+    end if;
+  elsif not pg_has_role(current_user, 'authenticated', 'MEMBER') then
+    execute format('grant authenticated to %I', current_user);
+  end if;
 end $$;
 
 create schema if not exists auth;

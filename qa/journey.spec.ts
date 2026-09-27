@@ -44,7 +44,7 @@ function tomorrow(): string {
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(() => {
-  execSync("node scripts/seed.mjs", { stdio: "inherit" });
+  execSync("node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed.mjs", { stdio: "inherit" });
 });
 
 let leadId = "";
@@ -342,4 +342,53 @@ test("10. Device View: PC / Mobile / PC+Mobile with route sync, no recursion", a
   await p.getByRole("tab", { name: "PC", exact: true }).click();
   await expect(p.getByTestId("device-frame")).toHaveCount(0);
   await p.context().close();
+});
+
+test("11. Demo mode: no login needed, one click switches role", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const p = await ctx.newPage();
+  await go(p, "/");
+  // Fresh visitor lands directly on the 사업단장 dashboard.
+  await expect(p.getByTestId("demo-bar")).toBeVisible();
+  await expect(p.getByRole("heading", { name: /김상호 단장님/ })).toBeVisible();
+  await expect(p.getByTestId("kpi-needs-report")).toBeVisible();
+  await shot(p, "19-demo-owner", false);
+
+  // One click → consultant view on the same page.
+  await p.getByTestId(`persona-${U.minsu}`).click();
+  await expect(p.getByRole("heading", { name: /최민수 컨설턴트님/ })).toBeVisible();
+  await expect(p.getByTestId("sidebar").getByRole("link", { name: "신청 가능 DB" })).toBeVisible();
+  await expect(p.getByTestId("sidebar").getByRole("link", { name: "전체 이력" })).toHaveCount(0);
+  await shot(p, "20-demo-consultant", false);
+
+  // One click → caller.
+  await p.getByTestId(`persona-${U.caller}`).click();
+  await expect(p.getByRole("heading", { name: /이정숙 콜담당님/ })).toBeVisible();
+
+  // Same DB detail seen by two roles: owner sees contact, other consultant does not.
+  const sungjin = "30000000-0000-4000-8000-000000000006"; // assigned to 최민수
+  await go(p, `/leads/${sungjin}`);
+  await p.getByTestId(`persona-${U.owner}`).click();
+  await expect(p.getByTestId("contact-phone")).toBeVisible();
+  await p.getByTestId(`persona-${U.jiyoung}`).click();
+  await expect(p.getByTestId("private-locked")).toBeVisible();
+  await expect(p.getByTestId("contact-phone")).toHaveCount(0);
+
+  // Reset restores seed data.
+  await p.getByTestId("demo-reset").click();
+  await p.getByTestId("demo-reset-confirm").click();
+  await expect(p.getByText("처음 상태로 되돌렸습니다")).toBeVisible();
+  await ctx.close();
+});
+
+test("12. Demo mode on mobile 390: role bar fits without horizontal scroll", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const p = await ctx.newPage();
+  await go(p, "/");
+  await expect(p.getByTestId("demo-bar")).toBeVisible();
+  expect(await p.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await p.getByTestId(`persona-${U.minsu}`).click();
+  await expect(p.getByRole("heading", { name: /최민수 컨설턴트님/ })).toBeVisible();
+  await shot(p, "m390-08-demo-bar", false);
+  await ctx.close();
 });

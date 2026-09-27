@@ -3,7 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { withService, withUser, toActionError } from "@/lib/db";
-import { isLocalAuth, LOCAL_COOKIE, signLocalSession } from "@/lib/auth/local";
+import { isDemoMode, LOCAL_COOKIE, LOCAL_COOKIE_OPTIONS, signLocalSession } from "@/lib/auth/local";
 import { createSupabaseServerClient, hasSupabaseEnv } from "@/lib/supabase/server";
 import { getSession } from "@/lib/auth/session";
 import { messageFor } from "@/lib/errors";
@@ -11,15 +11,15 @@ import { messageFor } from "@/lib/errors";
 export interface ActionState { error?: string; ok?: boolean; message?: string }
 
 export async function localLogin(userId: string) {
-  if (!isLocalAuth()) throw new Error("local auth disabled");
+  if (!isDemoMode()) throw new Error("demo mode disabled");
   const store = await cookies();
-  store.set(LOCAL_COOKIE, signLocalSession(userId), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
+  store.set(LOCAL_COOKIE, signLocalSession(userId), LOCAL_COOKIE_OPTIONS);
   redirect("/");
 }
 
 export async function logout() {
   const store = await cookies();
-  if (isLocalAuth()) {
+  if (isDemoMode()) {
     store.delete(LOCAL_COOKIE);
   } else if (hasSupabaseEnv()) {
     const supabase = await createSupabaseServerClient();
@@ -45,7 +45,7 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
   const password = String(formData.get("password") ?? "");
   if (!email || !fullName) return { error: "이름과 이메일을 입력해 주세요." };
 
-  if (isLocalAuth()) {
+  if (isDemoMode()) {
     const userId = await withService(async (tx) => {
       const [existing] = await tx<{ id: string }[]>`select id from auth.users where email = ${email}`;
       if (existing) return existing.id;
@@ -53,7 +53,7 @@ export async function signUp(_prev: ActionState, formData: FormData): Promise<Ac
       return row.id;
     });
     const store = await cookies();
-    store.set(LOCAL_COOKIE, signLocalSession(userId), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
+    store.set(LOCAL_COOKIE, signLocalSession(userId), LOCAL_COOKIE_OPTIONS);
     store.set("lf_pending_name", fullName, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 3600 });
     redirect("/onboarding");
   }
