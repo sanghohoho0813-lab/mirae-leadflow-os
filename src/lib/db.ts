@@ -17,7 +17,11 @@ function create(): Sql {
   });
 }
 
-export const sql: Sql = globalThis.__lf_sql ?? (globalThis.__lf_sql = create());
+// Created on first query, not at import: `next build` loads route modules
+// before runtime env vars exist (e.g. on Vercel).
+function db(): Sql {
+  return globalThis.__lf_sql ?? (globalThis.__lf_sql = create());
+}
 
 export type Tx = TransactionSql;
 
@@ -28,7 +32,7 @@ export type Tx = TransactionSql;
  */
 export async function withUser<T>(userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   if (!/^[0-9a-f-]{36}$/i.test(userId)) throw new Error("invalid user id");
-  return sql.begin(async (tx) => {
+  return db().begin(async (tx) => {
     await tx.unsafe("set local role authenticated");
     await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: userId, role: "authenticated" })}, true)`;
     return fn(tx);
@@ -37,7 +41,7 @@ export async function withUser<T>(userId: string, fn: (tx: Tx) => Promise<T>): P
 
 /** Privileged access (no RLS). Used only for auth bookkeeping in local mode. */
 export async function withService<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
-  return sql.begin(async (tx) => fn(tx)) as Promise<T>;
+  return db().begin(async (tx) => fn(tx)) as Promise<T>;
 }
 
 export class DbActionError extends Error {
