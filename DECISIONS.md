@@ -49,3 +49,7 @@
 - WHY: 비개발자가 SQL Editor를 쓰지 않고 Vercel에서 DB만 연결하면 끝나도록.
 - HOW: 마이그레이션 SQL을 빌드에 문자열로 포함(webpack asset/source), 체험 모드 첫 요청에서 advisory lock 안에서 적용 후 조직이 없으면 시드. `scripts/migrate.mjs`와 같은 `_migrations` 테이블 사용.
 - Neon 등 비슈퍼유저 소유자 대응: shim에서 BYPASSRLS 제거, PG16의 `grant authenticated to <owner> with set true` 자동 부여(매 시작 시 재확인). 새 클러스터 + 비슈퍼유저 계정으로 첫 접속·선착순·RLS 53개 검사 통과 확인.
+
+## D-15 DB 미연결 시 내장 임시 DB(PGlite)로 체험 모드 실행
+- WHY: 배포 직후 설정 없이 버튼 한 번으로 체험해 보고 싶다는 요청. `DATABASE_URL`이 없고 체험 모드이면 서버 안에서 PGlite(WASM Postgres)를 띄워 로컬 소켓으로 연결 → 기존 postgres.js 코드·RLS·RPC를 그대로 사용(RLS/선착순 53개 검사 통과).
+- 한계(실측, Vercel): 서버가 한동안 쉬면 데이터가 샘플 상태로 돌아감. 콜드 스타트 첫 접속 약 16초, 이후 약 0.3초. 콜드 스타트 순간 인스턴스가 2개 떠서 데이터가 잠시 갈릴 수 있음(이후 요청은 한 인스턴스로 모임). 여러 사람·여러 기기에서 같은 데이터를 보려면 `DATABASE_URL`(Neon 등) 연결 필요 — 연결하면 코드 변경 없이 자동 전환.
