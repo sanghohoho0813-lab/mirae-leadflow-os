@@ -8,7 +8,8 @@ export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
-  if (!process.env.DATABASE_URL) {
+  // Demo mode runs on a built-in temporary database when none is configured.
+  if (!process.env.DATABASE_URL && !isDemoMode()) {
     if (pathname !== "/setup") return NextResponse.redirect(new URL("/setup", request.url));
     return NextResponse.next();
   }

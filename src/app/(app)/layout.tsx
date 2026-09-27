@@ -1,6 +1,6 @@
 import { requireViewer } from "@/lib/auth/session";
 import { isDemoMode } from "@/lib/auth/mode";
-import { withService } from "@/lib/db";
+import { DB_INSTANCE_ID, isEphemeralDb, withService } from "@/lib/db";
 import { AppShell } from "@/components/layout/AppShell";
 import { DeviceViewProvider } from "@/components/layout/DeviceView";
 import { DemoBar, type Persona } from "@/components/layout/DemoBar";
@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     : [];
   return (
     <DeviceViewProvider>
-      <AppShell user={user} demo={demo} topBar={demo ? <DemoBar personas={personas} currentId={viewer.session.userId} /> : null}>
+      <AppShell user={user} demo={demo} topBar={demo ? <DemoBar personas={personas} currentId={viewer.session.userId} ephemeral={isEphemeralDb()} instanceId={DB_INSTANCE_ID} /> : null}>
         {children}
       </AppShell>
     </DeviceViewProvider>

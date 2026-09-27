@@ -44,6 +44,7 @@ function tomorrow(): string {
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(() => {
+  if (process.env.E2E_SKIP_SEED === "1") return; // server uses its own fresh built-in DB
   execSync("node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed.mjs", { stdio: "inherit" });
 });
 

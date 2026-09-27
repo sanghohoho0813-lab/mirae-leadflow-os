@@ -12,7 +12,7 @@ for (const f of [".env.local", ".env"]) {
 }
 
 export const DATABASE_URL = process.env.DATABASE_URL || "postgres://postgres@localhost:5432/leadflow";
-export const sql = postgres(DATABASE_URL, { max: 20, onnotice: () => {} });
+export const sql = postgres(DATABASE_URL, { max: Number(process.env.PG_POOL_MAX || 20), onnotice: () => {} });
 export const isLocal = /localhost|127\.0\.0\.1/.test(DATABASE_URL);
 
 // Runs `fn` inside a transaction that impersonates a Supabase authenticated
