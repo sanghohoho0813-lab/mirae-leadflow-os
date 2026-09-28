@@ -11,6 +11,7 @@ import { submitReport } from "@/lib/actions/leads";
 import { MATERIAL_OPTIONS, NEXT_ACTION_LABEL, OUTCOME_LABEL, REACTION_LABEL, RESULT_LABEL, TOPIC_OPTIONS } from "@/lib/labels";
 import type { MeetingOutcome, MeetingResult, NextAction, ReactionLevel } from "@/lib/types";
 import { fmtDate, kstDateString } from "@/lib/time";
+import { TimePicker } from "@/components/ui/TimePicker";
 
 function addDays(n: number): string {
   return kstDateString(new Date(Date.now() + n * 86400000));
@@ -18,8 +19,10 @@ function addDays(n: number): string {
 
 // Lead interest tags → the report's 상담 분야 chips (preselected).
 const TOPIC_FROM_INTEREST: Record<string, string> = {
-  정책자금: "정책자금", 고용지원금: "고용지원금", 기업부설연구소: "기업부설연구소", 세액공제: "기업부설연구소",
-  벤처기업확인: "벤처·이노비즈", 기업인증: "기업인증", 법인컨설팅: "절세·법인", 가지급금: "절세·법인", 절세: "절세·법인", 정부지원사업: "정부지원사업",
+  "절세·법인": "절세·법인", 가지급금: "절세·법인", 절세: "절세·법인", 법인컨설팅: "절세·법인", 세액공제: "절세·법인",
+  가업승계: "가업승계", "M&A": "M&A", 사내근로복지기금: "사내근로복지기금",
+  정책자금: "정책자금", 고용지원금: "고용지원금", 기업부설연구소: "기업부설연구소",
+  벤처인증: "벤처인증", 벤처기업확인: "벤처인증", 기업인증: "기업인증(이노비즈·메인비즈)", 정부지원사업: "정부지원사업",
 };
 const NEXT_NOTE_HINT: Partial<Record<NextAction, string>> = {
   CALL: "예: 재무제표 보내 주셨는지 확인 전화",
@@ -29,7 +32,8 @@ const NEXT_NOTE_HINT: Partial<Record<NextAction, string>> = {
 };
 const MEMO_TEMPLATE = "· 대표님 핵심 고민:\n· 회사 현황 (매출·직원·업종):\n· 제안한 내용:\n· 다음 약속·조건:\n";
 
-export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: { leadId: string; companyName: string; isFollowUp: boolean; interest?: string[] }) {
+export function ReportForm({ leadId, companyName, isFollowUp, interest = [], round = 1 }: { leadId: string; companyName: string; isFollowUp: boolean; interest?: string[]; round?: number }) {
+  const [nextTime, setNextTime] = useState("10:00");
   const [outcome, setOutcome] = useState<MeetingOutcome | null>(null);
   const [reaction, setReaction] = useState<ReactionLevel | null>(null);
   const [result, setResult] = useState<MeetingResult | null>(null);
@@ -44,7 +48,8 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("10:00");
   const [pending, start] = useSafeTransition();
-  const [done, setDone] = useState<{ status: string } | null>(null);
+  // Round is frozen at submit time: the page re-renders with the next round right after saving.
+  const [done, setDone] = useState<{ status: string; next: number } | null>(null);
   const toast = useToast();
 
   const needsReactionResult = outcome === "DONE";
@@ -54,7 +59,7 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
   const n = () => ++step;
   const canSubmit = outcome !== null
     && (!needsReactionResult || (reaction && result))
-    && (!needsNext || (next && (next === "NONE" || nextDate)))
+    && (!needsNext || (next && (next === "NONE" || (nextDate && (next !== "REVISIT" || nextTime)))))
     && (!needsNewMeeting || (newDate && newTime));
 
   const submit = () => start(async () => {
@@ -62,11 +67,12 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
     const r = await submitReport(leadId, {
       outcome, reaction, result, next_action: needsNext ? (next ?? "NONE") : "NONE", next_action_date: next && next !== "NONE" ? nextDate : null,
       memo, detail_memo: showDetail ? detail : "", new_meeting_date: newDate, new_meeting_time: newTime,
+      next_meeting_date: next === "REVISIT" ? nextDate : undefined, next_meeting_time: next === "REVISIT" ? nextTime : undefined,
       topics: outcome === "DONE" ? topics : [], materials: outcome === "DONE" ? materials : [], next_note: next && next !== "NONE" ? nextNote : "",
     });
     if (r.ok) {
-      const status = outcome === "POSTPONED" ? "ASSIGNED" : next && next !== "NONE" ? "FOLLOW_UP" : "CLOSED";
-      setDone({ status });
+      const status = outcome === "POSTPONED" ? "ASSIGNED" : next === "REVISIT" ? "NEXT_ROUND" : next && next !== "NONE" ? "FOLLOW_UP" : "CLOSED";
+      setDone({ status, next: round + 1 });
     } else toast("error", r.message ?? "저장하지 못했습니다.");
   });
 
@@ -80,6 +86,7 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
           <div className="font-semibold text-ink-2">다음 단계</div>
           <div className="mt-0.5 font-bold text-ink">
             {done.status === "ASSIGNED" && `미팅이 ${fmtDate(newDate)} ${newTime}로 변경되었습니다.`}
+            {done.status === "NEXT_ROUND" && `${done.next}차 미팅이 ${fmtDate(nextDate)} ${nextTime}로 잡혔습니다. 다녀오면 ${done.next}차 결과를 입력해 주세요.`}
             {done.status === "FOLLOW_UP" && next && `${NEXT_ACTION_LABEL[next]} · ${fmtDate(nextDate)}${nextNote.trim() ? ` · ${nextNote.trim()}` : ""} — 후속조치에 등록되었습니다.`}
             {done.status === "CLOSED" && "이 DB는 종료 처리되었습니다. 단장님 화면에도 반영되었습니다."}
           </div>
@@ -95,16 +102,16 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
 
   return (
     <div className="grid gap-4">
-      <Step n={1} title={isFollowUp ? "후속 진행은 어떻게 되었나요?" : "미팅은 진행되었나요?"} required>
+      <Step n={1} title={isFollowUp ? "후속 진행은 어떻게 되었나요?" : round > 1 ? `${round}차 미팅은 진행되었나요?` : "미팅은 진행되었나요?"} required>
         <ChoiceGroup name="outcome" columns={4} value={outcome} onChange={(v) => { setOutcome(v); if (v !== "DONE") { setReaction(null); setResult(null); } if (v === "NO_SHOW" && !next) setNext("CALL"); }} testId="outcome-choice"
           options={[{ value: "DONE", label: "완료" }, { value: "POSTPONED", label: "연기" }, { value: "CANCELLED", label: "취소" }, { value: "NO_SHOW", label: "부재" }]} />
       </Step>
 
       {needsNewMeeting && (
         <Step n={n()} title="새 미팅 일시" required>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3">
             <Input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} min={kstDateString()} data-testid="new-meeting-date" aria-label="새 미팅 날짜" />
-            <Input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} step={600} aria-label="새 미팅 시간" />
+            <TimePicker value={newTime} onChange={setNewTime} testId="new-meeting-time" />
           </div>
         </Step>
       )}
@@ -131,10 +138,10 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
       {needsNext && (
         <Step n={n()} title="다음에 할 일" required>
           <ChoiceGroup name="next" columns={3} value={next} onChange={setNext} testId="next-choice"
-            options={[{ value: "CALL", label: "전화" }, { value: "SEND_MATERIAL", label: "자료 전달" }, { value: "REVISIT", label: "재방문" }, { value: "OWNER_CHECK", label: "단장 확인 필요" }, { value: "NONE", label: "없음 (종료)" }]} />
+            options={[{ value: "CALL", label: "전화" }, { value: "SEND_MATERIAL", label: "자료 전달" }, { value: "REVISIT", label: `재방문 (${round + 1}차 미팅)` }, { value: "OWNER_CHECK", label: "단장 확인 필요" }, { value: "NONE", label: "없음 (종료)" }]} />
           {next && next !== "NONE" && (
             <div className="mt-4 grid gap-4">
-              <Field label="후속 예정일" required htmlFor="next-date">
+              <Field label={next === "REVISIT" ? `${round + 1}차 미팅 날짜` : "후속 예정일"} required htmlFor="next-date">
                 <div className="mb-2 flex flex-wrap gap-2">
                   {[{ l: "내일", d: 1 }, { l: "3일 후", d: 3 }, { l: "1주 후", d: 7 }, { l: "2주 후", d: 14 }].map((q) => (
                     <button key={q.d} type="button" onClick={() => setNextDate(addDays(q.d))} className={`min-h-[44px] rounded-xl border-2 px-3.5 text-[0.9375rem] font-semibold transition-base ${nextDate === addDays(q.d) ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}>{q.l}</button>
@@ -142,6 +149,12 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
                 </div>
                 <Input id="next-date" type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} min={kstDateString()} data-testid="next-date" />
               </Field>
+              {next === "REVISIT" && (
+                <Field label={`${round + 1}차 미팅 시간`} required>
+                  <TimePicker value={nextTime} onChange={setNextTime} testId="next-meeting-time" />
+                  <p className="mt-1 text-[0.875rem] text-ink-3">저장하면 {round + 1}차 미팅이 바로 잡히고, 다녀온 뒤 {round + 1}차 결과를 입력하게 됩니다.</p>
+                </Field>
+              )}
               <Field label="구체적으로 할 일 (선택)" htmlFor="next-note" hint="후속조치 목록에 그대로 보입니다">
                 <Input id="next-note" value={nextNote} onChange={(e) => setNextNote(e.target.value)} placeholder={NEXT_NOTE_HINT[next] ?? ""} data-testid="next-note" />
               </Field>

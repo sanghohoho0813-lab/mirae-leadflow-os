@@ -8,6 +8,7 @@ import { Button, LinkButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { createTraining, finishTrainingFile, startTrainingFile, summarizeTraining, updateTraining, uploadTrainingChunk, type TrainingInput } from "@/lib/actions/trainings";
 import { kstDateString } from "@/lib/time";
+import { TimePicker } from "@/components/ui/TimePicker";
 import { fmtSize } from "./TrainingClient";
 
 const MAX = 30 * 1024 * 1024;
@@ -32,7 +33,8 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
 }) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [date, setDate] = useState(initial?.date ?? nextWeekday(1));
-  const [time, setTime] = useState(initial?.time ?? "10:00");
+  const [time, setTime] = useState(initial?.time ?? "19:00");
+  const [notice, setNotice] = useState(initial?.notice ?? "");
   const [instructor, setInstructor] = useState(initial?.instructor_id ?? me);
   const [content, setContent] = useState(initial?.content ?? "");
   const [links, setLinks] = useState(initial?.links?.length ? initial.links : []);
@@ -79,7 +81,7 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
   const submit = async () => {
     setError(null);
     if (!title.trim()) { setError("교육 제목을 입력해 주세요."); return; }
-    const input: TrainingInput = { title, date, time, instructor_id: instructor || null, content, links: links.filter((l) => l.url.trim()) };
+    const input: TrainingInput = { title, date, time, instructor_id: instructor || null, content, links: links.filter((l) => l.url.trim()), notice };
     setPhase({ label: "저장하는 중" });
     try {
       const r = mode === "create" ? await createTraining(input) : await updateTraining(trainingId!, input);
@@ -120,15 +122,18 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
                 <button key={q.label} type="button" onClick={() => setDate(q.v)} className={`press min-h-[44px] rounded-xl border-2 px-3.5 text-[0.9375rem] font-semibold ${date === q.v ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2"}`}>{q.label}</button>
               ))}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="교육 날짜" data-testid="training-date" />
-              <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} step={600} aria-label="교육 시간" />
-            </div>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="교육 날짜" data-testid="training-date" />
+          </Field>
+          <Field label="교육 시간" required>
+            <TimePicker value={time} onChange={setTime} hours={[10, 14, 18, 19, 20]} testId="training-time" />
           </Field>
           <Field label="강사" htmlFor="t-inst">
             <Select id="t-inst" value={instructor} onChange={(e) => setInstructor(e.target.value)}>
               {instructors.map((p) => <option key={p.id} value={p.id}>{p.full_name} ({[p.division, ROLE_NAME[p.role] ?? ""].filter(Boolean).join(" ")})</option>)}
             </Select>
+          </Field>
+          <Field label="교육 공지 (선택)" htmlFor="t-notice" hint="교육 전 ‘다가오는 교육’에 그대로 보입니다. 카톡 공지를 붙여넣어도 됩니다.">
+            <Textarea id="t-notice" value={notice} onChange={(e) => setNotice(e.target.value)} rows={4} placeholder="예: 오늘 저녁 7시, 법인영업의 판을 바꿀 실전 교육이 시작됩니다!" data-testid="training-notice-input" />
           </Field>
         </div>
       </section>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Sparkles, ListChecks, MessageSquareQuote, Paperclip, Link2, NotebookText, Users, Pencil, Info, ExternalLink } from "lucide-react";
+import { Sparkles, ListChecks, MessageSquareQuote, Paperclip, Link2, NotebookText, Users, Pencil, Info, ExternalLink, Megaphone } from "lucide-react";
 import { canTeach, isManager, requireViewer } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
 import { getReadStatus, getTraining, getTrainingFiles } from "@/lib/trainings";
@@ -56,6 +56,13 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
           {t.summarized_at && <div className="text-[0.875rem] text-ink-3">요약 {fmtRelativeTime(t.summarized_at)} · {t.summary_source === "AI" ? "AI 정리" : "기본 요약"}</div>}
         </div>
       </div>
+
+      {t.notice && (
+        <section className="mb-5 rounded-2xl border border-primary/30 bg-soft/60 p-5" data-testid="training-notice">
+          <h2 className="mb-2 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><Megaphone size={20} className="text-primary" /> 교육 공지</h2>
+          <p className="whitespace-pre-line text-[1.0625rem] leading-relaxed text-ink">{t.notice}</p>
+        </section>
+      )}
 
       {/* 자료 */}
       <section className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card">

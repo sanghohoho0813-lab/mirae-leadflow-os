@@ -29,6 +29,8 @@ export interface Viewer {
   session: Session;
   profile: Profile;
   organization: Organization;
+  /** 본부 (null = 단장·비서·콜팀 or not placed yet). */
+  division: { id: string; name: string; claims_org_leads: boolean } | null;
 }
 
 export const getViewer = cache(async (): Promise<Viewer | null> => {
@@ -39,7 +41,10 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
     const [profile] = await tx<Profile[]>`select * from profiles where id = ${session.userId}`;
     if (!profile) return null;
     const [organization] = await tx<Organization[]>`select id, name, invite_code, claim_limit from organizations where id = ${profile.organization_id}`;
-    return { profile, organization };
+    const [division] = profile.division_id
+      ? await tx<{ id: string; name: string; claims_org_leads: boolean }[]>`select id, name, claims_org_leads from divisions where id = ${profile.division_id}`
+      : [];
+    return { profile, organization, division: division ?? null };
   });
   if (!result) return null;
   return { session, ...result };
@@ -58,7 +63,20 @@ export function isManager(v: Viewer) {
   return v.profile.role === "OWNER" || v.profile.role === "MANAGER";
 }
 export function canCreateLead(v: Viewer) {
-  return isManager(v) || v.profile.role === "CALLER";
+  return isManager(v) || v.profile.role === "CALLER" || (v.profile.role === "LEADER" && Boolean(v.profile.division_id));
+}
+/** 본부장 of a 본부: runs that 본부's DBs and people. */
+export function isLeader(v: Viewer) {
+  return v.profile.role === "LEADER" && Boolean(v.profile.division_id);
+}
+/** May run this DB (publish, assign, report for it). Mirrors lf_can_manage() in the database. */
+export function canManageLead(v: Viewer, lead: { division_id: string | null }) {
+  return isManager(v) || (isLeader(v) && lead.division_id === v.profile.division_id);
+}
+/** 광주 상무본부 etc.: education only, no shared Seoul/Gyeonggi DBs. */
+export function usesDb(v: Viewer) {
+  if (v.profile.role === "CONSULTANT") return v.division?.claims_org_leads ?? true;
+  return true;
 }
 export function canClaim(v: Viewer) {
   return v.profile.role === "CONSULTANT" || v.profile.role === "LEADER";

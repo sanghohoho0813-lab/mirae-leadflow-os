@@ -25,6 +25,8 @@ export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now 
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="truncate text-[1.125rem] font-bold text-ink group-hover:text-primary">{lead.company_name}</span>
           <StatusBadge status={lead.status} needsReport={lead.needs_report} />
+          {lead.division_name && <Badge tone="purple">{lead.division_name} DB</Badge>}
+          {lead.meeting_round > 1 && <Badge tone="info">{lead.meeting_round}차 미팅</Badge>}
           {lead.needs_report && overdueDays >= 3 && <Badge tone="danger">{overdueDays}일 경과</Badge>}
           {lead.status === "FOLLOW_UP" && lead.pending_follow_up_action && (
             <Badge tone="purple">{NEXT_ACTION_LABEL[lead.pending_follow_up_action]} · {lead.pending_follow_up_date ? relativeDay(lead.pending_follow_up_date, now).label : ""}</Badge>

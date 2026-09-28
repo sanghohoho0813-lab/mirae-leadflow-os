@@ -10,6 +10,9 @@ const U = {
   cB: "10000000-0000-4000-8000-000000000005",
   cC: "10000000-0000-4000-8000-000000000006",
   cE: "10000000-0000-4000-8000-000000000010",
+  leader2: "10000000-0000-4000-8000-000000000007", // 서인수 2본부 본부장
+  secretary: "10000000-0000-4000-8000-000000000018", // 이미라 비서 팀장
+  gwangju: "10000000-0000-4000-8000-000000000017", // 광주 상무본부 컨설턴트 G
   otherOwner: "20000000-0000-4000-8000-000000000001",
 };
 const UURIM = "30000000-0000-4000-8000-000000000008"; // 우림식품, 컨설턴트 B
@@ -76,7 +79,8 @@ test("1. CALLER registers a new DB (DRAFT)", async ({ browser }) => {
   await expect(page.getByRole("radio", { name: "방문" })).toHaveCount(0);
   await expect(page.locator("#public_summary, #meeting_reason, #caution")).toHaveCount(0);
   await page.fill("#meeting_date", tomorrow());
-  await page.getByRole("button", { name: "14:00", exact: true }).click();
+  await page.getByTestId("meeting-time-h14").click();
+  await page.getByTestId("meeting-time-zero").click();
   await page.fill("#contact_name", "홍길동");
   await page.getByTestId("title-전무이사").click();
   await expect(page.locator("#contact_title")).toHaveValue("전무이사");
@@ -238,7 +242,8 @@ test("5. OWNER sees the whole picture; releases & reassigns another lead; resche
   await expect(owner.getByTestId("assignee")).toHaveText("컨설턴트 E");
   await owner.click('[data-testid="reschedule-button"]');
   await owner.fill("#rs-date", tomorrow());
-  await owner.fill("#rs-time", "16:00");
+  await owner.getByTestId("rs-time-h16").click();
+  await owner.getByTestId("rs-time-zero").click();
   await owner.click('[data-testid="reschedule-confirm"]');
   await expect(owner.getByTestId("meeting-at")).toContainText("16:00");
   await expect(owner.getByTestId("activity-timeline")).toContainText("일정 변경");
@@ -437,8 +442,11 @@ test("13. Address: copy address, copy meeting info, open in map apps", async ({ 
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await ctx.grantPermissions(["clipboard-read", "clipboard-write"]);
   const p = await ctx.newPage();
-  await go(p, "/");
-  await p.getByTestId(`persona-${U.cB}`).click();
+  // 컨설턴트 B is not in the short role bar (one per 본부) — pick from the login list.
+  await go(p, "/login");
+  await p.click(`[data-testid="login-${U.cB}"]`);
+  await p.waitForURL("**/");
+  await settle(p);
   await expect(p.getByRole("heading", { name: /컨설턴트 B님/ })).toBeVisible();
   await go(p, `/leads/${UURIM}`);
   const main = p.getByRole("main");
@@ -729,4 +737,127 @@ test("23. Quick 신청 from the list, then the one-meeting rule kicks in", async
   await go(c, "/leads?tab=open");
   await expect(c.getByTestId("claim-limit-note")).toBeVisible();
   await c.context().close();
+});
+
+const DAEHAN = "30000000-0000-4000-8000-000000000020"; // (주)대한테크, 3본부 컨설턴트 F, 후속 진행 중
+
+test("24. 본부장 DB: 2본부 전용으로 바로 공개, 콜팀장·다른 본부에는 안 보이고 비서에게는 보인다", async ({ browser }) => {
+  const leader = await loginAs(browser, U.leader2);
+  await go(leader, "/leads/new");
+  await expect(leader.getByTestId("scope-fixed")).toContainText("2본부");
+  await leader.fill("#company_name", "본부전용QA(주)");
+  await leader.fill("#region", "서울 강서구");
+  await leader.fill("#meeting_date", tomorrow());
+  await leader.getByTestId("meeting-time-h10").click();
+  await leader.getByTestId("meeting-time-half").click();
+  await leader.fill("#contact_name", "김본부");
+  await leader.fill("#contact_phone", "010-7777-2222");
+  await leader.click('[data-testid="lead-submit"]');
+  await leader.waitForURL(/\/leads\/[0-9a-f-]{36}/);
+  const id = leader.url().match(/\/leads\/([0-9a-f-]{36})/)![1];
+  await expect(leader.getByTestId("meeting-at")).toContainText("10:30");
+  await expect(leader.getByText("2본부 전용 DB").first()).toBeVisible();
+  await expect(leader.getByTestId("assignee")).toHaveText("신청 가능");
+  await shot(leader, "24-leader-division-db");
+  await leader.context().close();
+
+  const caller = await loginAs(browser, U.caller);
+  await go(caller, `/leads/${id}`);
+  await expect(caller.getByText("페이지를 찾을 수 없습니다")).toBeVisible();
+  await go(caller, "/leads?tab=all");
+  await expect(caller.getByText("본부전용QA(주)")).toHaveCount(0);
+  await caller.context().close();
+
+  const e = await loginAs(browser, U.cE); // 3본부
+  await go(e, `/leads/${id}`);
+  await expect(e.getByText("페이지를 찾을 수 없습니다")).toBeVisible();
+  await e.context().close();
+
+  const c = await loginAs(browser, U.cC); // 2본부
+  await go(c, "/leads?tab=open");
+  await expect(c.getByText("본부전용QA(주)")).toBeVisible();
+  await c.context().close();
+
+  const sec = await loginAs(browser, U.secretary);
+  await go(sec, `/leads/${id}`);
+  await expect(sec.getByTestId("contact-phone")).toContainText("010-7777-2222");
+  await sec.context().close();
+});
+
+test("25. 광주 상무본부: 교육만 보이고 DB 메뉴·신청은 없다", async ({ browser }) => {
+  const g = await loginAs(browser, U.gwangju);
+  const side = g.getByTestId("sidebar");
+  await expect(side.getByRole("link", { name: "교육 자료실" })).toBeVisible();
+  await expect(side.getByRole("link", { name: "신청 가능 DB" })).toHaveCount(0);
+  await go(g, "/leads?tab=open");
+  await expect(g).toHaveURL(/\/$/);
+  await shot(g, "25-gwangju-home");
+  await g.context().close();
+});
+
+test("26. 2차·3차 미팅: 후속 중인 DB에 2차 미팅을 잡고, 메모를 남기고, 결과에서 3차를 잡는다", async ({ browser }) => {
+  const owner = await loginAs(browser, U.owner);
+  await go(owner, `/leads/${DAEHAN}`);
+  await owner.click('[data-testid="next-meeting-button"]');
+  await owner.fill('[data-testid="nm-date"]', tomorrow());
+  await owner.getByTestId("nm-time-h15").click();
+  await owner.click('[data-testid="next-meeting-confirm"]');
+  await expect(owner.getByText("2차 미팅").first()).toBeVisible();
+  await expect(owner.getByTestId("meeting-at")).toContainText("15:00");
+
+  await owner.click('[data-testid="note-button"]');
+  await owner.fill('[data-testid="note-text"]', "2차 때 세무사 동석 요청");
+  await owner.click('[data-testid="note-confirm"]');
+  await expect(owner.getByTestId("note-item").first()).toContainText("세무사 동석");
+
+  await go(owner, `/leads/${DAEHAN}/report`);
+  await expect(owner.getByRole("heading", { name: /2차 미팅 결과/ })).toBeVisible();
+  await owner.getByRole("radio", { name: "완료" }).click();
+  await owner.getByRole("radio", { name: "관심 높음" }).click();
+  await owner.getByRole("radio", { name: "재방문 필요" }).click();
+  await expect(owner.getByRole("radio", { name: /^재방문 \(3차 미팅\)$/ })).toHaveAttribute("aria-checked", "true");
+  await owner.fill('[data-testid="next-date"]', tomorrow());
+  await owner.getByTestId("next-meeting-time-h11").click();
+  await owner.fill('[data-testid="memo"]', "2차: 세무사 동석, 가지급금 정리 방향 합의. 3차에 견적 제시");
+  await shot(owner, "26-second-round-report");
+  await owner.click('[data-testid="report-submit"]');
+  await expect(owner.getByTestId("report-done")).toContainText("3차 미팅이");
+  await go(owner, `/leads/${DAEHAN}`);
+  await expect(owner.getByText("3차 미팅").first()).toBeVisible();
+  await expect(owner.getByTestId("meeting-at")).toContainText("11:00");
+  await expect(owner.getByTestId("report-item").first()).toContainText("2차 미팅");
+  await shot(owner, "26-third-round-booked");
+  await owner.context().close();
+});
+
+test("27. 교육 일정: 달력·한 달 일정 등록·메뉴 속 작은 달력·오늘 교육 공지", async ({ browser }) => {
+  const sec = await loginAs(browser, U.secretary);
+  await expect(sec.getByTestId("mini-calendar").first()).toBeVisible();
+  await go(sec, "/trainings");
+  await expect(sec.getByTestId("training-notice").first()).toContainText("법인영업의 판을 바꿀 실전 교육");
+  await go(sec, "/trainings/schedule");
+  await expect(sec.getByTestId("schedule-calendar")).toBeVisible();
+  await expect(sec.getByTestId("schedule-list")).toContainText("개인투자조합");
+  await shot(sec, "27-training-schedule");
+
+  // Next month: 월·수 rows are pre-filled; saving twice never duplicates.
+  const now = new Date(Date.now() + 9 * 3600000);
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const ym = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
+  await go(sec, `/trainings/schedule/bulk?m=${ym}`);
+  const rows = sec.locator('[data-testid^="bulk-row-"]');
+  expect(await rows.count()).toBeGreaterThanOrEqual(8);
+  await shot(sec, "27-training-bulk");
+  await sec.click('[data-testid="bulk-save"]');
+  await sec.waitForURL(new RegExp(`/trainings/schedule\\?m=${ym}`));
+  await expect(sec.getByTestId("schedule-item").first()).toBeVisible();
+  const created = await sec.getByTestId("schedule-item").count();
+  expect(created).toBeGreaterThanOrEqual(8);
+  await sec.context().close();
+
+  const m = await loginAs(browser, U.cA, { width: 390, height: 844 });
+  await go(m, "/trainings/schedule");
+  expect(await m.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await shot(m, "m390-27-training-schedule");
+  await m.context().close();
 });

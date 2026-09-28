@@ -46,8 +46,8 @@ export function DemoBar({ personas, currentId, ephemeral = false, instanceId }: 
     });
   };
 
-  const reset = () => start(async () => {
-    const r = await resetDemo().catch(() => null);
+  const reset = (mode: "sample" | "empty") => start(async () => {
+    const r = await resetDemo(mode).catch(() => null);
     setConfirmReset(false);
     if (!r) toast("error", "연결이 잠시 불안정합니다. 다시 눌러 주세요.");
     else if (r.ok) { refresh(); refreshFrames(); toast("success", r.message); }
@@ -94,12 +94,20 @@ export function DemoBar({ personas, currentId, ephemeral = false, instanceId }: 
           <RotateCcw size={17} /> <span className="hidden sm:inline">초기화</span>
         </button>
       </div>
-      <Dialog open={confirmReset} onClose={() => setConfirmReset(false)} title="체험 데이터 초기화">
-        <p className="mb-4 text-[1rem] text-ink-2">등록·신청·결과 입력한 내용을 모두 지우고 처음 샘플 데이터로 되돌립니다. 미팅 날짜도 오늘 기준으로 다시 맞춰집니다.</p>
-        {ephemeral && <p className="mb-4 rounded-xl bg-neutral-bg px-3 py-2 text-[0.9375rem] text-ink-2">지금은 DB가 연결되지 않은 <b>임시 체험</b>이라, 한동안 접속이 없으면 자동으로도 처음 상태로 돌아갑니다.</p>}
-        <div className="flex gap-2">
-          <Button variant="secondary" className="flex-1" onClick={() => setConfirmReset(false)}>돌아가기</Button>
-          <Button className="flex-1" onClick={reset} disabled={pending} data-testid="demo-reset-confirm">{pending ? "초기화 중…" : "초기화하기"}</Button>
+      <Dialog open={confirmReset} onClose={() => setConfirmReset(false)} title="체험 데이터">
+        <div className="grid gap-3">
+          <button type="button" onClick={() => reset("sample")} disabled={pending} data-testid="demo-reset-confirm"
+            className="press rounded-2xl border-2 border-line bg-white p-4 text-left hover:border-primary">
+            <div className="text-[1.0625rem] font-bold text-ink">샘플로 되돌리기</div>
+            <div className="text-[0.9375rem] text-ink-2">등록·신청·결과 입력한 내용을 지우고 샘플 DB 20건으로 다시 시작합니다. 날짜도 오늘 기준으로 맞춰집니다.</div>
+          </button>
+          <button type="button" onClick={() => reset("empty")} disabled={pending} data-testid="demo-reset-empty"
+            className="press rounded-2xl border-2 border-line bg-white p-4 text-left hover:border-primary">
+            <div className="text-[1.0625rem] font-bold text-ink">샘플 DB 모두 지우기</div>
+            <div className="text-[0.9375rem] text-ink-2">DB를 하나도 없이 비웁니다(사람·교육 자료는 그대로). 직접 등록부터 해 보고 싶을 때 쓰세요.</div>
+          </button>
+          {ephemeral && <p className="rounded-xl bg-neutral-bg px-3 py-2 text-[0.9375rem] text-ink-2">지금은 DB가 연결되지 않은 <b>임시 체험</b>이라, 한동안 접속이 없으면 자동으로 샘플 상태로 돌아갑니다.</p>}
+          <Button variant="secondary" onClick={() => setConfirmReset(false)}>닫기</Button>
         </div>
       </Dialog>
     </div>

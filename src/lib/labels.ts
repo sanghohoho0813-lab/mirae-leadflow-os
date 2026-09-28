@@ -4,7 +4,7 @@ export type Tone = "info" | "success" | "warning" | "danger" | "purple" | "neutr
 
 export const ROLE_LABEL: Record<MemberRole, string> = {
   OWNER: "사업단장",
-  MANAGER: "운영담당",
+  MANAGER: "비서·운영",
   CALLER: "콜팀",
   LEADER: "본부장",
   CONSULTANT: "컨설턴트",
@@ -84,12 +84,15 @@ export const ACTION_LABEL: Record<string, string> = {
   CANCEL_LEAD: "DB 취소",
   REPORT: "미팅 결과 입력",
   FOLLOW_UP_DONE: "후속조치 완료",
+  NOTE: "진행 메모",
+  NEXT_ROUND: "다음 미팅 잡기",
 };
 
-export const INTEREST_TAG_OPTIONS = ["정책자금", "고용지원금", "기업부설연구소", "벤처기업확인", "기업인증", "세액공제", "법인컨설팅", "정부지원사업", "가지급금", "절세"];
+/** 관심을 보인 분야 — 세금·법인 쪽이 가장 많아 앞에 둔다. */
+export const INTEREST_TAG_OPTIONS = ["절세·법인", "가지급금", "가업승계", "M&A", "사내근로복지기금", "정책자금", "고용지원금", "기업부설연구소", "세액공제", "벤처인증", "기업인증", "정부지원사업"];
 export const CONCERN_TAG_OPTIONS = ["비용", "시간 부족", "서류 부담", "기존 대출 부담", "담보 부족", "세무사 교체 부담", "시기 부적절", "결정권자 아님"];
 
-const HONORIFIC_BASE: Record<MemberRole, string> = { OWNER: "단장", MANAGER: "운영담당", CALLER: "콜팀", LEADER: "본부장", CONSULTANT: "컨설턴트" };
+const HONORIFIC_BASE: Record<MemberRole, string> = { OWNER: "단장", MANAGER: "비서", CALLER: "콜팀", LEADER: "본부장", CONSULTANT: "컨설턴트" };
 
 /** 직함 (title) if set, else the short role name: 단장 · 콜팀장 · 본부장 · 컨설턴트. */
 export function titleOf(role: MemberRole, title?: string | null): string {
@@ -109,7 +112,7 @@ export function personLabel(name: string, role: MemberRole, title?: string | nul
 }
 
 /** 상담 분야 (결과 입력 · 교육 키워드와 공유). */
-export const TOPIC_OPTIONS = ["정책자금", "고용지원금", "기업부설연구소", "벤처·이노비즈", "기업인증", "절세·법인", "정부지원사업", "사업계획서"];
+export const TOPIC_OPTIONS = ["절세·법인", "정책자금", "고용지원금", "기업부설연구소", "벤처인증", "기업인증(이노비즈·메인비즈)", "사내근로복지기금", "M&A", "가업승계", "정부지원사업", "사업계획서"];
 /** 받을 자료 / 보낼 자료. */
 export const MATERIAL_OPTIONS = ["재무제표", "부가세 과세표준증명", "4대보험 가입자 명부", "사업자등록증", "기존 대출 현황", "회사소개서", "견적서·제안서"];
 

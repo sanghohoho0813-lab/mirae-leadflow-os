@@ -11,10 +11,12 @@ const sign = (id) => `${id}.${createHmac("sha256", secret).update(id).digest("he
 const L6 = "30000000-0000-4000-8000-000000000006", L1 = "30000000-0000-4000-8000-000000000001", L4 = "30000000-0000-4000-8000-000000000004", L10 = "30000000-0000-4000-8000-000000000010";
 const T1 = "50000000-0000-4000-8000-000000000001", T6 = "50000000-0000-4000-8000-000000000006";
 const ROLES = {
-  owner: { id: "10000000-0000-4000-8000-000000000001", pages: ["/", "/leads?tab=all", "/leads?tab=needs_report", "/leads?tab=all&view=map", `/leads/${L6}`, `/leads/${L6}/report`, "/leads/new", `/leads/${L6}/edit`, "/follow-ups", "/activity", "/members", "/trainings", `/trainings/${T1}`, `/trainings/${T6}`, "/trainings/new", `/trainings/${T1}/edit`, "/settings"] },
+  owner: { id: "10000000-0000-4000-8000-000000000001", pages: ["/", "/leads?tab=all", "/leads?tab=needs_report", "/leads?tab=all&view=map", `/leads/${L6}`, `/leads/${L6}/report`, "/leads/new", `/leads/${L6}/edit`, "/follow-ups", "/activity", "/members", "/trainings", `/trainings/${T1}`, `/trainings/${T6}`, "/trainings/new", `/trainings/${T1}/edit`, "/trainings/schedule", "/trainings/schedule/bulk", "/settings"] },
   caller: { id: "10000000-0000-4000-8000-000000000003", pages: ["/", "/leads", "/leads/new", `/leads/${L1}`, `/leads/${L1}/edit`, "/trainings", `/trainings/${T1}`] },
-  leader: { id: "10000000-0000-4000-8000-000000000007", pages: ["/", "/trainings", "/trainings/new", `/trainings/${T1}`] },
-  consultant: { id: "10000000-0000-4000-8000-000000000006", pages: ["/", "/leads?tab=open", "/leads?tab=mine", "/leads?tab=open&view=map", `/leads/${L10}`, `/leads/${L10}/report`, `/leads/${L4}`, "/follow-ups", "/trainings", `/trainings/${T1}`, "/settings"] },
+  leader: { id: "10000000-0000-4000-8000-000000000007", pages: ["/", "/leads?tab=division", "/leads/new", "/members", "/trainings", "/trainings/new", `/trainings/${T1}`, "/trainings/schedule"] },
+  secretary: { id: "10000000-0000-4000-8000-000000000018", pages: ["/", "/leads?tab=all", "/members", "/trainings/schedule", "/trainings/schedule/bulk"] },
+  gwangju: { id: "10000000-0000-4000-8000-000000000017", pages: ["/", "/trainings", "/trainings/schedule", `/trainings/${T1}`] },
+  consultant: { id: "10000000-0000-4000-8000-000000000006", pages: ["/", "/leads?tab=open", "/leads?tab=mine", "/leads?tab=open&view=map", `/leads/${L10}`, `/leads/${L10}/report`, `/leads/${L4}`, "/follow-ups", "/trainings", `/trainings/${T1}`, "/trainings/schedule", "/settings"] },
 };
 const VIEWPORTS = [{ w: 390, h: 844 }, { w: 768, h: 1024 }, { w: 1280, h: 800 }, { w: 1440, h: 900, dual: true }];
 const IGNORE = /ERR_CERT|Failed to load resource|basemaps|cartocdn|pretendard/i;

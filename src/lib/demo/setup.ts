@@ -1,9 +1,10 @@
 import { withService } from "@/lib/db";
-import { ORG_ID, seedDemo } from "./seed";
+import { ORG_ID, clearDemoLeads, seedDemo } from "./seed";
 import shimSql from "../../../supabase/local/0000_supabase_shim.sql";
 import initSql from "../../../supabase/migrations/0001_init.sql";
 import addressSql from "../../../supabase/migrations/0002_lead_address.sql";
 import trainingSql from "../../../supabase/migrations/0003_training_and_limits.sql";
+import divisionsSql from "../../../supabase/migrations/0004_divisions_rounds.sql";
 
 // Bundled as strings (webpack asset/source) so they exist on Vercel.
 // Names match scripts/migrate.mjs so both record into the same _migrations table.
@@ -13,6 +14,7 @@ const MIGRATIONS = [
   { name: "supabase/migrations/0001_init.sql", sql: initSql },
   { name: "supabase/migrations/0002_lead_address.sql", sql: addressSql },
   { name: "supabase/migrations/0003_training_and_limits.sql", sql: trainingSql },
+  { name: "supabase/migrations/0004_divisions_rounds.sql", sql: divisionsSql },
 ];
 
 // Same check as the shim, re-run on every start so a DB set up by an older
@@ -68,5 +70,14 @@ export async function resetDemoData(): Promise<void> {
   await withService(async (tx) => {
     await tx`select pg_advisory_xact_lock(727001)`;
     await seedDemo(tx);
+  });
+}
+
+/** Removes every sample DB (people and trainings stay) so the team can enter their own. */
+export async function clearDemoData(): Promise<void> {
+  await ensureDemoReady();
+  await withService(async (tx) => {
+    await tx`select pg_advisory_xact_lock(727001)`;
+    await clearDemoLeads(tx);
   });
 }

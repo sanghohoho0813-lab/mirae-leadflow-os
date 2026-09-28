@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Paperclip, Sparkles, CheckCircle2 } from "lucide-react";
+import { ChevronRight, Paperclip, Sparkles, CheckCircle2, Megaphone } from "lucide-react";
 import type { TrainingListItem } from "@/lib/types";
 import { fmtTime, kstDateString, weekdayKo } from "@/lib/time";
 
@@ -43,6 +43,11 @@ export function TrainingCard({ t, upcoming }: { t: TrainingListItem; upcoming?: 
             <Sparkles size={16} className="mt-0.5 shrink-0 text-gold" />
             <span className="line-clamp-2">{t.summary.one_line}</span>
           </p>
+        ) : upcoming && t.notice ? (
+          <div className={`mt-2 flex gap-1.5 rounded-xl px-3 py-2.5 text-[0.9688rem] leading-relaxed ${isToday ? "bg-soft text-ink" : "bg-canvas text-ink"}`} data-testid="training-notice">
+            <Megaphone size={17} className="mt-1 shrink-0 text-primary" />
+            <span className={`whitespace-pre-line ${isToday ? "" : "line-clamp-3"}`}>{t.notice}</span>
+          </div>
         ) : upcoming ? (
           <p className="mt-2 text-[0.9375rem] text-ink-3">교육이 끝나면 자료와 핵심 요약이 여기에 올라옵니다.</p>
         ) : null}

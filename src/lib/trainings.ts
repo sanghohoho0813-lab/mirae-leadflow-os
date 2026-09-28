@@ -8,7 +8,7 @@ export const FILE_MAX = 30 * 1024 * 1024;
 export const FILE_MAX_COUNT = 10;
 
 const LIST = (uid: string) => `
-  select t.id, t.title, t.held_at, t.instructor_id, coalesce(p.full_name, t.instructor_name) as instructor_name, p.role as instructor_role, p.division as instructor_division,
+  select t.id, t.title, t.held_at, t.notice, t.instructor_id, coalesce(p.full_name, t.instructor_name) as instructor_name, p.role as instructor_role, p.division as instructor_division,
     t.summary, t.summary_source,
     (select count(*)::int from training_files f where f.training_id = t.id and f.complete) as file_count,
     (select count(*)::int from training_reads r where r.training_id = t.id) as read_count,
@@ -86,4 +86,38 @@ export async function listAllFiles(tx: Tx, q?: string): Promise<LibraryFile[]> {
     from training_files f join trainings t on t.id = f.training_id left join profiles p on p.id = t.instructor_id
     where f.complete and (${like}::text is null or f.name ilike ${like} or t.title ilike ${like})
     order by t.held_at desc, f.created_at limit 300`;
+}
+
+export interface ScheduleItem {
+  id: string; title: string; held_at: Date; notice: string | null;
+  instructor_name: string | null; instructor_role: MemberRole | null; instructor_division: string | null;
+  has_summary: boolean; file_count: number;
+}
+
+/** 교육 일정: every session in one month ("YYYY-MM", Korea time). */
+export async function listTrainingMonth(tx: Tx, ym: string): Promise<ScheduleItem[]> {
+  const [y, m] = ym.split("-").map(Number);
+  const from = new Date(Date.UTC(y, m - 1, 1) - 9 * 3_600_000);
+  const to = new Date(Date.UTC(y, m, 1) - 9 * 3_600_000);
+  return tx<ScheduleItem[]>`
+    select t.id, t.title, t.held_at, t.notice, coalesce(p.full_name, t.instructor_name) as instructor_name, p.role as instructor_role, p.division as instructor_division,
+      t.summary is not null as has_summary,
+      (select count(*)::int from training_files f where f.training_id = t.id and f.complete) as file_count
+    from trainings t left join profiles p on p.id = t.instructor_id
+    where t.held_at >= ${from} and t.held_at < ${to}
+    order by t.held_at`;
+}
+
+/** Sidebar mini calendar: which days this month have a session, and who teaches. */
+export async function listTrainingDays(tx: Tx): Promise<{ month: string; today: string; days: Record<string, "OWNER" | "LEADER" | "OTHER"> }> {
+  const today = kstDateString();
+  const month = today.slice(0, 7);
+  const rows = await listTrainingMonth(tx, month);
+  const days: Record<string, "OWNER" | "LEADER" | "OTHER"> = {};
+  for (const r of rows) {
+    const d = kstDateString(r.held_at);
+    const k = r.instructor_role === "OWNER" ? "OWNER" : r.instructor_role === "LEADER" ? "LEADER" : "OTHER";
+    if (!days[d] || k === "OWNER") days[d] = k;
+  }
+  return { month, today, days };
 }

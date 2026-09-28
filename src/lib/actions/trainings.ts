@@ -16,11 +16,13 @@ export interface TrainingInput {
   instructor_id: string | null;
   content: string;
   links: { label: string; url: string }[];
+  notice?: string;
 }
 
 function validate(input: TrainingInput): string | null {
   if (!input.title.trim()) return "교육 제목을 입력해 주세요.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date) || !/^\d{2}:\d{2}$/.test(input.time)) return "교육 날짜와 시간을 선택해 주세요.";
+  if ((input.notice ?? "").length > 2000) return "교육 공지는 2,000자 이하로 입력해 주세요.";
   if (input.content.length > 400_000) return "강의 내용이 너무 깁니다. 40만 자 이하로 나눠 올려 주세요.";
   for (const l of input.links) if (l.url && !/^https?:\/\//i.test(l.url)) return "링크는 http:// 또는 https:// 로 시작해야 합니다.";
   return null;
@@ -31,6 +33,7 @@ const cleanLinks = (links: TrainingInput["links"]) =>
 
 function revalidateTrainings(id?: string) {
   revalidatePath("/trainings");
+  revalidatePath("/trainings/schedule");
   revalidatePath("/");
   if (id) revalidatePath(`/trainings/${id}`);
 }
@@ -48,9 +51,9 @@ export async function createTraining(input: TrainingInput): Promise<ActionResult
   if (err) return { ok: false, code: "VALIDATION", message: err };
   try {
     const id = await withUser(viewer.session.userId, async (tx) => (await tx<{ id: string }[]>`
-      insert into trainings(organization_id, title, held_at, instructor_id, content, links, created_by)
+      insert into trainings(organization_id, title, held_at, instructor_id, content, links, notice, created_by)
       values (${viewer.profile.organization_id}, ${input.title.trim()}, ${kstToDate(input.date, input.time)}, ${input.instructor_id || viewer.session.userId},
-        ${input.content.trim() || null}, ${tx.json(cleanLinks(input.links))}, ${viewer.session.userId})
+        ${input.content.trim() || null}, ${tx.json(cleanLinks(input.links))}, ${input.notice?.trim() || null}, ${viewer.session.userId})
       returning id`)[0].id);
     revalidateTrainings(id);
     return { ok: true, id };
@@ -64,7 +67,8 @@ export async function updateTraining(id: string, input: TrainingInput): Promise<
   try {
     const rows = await withUser(viewer.session.userId, (tx) => tx`
       update trainings set title = ${input.title.trim()}, held_at = ${kstToDate(input.date, input.time)},
-        instructor_id = ${input.instructor_id || null}, content = ${input.content.trim() || null}, links = ${tx.json(cleanLinks(input.links))}
+        instructor_id = ${input.instructor_id || null}, content = ${input.content.trim() || null}, links = ${tx.json(cleanLinks(input.links))},
+        notice = ${input.notice?.trim() || null}
       where id = ${id} returning id`);
     if (!rows.length) return { ok: false, code: "FORBIDDEN", message: "이 교육을 수정할 권한이 없습니다." };
     revalidateTrainings(id);
@@ -79,6 +83,37 @@ export async function deleteTraining(id: string): Promise<ActionResult> {
     if (!rows.length) return { ok: false, code: "FORBIDDEN", message: "이 교육을 삭제할 권한이 없습니다." };
     revalidateTrainings();
     return { ok: true };
+  } catch (e) { return fail(e); }
+}
+
+export interface ScheduleRow { date: string; time: string; title: string; instructor_id: string | null }
+
+/**
+ * 한 달 교육 일정 한꺼번에 등록 (비서·단장). Days that already have a session
+ * with the same 강사 are skipped, so pressing 저장 twice never duplicates.
+ */
+export async function createTrainingSchedule(rows: ScheduleRow[]): Promise<ActionResult & { created?: number; skipped?: number }> {
+  const viewer = await requireViewer();
+  if (!canTeach(viewer)) return { ok: false, code: "FORBIDDEN", message: "교육 일정은 단장·비서·본부장만 등록할 수 있습니다." };
+  const valid = rows.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && /^\d{2}:\d{2}$/.test(r.time)).slice(0, 31);
+  if (!valid.length) return { ok: false, code: "VALIDATION", message: "등록할 날짜를 한 개 이상 골라 주세요." };
+  try {
+    let created = 0;
+    await withUser(viewer.session.userId, async (tx) => {
+      for (const r of valid) {
+        const at = kstToDate(r.date, r.time);
+        const inst = r.instructor_id || viewer.session.userId;
+        const [dup] = await tx`select 1 from trainings where instructor_id = ${inst}
+          and (held_at at time zone 'Asia/Seoul')::date = ${r.date}::date limit 1`;
+        if (dup) continue;
+        const title = r.title.trim() || "정기 교육";
+        await tx`insert into trainings(organization_id, title, held_at, instructor_id, created_by)
+          values (${viewer.profile.organization_id}, ${title.slice(0, 120)}, ${at}, ${inst}, ${viewer.session.userId})`;
+        created++;
+      }
+    });
+    revalidateTrainings();
+    return { ok: true, created, skipped: valid.length - created };
   } catch (e) { return fail(e); }
 }
 

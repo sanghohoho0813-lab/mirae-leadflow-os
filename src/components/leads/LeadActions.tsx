@@ -2,12 +2,13 @@
 
 import { useSafeTransition, useSafeRefresh, useSafeNavigate } from "@/components/providers/SafeActions";
 import { useState, type ReactNode } from "react";
-import { Hand, Megaphone, Undo2, UserCog, CalendarClock, Ban, XCircle, Pencil, ClipboardEdit, Phone, EyeOff, Lock } from "lucide-react";
+import { Hand, Megaphone, Undo2, UserCog, CalendarClock, Ban, XCircle, Pencil, ClipboardEdit, Phone, EyeOff, Lock, CalendarPlus, StickyNote } from "lucide-react";
+import { TimePicker } from "@/components/ui/TimePicker";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
-import { cancelClaim, cancelLead, claimLead, publishLead, reassignLead, releaseLead, rescheduleLead, unpublishLead } from "@/lib/actions/leads";
+import { addLeadNote, cancelClaim, cancelLead, claimLead, publishLead, reassignLead, releaseLead, rescheduleLead, scheduleNextMeeting, unpublishLead } from "@/lib/actions/leads";
 import type { LeadListItem, MemberRole } from "@/lib/types";
 import { fmtDateTime, kstDateString, kstTimeString } from "@/lib/time";
 
@@ -170,10 +171,8 @@ function RescheduleButton({ lead }: { lead: LeadListItem }) {
       <Dialog open={open} onClose={() => setOpen(false)} title="미팅 일정 변경">
         <div className="grid gap-4">
           <p className="text-[1rem] text-ink-2">현재: <b className="text-ink">{fmtDateTime(lead.meeting_at)}</b></p>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="새 날짜" required htmlFor="rs-date"><Input id="rs-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-            <Field label="새 시간" required htmlFor="rs-time"><Input id="rs-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} /></Field>
-          </div>
+          <Field label="새 날짜" required htmlFor="rs-date"><Input id="rs-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+          <Field label="새 시간" required><TimePicker value={time} onChange={setTime} testId="rs-time" /></Field>
           <Field label="사유 (선택)" htmlFor="rs-reason"><Input id="rs-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="예: 대표님 출장" /></Field>
           <div className="flex gap-2">
             <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>돌아가기</Button>
@@ -189,12 +188,84 @@ function RescheduleButton({ lead }: { lead: LeadListItem }) {
   );
 }
 
+// ----------------------------------------------------------------- next round
+/** 후속 중이거나 종결된 DB에 2차·3차 미팅을 잡는다. */
+function NextMeetingButton({ lead }: { lead: LeadListItem }) {
+  const next = lead.meeting_round + 1;
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("10:00");
+  const [pending, start] = useSafeTransition();
+  const toast = useToast();
+  const refresh = useSafeRefresh();
+  const days = Array.from({ length: 10 }, (_, i) => new Date(Date.now() + (i + 1) * 86_400_000))
+    .filter((d) => { const w = new Date(d.getTime() + 9 * 3_600_000).getUTCDay(); return w !== 0 && w !== 6; }).slice(0, 5);
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setOpen(true)} data-testid="next-meeting-button"><CalendarPlus size={18} /> {next}차 미팅 잡기</Button>
+      <Dialog open={open} onClose={() => setOpen(false)} title={`${next}차 미팅 잡기`}>
+        <div className="grid gap-4">
+          <p className="text-[1rem] text-ink-2">날짜와 시간을 고르면 {next}차 미팅이 바로 잡히고, 다녀온 뒤 {next}차 결과를 입력합니다.</p>
+          <Field label="날짜" required htmlFor="nm-date">
+            <div className="mb-2 flex flex-wrap gap-2">
+              {days.map((d) => { const v = kstDateString(d); return (
+                <button key={v} type="button" onClick={() => setDate(v)} className={`press h-11 rounded-xl border-2 px-3 text-[0.9375rem] font-semibold ${date === v ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2"}`}>
+                  {Number(v.slice(5, 7))}/{Number(v.slice(8))} ({"일월화수목금토"[new Date(d.getTime() + 9 * 3_600_000).getUTCDay()]})
+                </button>); })}
+            </div>
+            <Input id="nm-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} min={kstDateString()} data-testid="nm-date" />
+          </Field>
+          <Field label="시간" required><TimePicker value={time} onChange={setTime} testId="nm-time" /></Field>
+          <div className="flex gap-2">
+            <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>돌아가기</Button>
+            <Button className="flex-1" disabled={pending || !date || !time} data-testid="next-meeting-confirm" onClick={() => start(async () => {
+              const r = await scheduleNextMeeting(lead.id, date, time);
+              if (r.ok) { toast("success", `${next}차 미팅을 잡았습니다.`); setOpen(false); refresh(); }
+              else toast("error", r.message ?? "실패했습니다.");
+            })}>{pending ? "처리 중…" : `${next}차 미팅 잡기`}</Button>
+          </div>
+        </div>
+      </Dialog>
+    </>
+  );
+}
+
+// ----------------------------------------------------------------- note
+/** 진행 메모: 짧은 코멘트를 이력에 남긴다 (예: "2차 때 대표님이 세무사 동석 희망"). */
+function NoteButton({ lead }: { lead: LeadListItem }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [pending, start] = useSafeTransition();
+  const toast = useToast();
+  const refresh = useSafeRefresh();
+  return (
+    <>
+      <Button variant="secondary" onClick={() => setOpen(true)} data-testid="note-button"><StickyNote size={18} /> 메모 남기기</Button>
+      <Dialog open={open} onClose={() => setOpen(false)} title="진행 메모 남기기">
+        <div className="grid gap-4">
+          <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} placeholder="예: 대표님이 다음 미팅에 세무사 동석을 원하심" data-testid="note-text" aria-label="메모" />
+          <div className="flex gap-2">
+            <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>돌아가기</Button>
+            <Button className="flex-1" disabled={pending || !text.trim()} data-testid="note-confirm" onClick={() => start(async () => {
+              const r = await addLeadNote(lead.id, text);
+              if (r.ok) { toast("success", "메모를 남겼습니다."); setText(""); setOpen(false); refresh(); }
+              else toast("error", r.message ?? "실패했습니다.");
+            })}>{pending ? "저장 중…" : "남기기"}</Button>
+          </div>
+        </div>
+      </Dialog>
+    </>
+  );
+}
+
 // ----------------------------------------------------------------- action bar
-export function LeadActionBar({ lead, role, userId, consultants, phone, blockedBy = null, claimLimit = 1 }: {
+export function LeadActionBar({ lead, role, userId, consultants, phone, blockedBy = null, claimLimit = 1, canManage }: {
   lead: LeadListItem; role: MemberRole; userId: string; consultants: { id: string; full_name: string }[]; phone: string | null;
   blockedBy?: ActiveMeeting | null; claimLimit?: number;
+  /** 단장·비서, or the 본부장 of this 본부 DB. */
+  canManage?: boolean;
 }) {
-  const manager = role === "OWNER" || role === "MANAGER";
+  const manager = canManage ?? (role === "OWNER" || role === "MANAGER");
   const consultant = role === "CONSULTANT" || role === "LEADER";
   const mine = lead.assigned_to === userId;
   const creator = lead.created_by === userId;
@@ -239,6 +310,12 @@ export function LeadActionBar({ lead, role, userId, consultants, phone, blockedB
   }
   if ((manager || (creator && role === "CALLER")) && active) {
     secondary.push(<LinkButton key="edit" href={`/leads/${lead.id}/edit`} variant="secondary"><Pencil size={18} /> 정보 수정</LinkButton>);
+  }
+  if ((mine || manager) && (lead.status === "FOLLOW_UP" || lead.status === "CLOSED") && lead.assigned_to) {
+    secondary.unshift(<NextMeetingButton key="next-round" lead={lead} />);
+  }
+  if ((mine || manager || creator) && lead.status !== "CANCELLED" && lead.status !== "DRAFT") {
+    secondary.push(<NoteButton key="note" lead={lead} />);
   }
   if (manager && active) {
     secondary.push(<ConfirmAction key="cancel-lead" label="DB 취소" icon={<Ban size={18} />} title="DB 취소" desc="이 DB를 취소합니다. 배정과 예정된 후속조치도 함께 취소됩니다. 되돌릴 수 없습니다." confirmLabel="DB 취소하기" reasonLabel="취소 사유" reasonRequired run={(r) => cancelLead(lead.id, r)} testId="cancel-lead-button" variant="danger" danger />);

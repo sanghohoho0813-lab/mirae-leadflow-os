@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { requireViewer, isManager } from "@/lib/auth/session";
+import { requireViewer, canManageLead } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
 import { getLead, getLeadPrivate } from "@/lib/queries";
 import { updateLead } from "@/lib/actions/leads";
@@ -13,7 +13,7 @@ export default async function EditLeadPage({ params }: { params: Promise<{ id: s
   const viewer = await requireViewer();
   const data = await withUser(viewer.session.userId, async (tx) => ({ lead: await getLead(tx, id), priv: await getLeadPrivate(tx, id) }));
   if (!data.lead) notFound();
-  const editable = isManager(viewer) || (viewer.profile.role === "CALLER" && data.lead.created_by === viewer.session.userId);
+  const editable = canManageLead(viewer, data.lead) || (viewer.profile.role === "CALLER" && !data.lead.division_id && data.lead.created_by === viewer.session.userId);
   if (!editable || ["CLOSED", "CANCELLED"].includes(data.lead.status)) redirect(`/leads/${id}`);
   const action = updateLead.bind(null, id);
   return (

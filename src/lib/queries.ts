@@ -1,13 +1,14 @@
 import type { Tx } from "@/lib/db";
-import type { ActivityLog, Assignment, FollowUp, Lead, LeadListItem, LeadPrivateDetails, MeetingReport, Profile } from "@/lib/types";
+import type { ActivityLog, Assignment, Division, FollowUp, Lead, LeadListItem, LeadPrivateDetails, MeetingReport, Profile } from "@/lib/types";
 
-export type LeadTab = "open" | "mine" | "today" | "needs_report" | "draft" | "follow_up" | "all" | "closed";
+export type LeadTab = "open" | "mine" | "today" | "needs_report" | "draft" | "follow_up" | "all" | "closed" | "division";
 
 const LIST_SELECT = `
-  select l.*, a.full_name as assignee_name, c.full_name as creator_name,
+  select l.*, dv.name as division_name, a.full_name as assignee_name, c.full_name as creator_name,
     (l.status = 'ASSIGNED' and l.meeting_at < now()) as needs_report,
     fu.due_date::text as pending_follow_up_date, fu.action as pending_follow_up_action
   from leads l
+  left join divisions dv on dv.id = l.division_id
   left join profiles a on a.id = l.assigned_to
   left join profiles c on c.id = l.created_by
   left join lateral (
@@ -34,6 +35,7 @@ export async function listLeads(tx: Tx, opts: { tab: LeadTab; userId: string; q?
     case "follow_up": where.push(`l.status = 'FOLLOW_UP'`); break;
     case "closed": where.push(`l.status in ('CLOSED','CANCELLED')`); break;
     case "all": where.push(`l.status <> 'CANCELLED'`); break;
+    case "division": where.push(`l.division_id = (select division_id from profiles where id = ${p(userId)}) and l.status <> 'CANCELLED'`); break;
   }
   if (search) where.push(`(l.company_name ilike ${p(search)} or l.region ilike ${p(search)} or coalesce(l.industry,'') ilike ${p(search)} or coalesce(a.full_name,'') ilike ${p(search)})`);
 
@@ -86,15 +88,25 @@ export async function listOrgLogs(tx: Tx, limit = 100): Promise<ActivityLog[]> {
     order by g.created_at desc, g.id desc limit ${limit}`;
 }
 
-export async function listConsultants(tx: Tx): Promise<Profile[]> {
-  return tx<Profile[]>`select * from profiles where role in ('CONSULTANT','LEADER') and is_active order by full_name`;
+/** People a DB can be handed to: 본부 DB → that 본부 only; 사업단 DB → 본부 that take shared DBs. */
+export async function listConsultants(tx: Tx, leadDivision?: string | null): Promise<Profile[]> {
+  return tx<Profile[]>`
+    select p.* from profiles p left join divisions d on d.id = p.division_id
+    where p.role in ('CONSULTANT','LEADER') and p.is_active
+      and ${leadDivision ? tx`p.division_id = ${leadDivision}` : tx`coalesce(d.claims_org_leads, true)`}
+    order by d.sort nulls last, p.full_name`;
+}
+
+export async function listDivisions(tx: Tx): Promise<Division[]> {
+  return tx<Division[]>`select id, name, sort, claims_org_leads from divisions order by sort, name`;
 }
 
 export async function listMembers(tx: Tx): Promise<(Profile & { active_leads: number })[]> {
   return tx<(Profile & { active_leads: number })[]>`
     select p.*, (select count(*)::int from leads l where l.assigned_to = p.id and l.status in ('ASSIGNED','FOLLOW_UP')) as active_leads
-    from profiles p order by
-      case p.role when 'OWNER' then 0 when 'MANAGER' then 1 when 'CALLER' then 2 when 'LEADER' then 3 else 4 end, p.is_active desc, p.full_name`;
+    from profiles p left join divisions d on d.id = p.division_id order by
+      d.sort nulls first, case p.role when 'OWNER' then 0 when 'MANAGER' then 1 when 'CALLER' then 2 when 'LEADER' then 3 else 4 end,
+      case p.title when '지점장' then 0 when '팀장' then 1 else 2 end, p.is_active desc, p.full_name`;
 }
 
 export async function listFollowUps(tx: Tx, opts: { scope: "mine" | "all"; userId: string; status: "PENDING" | "DONE" }): Promise<FollowUp[]> {
@@ -144,7 +156,7 @@ export async function getManagerDashboard(tx: Tx, userId: string): Promise<Manag
 }
 
 export interface ConsultantDashboard {
-  counts: { today: number; upcoming: number; needs_report: number; follow_ups_due: number; open: number };
+  counts: { today: number; upcoming: number; needs_report: number; follow_ups_due: number; open: number; first_active: number };
   today: LeadListItem[];
   needsReport: LeadListItem[];
   upcoming: LeadListItem[];
@@ -158,6 +170,7 @@ export async function getConsultantDashboard(tx: Tx, userId: string): Promise<Co
       (select count(*)::int from leads where assigned_to = ${userId} and status in ('ASSIGNED','FOLLOW_UP') and (meeting_at at time zone 'Asia/Seoul')::date = ${kstToday(tx)}) as today,
       (select count(*)::int from leads where assigned_to = ${userId} and status = 'ASSIGNED' and meeting_at >= now()) as upcoming,
       (select count(*)::int from leads where assigned_to = ${userId} and status = 'ASSIGNED' and meeting_at < now()) as needs_report,
+      (select count(*)::int from leads where assigned_to = ${userId} and status = 'ASSIGNED' and meeting_round = 1) as first_active,
       (select count(*)::int from follow_ups where assignee_id = ${userId} and status = 'PENDING' and due_date <= ${kstToday(tx)}) as follow_ups_due,
       (select count(*)::int from leads where status = 'OPEN') as open`;
   const mine = await listLeads(tx, { tab: "mine", userId, limit: 100 });

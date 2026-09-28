@@ -31,6 +31,7 @@ export function TrainingHomeCard({ h, showReads, className = "" }: { h: Training
             <div className="min-w-0 flex-1 leading-snug">
               <div className="text-[0.875rem] font-semibold text-ink-3">다음 교육 · {fmtShortDate(next.held_at)} {fmtTime(next.held_at)} · {next.instructor_name}</div>
               <div className="truncate text-[1rem] font-bold text-ink">{next.title}</div>
+              {next.notice && <div className="mt-0.5 line-clamp-2 text-[0.9375rem] text-ink-2" data-testid="home-training-notice">{next.notice.split("\n")[0]}</div>}
             </div>
             <ChevronRight size={18} className="shrink-0 text-ink-3" />
           </Link>

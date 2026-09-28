@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { MapPin, Clock, Building2, User, Lock, Phone, FileText, MessageSquare, History, ClipboardList, Users, AlertTriangle, Sparkles, Navigation, ClipboardCopy } from "lucide-react";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { kakaoMapUrl, naverMapUrl } from "@/lib/geo";
-import { requireViewer, isManager } from "@/lib/auth/session";
+import { requireViewer, canManageLead } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
 import { getLead, getLeadAssignments, getLeadFollowUps, getLeadLogs, getLeadPrivate, getLeadReports, listConsultants } from "@/lib/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -24,25 +24,24 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   const { lost } = await searchParams;
   const viewer = await requireViewer();
   const uid = viewer.session.userId;
-  const manager = isManager(viewer);
-
   const data = await withUser(uid, async (tx) => {
     const lead = await getLead(tx, id);
     if (!lead) return null;
+    const manager = canManageLead(viewer, lead);
     const claimer = (viewer.profile.role === "CONSULTANT" || viewer.profile.role === "LEADER") && lead.status === "OPEN";
     const limit = viewer.organization.claim_limit;
     const [priv, reports, followUps, assignments, logs, consultants, active] = await Promise.all([
       getLeadPrivate(tx, id), getLeadReports(tx, id), getLeadFollowUps(tx, id), getLeadAssignments(tx, id), getLeadLogs(tx, id),
-      manager ? listConsultants(tx) : Promise.resolve([]),
+      manager ? listConsultants(tx, lead.division_id) : Promise.resolve([]),
       claimer && limit > 0
-        ? tx<{ id: string; company_name: string; passed: boolean }[]>`select id, company_name, meeting_at < now() as passed from leads where assigned_to = ${uid} and status = 'ASSIGNED' order by meeting_at`
+        ? tx<{ id: string; company_name: string; passed: boolean }[]>`select id, company_name, meeting_at < now() as passed from leads where assigned_to = ${uid} and status = 'ASSIGNED' and meeting_round = 1 order by meeting_at`
         : Promise.resolve([]),
     ]);
     const blockedBy = limit > 0 && active.length >= limit ? active[0] : null;
-    return { lead, priv, reports, followUps, assignments, logs, consultants, blockedBy };
+    return { lead, priv, reports, followUps, assignments, logs, consultants, blockedBy, manager };
   });
   if (!data) notFound();
-  const { lead, priv, reports, followUps, assignments, logs, consultants, blockedBy } = data;
+  const { lead, priv, reports, followUps, assignments, logs, consultants, blockedBy, manager } = data;
   const rel = relativeDay(lead.meeting_at);
   const mine = lead.assigned_to === uid;
   const consultantRole = viewer.profile.role === "CONSULTANT" || viewer.profile.role === "LEADER";
@@ -53,7 +52,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       <PageHeader
         back={consultantRole ? (lead.status === "OPEN" ? "/leads?tab=open" : "/leads?tab=mine") : "/leads"}
         backLabel="목록"
-        eyebrow={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={lead.status} needsReport={lead.needs_report} size="lg" />{lead.needs_report && daysSince(lead.meeting_at) >= 1 && <Badge tone="danger" size="lg">{daysSince(lead.meeting_at)}일 경과</Badge>}{mine && <Badge tone="info" size="lg">내 담당</Badge>}</div>}
+        eyebrow={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={lead.status} needsReport={lead.needs_report} size="lg" />{lead.needs_report && daysSince(lead.meeting_at) >= 1 && <Badge tone="danger" size="lg">{daysSince(lead.meeting_at)}일 경과</Badge>}{mine && <Badge tone="info" size="lg">내 담당</Badge>}{lead.division_name && <Badge tone="purple" size="lg">{lead.division_name} 전용 DB</Badge>}{lead.meeting_round > 1 && <Badge tone="info" size="lg">{lead.meeting_round}차 미팅</Badge>}</div>}
         title={lead.company_name}
         sub={<span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">{lead.industry && <span className="inline-flex items-center gap-1"><Building2 size={15} /> {lead.industry}</span>}<span className="inline-flex items-center gap-1"><MapPin size={15} /> {lead.region}</span></span>}
       />
@@ -82,7 +81,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                   <div className="mt-2"><Link prefetch={false} href="/leads?tab=open" className="inline-flex h-10 items-center rounded-xl border border-warning/40 bg-white px-4 text-[0.9375rem] font-semibold text-warning">신청 가능한 DB 보기</Link></div>
                 </div>
               )}
-              <LeadActionBar lead={lead} role={viewer.profile.role} userId={uid} consultants={consultants.map((c) => ({ id: c.id, full_name: c.full_name }))} phone={priv?.contact_phone ?? null} blockedBy={blockedBy} claimLimit={viewer.organization.claim_limit} />
+              <LeadActionBar lead={lead} role={viewer.profile.role} userId={uid} consultants={consultants.map((c) => ({ id: c.id, full_name: c.full_name }))} phone={priv?.contact_phone ?? null} blockedBy={blockedBy} claimLimit={viewer.organization.claim_limit} canManage={manager} />
             </CardBody>
           </Card>
 
@@ -163,11 +162,12 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           {/* Reports */}
           {reports.length > 0 && (
             <Card className="fade-up-3">
-              <CardHeader icon={<MessageSquare size={20} />} title="미팅 결과" count={reports.length} />
+              <CardHeader icon={<MessageSquare size={20} />} title={reports.some((x) => x.round > 1) ? "차수별 미팅 결과" : "미팅 결과"} count={reports.length} />
               <CardBody className="grid gap-3">
                 {reports.map((r) => (
                   <div key={r.id} className="rounded-xl border border-line bg-white px-4 py-3" data-testid="report-item">
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                      {reports.some((x) => x.round > 1) && <Badge tone="info" size="lg">{r.round}차 미팅</Badge>}
                       <Badge tone={r.outcome === "DONE" ? "success" : r.outcome === "POSTPONED" ? "warning" : "neutral"}>{OUTCOME_LABEL[r.outcome]}</Badge>
                       {r.reaction && <Badge tone={r.reaction === "HIGH" ? "success" : r.reaction === "MID" ? "info" : "neutral"}>{REACTION_LABEL[r.reaction]}</Badge>}
                       {r.result && <Badge tone="info">{RESULT_LABEL[r.result]}</Badge>}

@@ -11,6 +11,7 @@ import type { FormState } from "@/lib/actions/leads";
 import type { LeadPrivateDetails, Lead } from "@/lib/types";
 import { kstDateString, kstTimeString } from "@/lib/time";
 import { regionFromAddress } from "@/lib/geo";
+import { TimePicker } from "@/components/ui/TimePicker";
 
 interface Props {
   action: (prev: FormState, fd: FormData) => Promise<FormState>;
@@ -19,9 +20,27 @@ interface Props {
   canPublishNow?: boolean;
   cancelHref: string;
   submitLabel: string;
+  /** 단장·비서: 사업단 전체 or one 본부 only. */
+  scopeOptions?: { id: string; name: string }[];
+  /** 본부장: always their own 본부 (shown, not chosen). */
+  fixedScope?: string | null;
 }
 
-const TIMES = ["10:00", "11:00", "13:00", "14:00", "15:00", "16:00"];
+const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
+
+/** 오늘부터 평일 4일 (주말은 건너뜀 — 토요일 미팅은 거의 없음. 달력에서는 고를 수 있음). */
+function quickWeekdays(): { l: string; v: string }[] {
+  const out: { l: string; v: string }[] = [];
+  for (let n = 0; out.length < 4 && n < 10; n++) {
+    const v = addDays(n);
+    const d = new Date(`${v}T12:00:00+09:00`);
+    const w = d.getUTCDay();
+    if (w === 0 || w === 6) continue;
+    const name = n === 0 ? "오늘" : n === 1 ? "내일" : n === 2 ? "모레" : `${Number(v.slice(5, 7))}/${Number(v.slice(8))}`;
+    out.push({ l: `${name} (${WEEK[w]})`, v });
+  }
+  return out;
+}
 
 function addDays(n: number) {
   return kstDateString(new Date(Date.now() + n * 86400000));
@@ -59,7 +78,8 @@ function Chip({ active, onClick, children, testId }: { active: boolean; onClick:
  * 신규 DB 등록 — 한 장짜리. 핵심만: 업체 · 업종 · 장소 · 일시 · 만나는 분 · 관심 분야 · 코멘트.
  * 미팅은 모두 방문. 신청 전 공개 한 줄은 업종·관심 분야로 자동으로 만든다.
  */
-export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submitLabel }: Props) {
+export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submitLabel, scopeOptions, fixedScope }: Props) {
+  const [scope, setScope] = useState<string>("");
   const [state, formAction, pending] = useActionState(action, {});
   const navigate = useSafeNavigate();
   useEffect(() => { if (state.redirectTo) navigate(state.redirectTo); }, [state, navigate]);
@@ -90,7 +110,7 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
     if (!interest.includes(t)) setInterest([...interest, t]);
     setCustom("");
   };
-  const quickDays = [{ l: "오늘", v: addDays(0) }, { l: "내일", v: addDays(1) }, { l: "모레", v: addDays(2) }];
+  const quickDays = quickWeekdays();
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -99,6 +119,20 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
           별표(*)만 채우면 등록됩니다. 연락처·주소·코멘트는 <b>배정된 담당자와 단장님만</b> 봅니다. 미팅은 모두 <b>방문</b>으로 등록됩니다.
         </p>
 
+        {fixedScope && (
+          <p className="mb-4 rounded-xl border border-line bg-canvas px-4 py-2.5 text-[0.9375rem] font-semibold text-ink" data-testid="scope-fixed">
+            공개 범위: {fixedScope} 전용 (콜팀에게는 보이지 않음)
+          </p>
+        )}
+        {scopeOptions && scopeOptions.length > 0 && (
+          <Row label="공개 범위" hint="본부를 고르면 그 본부 사람만 신청할 수 있습니다">
+            <div className="flex flex-wrap gap-2">
+              <Chip active={scope === ""} onClick={() => setScope("")} testId="scope-all">사업단 전체</Chip>
+              {scopeOptions.map((d) => <Chip key={d.id} active={scope === d.id} onClick={() => setScope(d.id)} testId={`scope-${d.name}`}>{d.name}만</Chip>)}
+            </div>
+            <input type="hidden" name="division_id" value={scope} />
+          </Row>
+        )}
         <Row label="업체명" required>
           <Input id="company_name" name="company_name" defaultValue={lead?.company_name} placeholder="예: 성진테크(주)" required autoFocus />
         </Row>
@@ -140,8 +174,7 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
             <div className="min-w-[10rem] flex-1"><Input id="meeting_date" name="meeting_date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {TIMES.map((t) => <Chip key={t} active={time === t} onClick={() => setTime(t)}>{t}</Chip>)}
-            <div className="min-w-[8rem] flex-1"><Input id="meeting_time" name="meeting_time" type="time" step={600} value={time} onChange={(e) => setTime(e.target.value)} required /></div>
+            <TimePicker value={time} onChange={setTime} name="meeting_time" testId="meeting-time" />
           </div>
         </Row>
 
@@ -172,7 +205,8 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
 
       {canPublishNow && (
         <label className="flex items-center gap-3 rounded-2xl border border-line bg-white px-5 py-4 text-[1.0625rem] font-semibold text-ink shadow-card">
-          <input type="checkbox" name="publish_now" className="h-6 w-6 accent-[var(--theme-primary)]" /> 저장하면서 바로 공개하기 (컨설턴트 신청 가능)
+          <input type="checkbox" name="publish_now" defaultChecked={!!fixedScope} className="h-6 w-6 accent-[var(--theme-primary)]" data-testid="publish-now" />
+          {fixedScope ? `저장하면서 바로 ${fixedScope}에 공개하기 (본부원 신청 가능)` : "저장하면서 바로 공개하기 (컨설턴트 신청 가능)"}
         </label>
       )}
 

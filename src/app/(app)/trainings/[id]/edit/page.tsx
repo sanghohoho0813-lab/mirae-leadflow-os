@@ -21,7 +21,7 @@ export default async function EditTrainingPage({ params }: { params: Promise<{ i
     <div className="fade-up mx-auto max-w-3xl">
       <PageHeader back={`/trainings/${id}`} backLabel="교육 상세" title="교육 자료 수정" sub="자료를 더 올리거나 내용을 고친 뒤 [다시 정리]를 누르면 요약이 새로 만들어집니다." />
       <TrainingForm mode="edit" trainingId={id} me={uid} instructors={data.instructors}
-        initial={{ title: t.title, date: kstDateString(t.held_at), time: kstTimeString(t.held_at), instructor_id: t.instructor_id, content: t.content ?? "", links: t.links }} />
+        initial={{ title: t.title, date: kstDateString(t.held_at), time: kstTimeString(t.held_at), instructor_id: t.instructor_id, content: t.content ?? "", links: t.links, notice: t.notice ?? "" }} />
     </div>
   );
 }

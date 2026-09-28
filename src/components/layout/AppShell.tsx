@@ -1,9 +1,10 @@
 "use client";
 
+import { MiniCalendar, type TrainingDays } from "./MiniCalendar";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { Home, Database, CalendarCheck, RefreshCw, History, Users, PlusCircle, MoreHorizontal, LogOut, X, Menu, Inbox, Megaphone, GraduationCap, Settings } from "lucide-react";
+import { Home, Database, CalendarCheck, RefreshCw, History, Users, PlusCircle, MoreHorizontal, LogOut, X, Menu, Inbox, Megaphone, GraduationCap, Settings, CalendarDays, Building } from "lucide-react";
 import { NavProgress } from "./NavProgress";
 import { LiveClock } from "./LiveClock";
 import { personLabel, ROLE_LABEL } from "@/lib/labels";
@@ -11,7 +12,7 @@ import type { MemberRole } from "@/lib/types";
 import { logout } from "@/lib/actions/auth";
 import { Logo } from "./Logo";
 
-export interface ShellUser { name: string; role: MemberRole; title: string | null; division: string | null; orgName: string }
+export interface ShellUser { name: string; role: MemberRole; title: string | null; division: string | null; orgName: string; leader: boolean; usesDb: boolean }
 
 /** Live counts shown as badges on the menu (what needs attention now). */
 export interface NavCounts { needs_report: number; follow_ups: number; open: number; drafts: number; trainings: number }
@@ -32,23 +33,26 @@ interface NavConfig { sections: NavSection[]; bottom: NavItem[]; cta?: { href: s
 const I = 20;
 const isLeadsTab = (p: string, q: URLSearchParams, tab: string | null) => p === "/leads" && (q.get("tab") ?? null) === tab;
 
-function navFor(role: MemberRole): NavConfig {
+function navFor(user: ShellUser): NavConfig {
+  const role = user.role;
   const home: NavItem = { href: "/", label: "홈", icon: <Home size={I} />, match: (p) => p === "/" };
-  const training: NavItem = { href: "/trainings", label: "교육 자료실", short: "교육", icon: <GraduationCap size={I} />, match: (p) => p.startsWith("/trainings"), badge: { key: "trainings" } };
+  const training: NavItem = { href: "/trainings", label: "교육 자료실", short: "교육", icon: <GraduationCap size={I} />, match: (p) => p.startsWith("/trainings") && !p.startsWith("/trainings/schedule"), badge: { key: "trainings" } };
+  const schedule: NavItem = { href: "/trainings/schedule", label: "교육 일정", short: "일정", icon: <CalendarDays size={I} />, match: (p) => p.startsWith("/trainings/schedule") };
+  const education: NavSection = { title: "교육", items: [training, schedule] };
   const follow: NavItem = { href: "/follow-ups", label: "후속조치", icon: <RefreshCw size={I} />, match: (p) => p.startsWith("/follow-ups"), badge: { key: "follow_ups" } };
   const settings: NavSection = { title: "설정", items: [{ href: "/settings", label: "설정 · 글자 크기", icon: <Settings size={I} />, match: (p) => p.startsWith("/settings") }] };
+  const members: NavItem = { href: "/members", label: "구성원 관리", icon: <Users size={I} />, match: (p) => p.startsWith("/members") };
   if (role === "OWNER" || role === "MANAGER") {
     const needs: NavItem = { href: "/leads?tab=needs_report", label: "결과 미입력", short: "미입력", icon: <Inbox size={I} />, match: (p, q) => isLeadsTab(p, q, "needs_report"), badge: { key: "needs_report", urgent: true } };
     const leads: NavItem = { href: "/leads", label: "DB 관리", short: "DB", icon: <Database size={I} />, match: (p, q) => p.startsWith("/leads") && !isLeadsTab(p, q, "needs_report") && !isLeadsTab(p, q, "draft") && p !== "/leads/new" };
     const drafts: NavItem = { href: "/leads?tab=draft", label: "공개 대기", icon: <Megaphone size={I} />, match: (p, q) => isLeadsTab(p, q, "draft"), badge: { key: "drafts" } };
     const history: NavItem = { href: "/activity", label: "전체 이력", icon: <History size={I} />, match: (p) => p.startsWith("/activity") };
-    const members: NavItem = { href: "/members", label: "구성원 관리", icon: <Users size={I} />, match: (p) => p.startsWith("/members") };
     return {
       sections: [
         { title: "오늘 업무", items: [home, needs, follow] },
         { title: "DB", items: [leads, drafts] },
-        { title: "교육", items: [training] },
-        { title: "관리", items: role === "OWNER" ? [history, members] : [history] },
+        education,
+        { title: "관리", items: [history, members] },
         settings,
       ],
       bottom: [home, leads, needs, training],
@@ -61,19 +65,36 @@ function navFor(role: MemberRole): NavConfig {
     return {
       sections: [
         { title: "오늘 업무", items: [home, create, leads] },
-        { title: "교육", items: [training] },
+        education,
         settings,
       ],
       bottom: [home, create, leads, training],
       cta: { href: "/leads/new", label: "신규 DB 등록" },
     };
   }
+  // 광주 상무본부 등 교육만 쓰는 본부
+  if (!user.usesDb) {
+    return { sections: [{ title: "내 업무", items: [home] }, education, settings], bottom: [home, training, schedule] };
+  }
   const open: NavItem = { href: "/leads?tab=open", label: "신청 가능 DB", short: "신청 가능", icon: <Database size={I} />, match: (p, q) => p === "/leads" && (q.get("tab") ?? "open") === "open", badge: { key: "open" } };
   const mine: NavItem = { href: "/leads?tab=mine", label: "내 미팅", icon: <CalendarCheck size={I} />, match: (p, q) => isLeadsTab(p, q, "mine") || /^\/leads\/[^/]+/.test(p), badge: { key: "needs_report", urgent: true } };
+  if (user.leader) {
+    const create: NavItem = { href: "/leads/new", label: "본부 DB 등록", icon: <PlusCircle size={I} />, match: (p) => p === "/leads/new" };
+    const division: NavItem = { href: "/leads?tab=division", label: "본부 DB", short: "본부 DB", icon: <Building size={I} />, match: (p, q) => isLeadsTab(p, q, "division") || isLeadsTab(p, q, "draft"), badge: { key: "drafts" } };
+    return {
+      sections: [
+        { title: "내 업무", items: [home, open, { ...mine, match: (p, q) => isLeadsTab(p, q, "mine") }, follow] },
+        { title: user.division ?? "우리 본부", items: [create, division, { ...members, label: "본부원 관리" }] },
+        education,
+        settings,
+      ],
+      bottom: [home, open, division, training],
+    };
+  }
   return {
     sections: [
       { title: "내 업무", items: [home, open, mine, follow] },
-      { title: "교육", items: [training] },
+      education,
       settings,
     ],
     bottom: [home, open, mine, training],
@@ -102,13 +123,13 @@ function MadeBy({ dark }: { dark?: boolean }) {
   return <div className={`text-center text-[0.75rem] tracking-wide ${dark ? "text-white/40" : "text-ink-3/80"}`} data-testid="made-by">Powered by 미래AI랩</div>;
 }
 
-export function AppShell({ user, children, demo = false, topBar, counts }: { user: ShellUser; children: ReactNode; demo?: boolean; topBar?: ReactNode; counts: NavCounts }) {
+export function AppShell({ user, children, demo = false, topBar, counts, trainingDays }: { user: ShellUser; children: ReactNode; demo?: boolean; topBar?: ReactNode; counts: NavCounts; trainingDays?: TrainingDays }) {
   const pathname = usePathname();
   const search = useSearchParams();
   const [drawer, setDrawer] = useState(false);
   // Highlight the tapped tab immediately, before the server responds.
   const [tapped, setTapped] = useState<string | null>(null);
-  const nav = navFor(user.role);
+  const nav = navFor(user);
   useEffect(() => { setDrawer(false); setTapped(null); }, [pathname, search]);
   // A login form submitted from a scrolled page must not carry its scroll offset into the app.
   useEffect(() => window.scrollTo(0, 0), []);
@@ -169,6 +190,8 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
                   );
                 })}
               </div>
+              {/* 교육 section: a small month calendar right under 교육 일정 */}
+              {sec.title === "교육" && trainingDays && <div className="mt-2 px-1"><MiniCalendar data={trainingDays} dark /></div>}
             </div>
           ))}
         </nav>
@@ -278,6 +301,7 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
                   ))}
                 </div>
               ))}
+              {trainingDays && <div className="mt-3 px-1"><MiniCalendar data={trainingDays} /></div>}
               {!demo && (
                 <form action={logout}>
                   <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 text-[1rem] font-semibold text-ink-2 hover:bg-neutral-bg" style={{ height: 52 }}>

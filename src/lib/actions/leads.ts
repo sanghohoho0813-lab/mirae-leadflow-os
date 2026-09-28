@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireViewer, canCreateLead, isManager } from "@/lib/auth/session";
+import { requireViewer, canCreateLead, isManager, isLeader } from "@/lib/auth/session";
 import { withUser, toActionError } from "@/lib/db";
 import { messageFor } from "@/lib/errors";
 import { kstToDate } from "@/lib/time";
@@ -60,21 +60,25 @@ export async function createLead(_prev: FormState, fd: FormData): Promise<FormSt
   if (!canCreateLead(viewer)) return { error: "DB를 등록할 권한이 없습니다." };
   const f = readLeadForm(fd);
   if (!f.company || !f.region || !f.date || !f.time) return { error: REQUIRED };
+  // 본부장 → always their own 본부. 단장·비서 → 사업단 전체 or the 본부 they picked. 콜팀 → 사업단 전체.
+  const pickedDivision = str(fd, "division_id");
+  const divisionId = isLeader(viewer) ? viewer.profile.division_id
+    : isManager(viewer) && /^[0-9a-f-]{36}$/i.test(pickedDivision) ? pickedDivision : null;
 
   let id = "";
   try {
     id = await withUser(viewer.session.userId, async (tx) => {
       const [lead] = await tx<{ id: string }[]>`
-        insert into leads(organization_id, company_name, region, industry, meeting_at, meeting_method, public_summary, status, created_by, caller_id)
+        insert into leads(organization_id, company_name, region, industry, meeting_at, meeting_method, public_summary, status, created_by, caller_id, division_id)
         values (${viewer.profile.organization_id}, ${f.company}, ${f.region}, ${f.industry}, ${kstToDate(f.date, f.time)}, 'VISIT',
-          ${f.summary}, 'DRAFT', ${viewer.session.userId}, ${viewer.session.userId})
+          ${f.summary}, 'DRAFT', ${viewer.session.userId}, ${viewer.profile.role === "CALLER" ? viewer.session.userId : null}, ${divisionId})
         returning id`;
       await tx`
         insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, address, interest_tags, extra_note)
         values (${lead.id}, ${viewer.profile.organization_id}, ${f.contactName}, ${f.contactTitle}, ${f.contactPhone}, ${f.address || null},
           ${f.interest}, ${f.comment})`;
       await tx`select lf_log(${lead.id}, 'CREATE', null, 'DRAFT', ${JSON.stringify({ company_name: f.company })}::jsonb)`;
-      if (isManager(viewer) && fd.get("publish_now") === "on") {
+      if ((isManager(viewer) || isLeader(viewer)) && fd.get("publish_now") === "on") {
         await tx`select publish_lead(${lead.id})`;
       }
       return lead.id;
@@ -184,6 +188,9 @@ export interface ReportInput {
   topics?: string[];
   materials?: string[];
   next_note?: string;
+  /** 재방문 → the next round's date and time (books it straight away). */
+  next_meeting_date?: string;
+  next_meeting_time?: string;
 }
 
 const clean = (a?: string[]) => (a ?? []).map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
@@ -196,7 +203,8 @@ export async function submitReport(id: string, input: ReportInput): Promise<Acti
     await withUser(viewer.session.userId, (tx) => tx`
       select submit_meeting_report(${id}, ${input.outcome}, ${input.reaction ?? null}, ${input.result ?? null}, ${input.next_action},
         ${input.next_action_date || null}, ${input.memo ?? null}, ${input.detail_memo ?? null}, ${newMeetingAt},
-        ${clean(input.topics)}::text[], ${clean(input.materials)}::text[], ${input.next_note ?? null})`);
+        ${clean(input.topics)}::text[], ${clean(input.materials)}::text[], ${input.next_note ?? null},
+        ${input.next_action === "REVISIT" && input.next_meeting_date && input.next_meeting_time ? kstToDate(input.next_meeting_date, input.next_meeting_time) : null})`);
   } catch (e) {
     const code = toActionError(e).code;
     return { ok: false, code, message: messageFor(code) };
@@ -255,4 +263,30 @@ export async function setClaimLimit(limit: number): Promise<ActionResult> {
   revalidatePath("/members");
   revalidatePath("/leads");
   return { ok: true };
+}
+
+/** 단장: 역할·본부·직함. 본부장: 자기 본부원의 직함. (Checked again in set_member_profile.) */
+export async function setMemberProfile(profileId: string, role: string, divisionId: string | null, title: string): Promise<ActionResult> {
+  const viewer = await requireViewer();
+  try {
+    await withUser(viewer.session.userId, (tx) => tx`select set_member_profile(${profileId}, ${role}::member_role, ${divisionId || null}, ${title.trim().slice(0, 30) || null})`);
+  } catch (e) {
+    const code = toActionError(e).code;
+    return { ok: false, code, message: messageFor(code) };
+  }
+  revalidatePath("/members");
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/** 다음(2차·3차) 미팅 잡기 — for a DB whose last meeting is done. */
+export async function scheduleNextMeeting(id: string, date: string, time: string): Promise<ActionResult> {
+  if (!date || !time) return { ok: false, code: "VALIDATION", message: "날짜와 시간을 골라 주세요." };
+  return rpc((uid) => withUser(uid, (tx) => tx`select schedule_next_meeting(${id}, ${kstToDate(date, time)})`), id);
+}
+
+/** 진행 메모: a short comment on the DB's history. */
+export async function addLeadNote(id: string, text: string): Promise<ActionResult> {
+  if (!text.trim()) return { ok: false, code: "VALIDATION", message: "메모를 입력해 주세요." };
+  return rpc((uid) => withUser(uid, (tx) => tx`select add_lead_note(${id}, ${text.trim().slice(0, 1000)})`), id);
 }

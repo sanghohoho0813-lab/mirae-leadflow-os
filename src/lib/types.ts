@@ -14,6 +14,7 @@ export interface Profile {
   full_name: string;
   phone: string | null;
   division: string | null;
+  division_id: string | null;
   title: string | null;
   is_active: boolean;
   created_at: Date;
@@ -43,11 +44,15 @@ export interface Lead {
   published_at: Date | null;
   closed_at: Date | null;
   cancel_reason: string | null;
+  division_id: string | null;
+  meeting_round: number;
   created_at: Date;
   updated_at: Date;
 }
 
 export interface LeadListItem extends Lead {
+  /** 본부 DB의 본부 이름 (사업단 공통 DB는 null). */
+  division_name: string | null;
   assignee_name: string | null;
   creator_name: string | null;
   needs_report: boolean;
@@ -86,6 +91,7 @@ export interface MeetingReport {
   topics: string[];
   materials: string[];
   next_note: string | null;
+  round: number;
   created_at: Date;
 }
 
@@ -143,6 +149,8 @@ export interface TrainingListItem {
   id: string;
   title: string;
   held_at: Date;
+  /** 교육 공지 (예: "오늘 저녁 7시, …") shown on the upcoming card. */
+  notice: string | null;
   instructor_id: string | null;
   instructor_name: string | null;
   instructor_role: MemberRole | null;
@@ -173,3 +181,5 @@ export interface TrainingFile {
   created_by: string;
   created_at: Date;
 }
+
+export interface Division { id: string; name: string; sort: number; claims_org_leads: boolean }

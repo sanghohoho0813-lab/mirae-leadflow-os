@@ -15,6 +15,10 @@ const U = {
   leader: "10000000-0000-4000-8000-000000000007",
   c4: "10000000-0000-4000-8000-000000000009",
   c5: "10000000-0000-4000-8000-000000000010",
+  branchB: "10000000-0000-4000-8000-000000000013",
+  teamB: "10000000-0000-4000-8000-000000000014",
+  gwangju: "10000000-0000-4000-8000-000000000017",
+  secretary: "10000000-0000-4000-8000-000000000018",
   otherOwner: "20000000-0000-4000-8000-000000000001",
 };
 const OPEN_LEAD = "30000000-0000-4000-8000-000000000003"; // 태양금속
@@ -93,7 +97,7 @@ console.log("\n[1b] One active meeting per person (claim limit)");
   check("OWNER raises limit to 2 -> second claim allowed", two.ok === true, JSON.stringify(two));
   await asUser(U.c2, (tx) => tx`select cancel_claim(${OPEN_LEAD_2})`);
   await asUser(U.owner, (tx) => tx`select set_claim_limit(1)`);
-  const reported = await sql`select count(*)::int as n from leads where assigned_to = ${U.c2} and status = 'ASSIGNED'`;
+  const reported = await sql`select count(*)::int as n from leads where assigned_to = ${U.c2} and status = 'ASSIGNED' and meeting_round = 1`;
   check("cleanup: c2 back to one active meeting", reported[0].n === 1);
 }
 
@@ -237,6 +241,74 @@ console.log("\n[7] 교육 자료실 RLS");
   check("consultant cannot delete it", del.length === 0);
   const own = await asUser(U.owner, (tx) => tx`delete from trainings where id = ${tid} returning id`);
   check("단장 can delete it (files cascade)", own.length === 1 && (await sql`select count(*)::int as n from training_file_chunks where file_id = ${fid}`)[0].n === 0);
+}
+
+console.log("\n[8] 본부 DB · 광주 상무본부 · 본부장 권한");
+{
+  const DIV2 = "80000000-0000-4000-8000-000000000002", DIV3 = "80000000-0000-4000-8000-000000000003";
+  const HANGYEOL = "30000000-0000-4000-8000-000000000016"; // 2본부 DRAFT
+  const SAEBOM = "30000000-0000-4000-8000-000000000017";   // 2본부 OPEN
+  const see = async (uid, id) => (await asUser(uid, (tx) => tx`select id from leads where id = ${id}`)).length === 1;
+  check("콜팀장 cannot see 본부 DBs", !(await see(U.caller, HANGYEOL)) && !(await see(U.caller, SAEBOM)));
+  check("단장·비서 see 본부 DBs", (await see(U.owner, HANGYEOL)) && (await see(U.secretary, HANGYEOL)));
+  check("비서 sees private details of 본부 DB", (await asUser(U.secretary, (tx) => tx`select 1 from lead_private_details where lead_id = ${HANGYEOL}`)).length === 1);
+  check("2본부 본부장 sees own 본부 DRAFT", await see(U.leader, HANGYEOL));
+  check("3본부 본부장 cannot see 2본부 DB", !(await see(U.leaderB, HANGYEOL)) && !(await see(U.leaderB, SAEBOM)));
+  check("2본부 컨설턴트 sees 2본부 OPEN DB", await see(U.c3, SAEBOM));
+  check("직할·3본부 컨설턴트 cannot see it", !(await see(U.c1, SAEBOM)) && !(await see(U.c5, SAEBOM)));
+  check("광주 상무본부 cannot see 사업단 공통 OPEN DB", !(await see(U.gwangju, OPEN_LEAD_2)));
+  const gw = await asUser(U.gwangju, async (tx) => (await tx`select claim_lead(${OPEN_LEAD_2}) as r`)[0].r);
+  check("광주 상무본부 cannot claim it (NOT_FOUND)", gw.code === "NOT_FOUND", gw.code);
+  const wrong = await asUser(U.c5, async (tx) => (await tx`select claim_lead(${SAEBOM}) as r`)[0].r);
+  check("3본부 cannot claim 2본부 DB", wrong.code === "NOT_FOUND", wrong.code);
+  const ok = await asUser(U.teamB, async (tx) => (await tx`select claim_lead(${SAEBOM}) as r`)[0].r);
+  check("2본부 팀장 claims 2본부 DB", ok.ok === true, JSON.stringify(ok));
+  check("3본부 본부장 cannot publish 2본부 DB", await expectError(() => asUser(U.leaderB, (tx) => tx`select publish_lead(${HANGYEOL})`), "FORBIDDEN"));
+  await asUser(U.leader, (tx) => tx`select publish_lead(${HANGYEOL})`);
+  check("2본부 본부장 publishes own 본부 DB", (await sql`select status from leads where id = ${HANGYEOL}`)[0].status === "OPEN");
+  check("본부장 cannot reassign to another 본부", await expectError(() => asUser(U.leader, (tx) => tx`select reassign_lead(${SAEBOM}, ${U.c5})`), "INVALID_CONSULTANT"));
+  check("본부장 reassigns within own 본부", !(await expectError(() => asUser(U.leader, (tx) => tx`select reassign_lead(${SAEBOM}, ${U.branchB}, '지점장에게')`), "")));
+  const mk = (uid, div) => asUser(uid, (tx) => tx`insert into leads(organization_id, company_name, region, meeting_at, status, created_by, division_id)
+    values (${ORG_ID}, '본부 테스트', '서울 중구', now() + interval '3 days', 'DRAFT', ${uid}, ${div}) returning id`);
+  const own = await mk(U.leader, DIV2);
+  check("본부장 registers a DB for own 본부", own.length === 1);
+  check("본부장 cannot register for another 본부", await expectError(() => mk(U.leader, DIV3), "row-level security"));
+  check("본부장 cannot register a 사업단 공통 DB", await expectError(() => mk(U.leader, null), "row-level security"));
+  check("콜팀장 cannot register a 본부 DB", await expectError(() => mk(U.caller, DIV2), "row-level security"));
+  check("콜팀장 does not see the 본부장's new DB", !(await see(U.caller, own[0].id)));
+  await sql`delete from activity_logs where lead_id = ${own[0].id}`;
+  await sql`delete from leads where id = ${own[0].id}`;
+
+  check("본부장 sets 직함 of own 본부원", !(await expectError(() => asUser(U.leader, (tx) => tx`select set_member_profile(${U.teamB}, 'CONSULTANT', ${DIV2}, '선임 팀장')`), "")));
+  check("본부장 cannot manage another 본부's member", await expectError(() => asUser(U.leader, (tx) => tx`select set_member_profile(${U.c5}, 'CONSULTANT', ${DIV3}, '팀장')`), "FORBIDDEN"));
+  check("본부장 cannot promote", await expectError(() => asUser(U.leader, (tx) => tx`select set_member_profile(${U.teamB}, 'LEADER', ${DIV2}, '팀장')`), "FORBIDDEN"));
+  check("비서 cannot change roles", await expectError(() => asUser(U.secretary, (tx) => tx`select set_member_profile(${U.teamB}, 'CONSULTANT', ${DIV3}, '팀장')`), "FORBIDDEN"));
+  await asUser(U.owner, (tx) => tx`select set_member_profile(${U.gwangju}, 'CONSULTANT', ${DIV3}, null)`);
+  check("단장 moves a member to another 본부", (await sql`select division from profiles where id = ${U.gwangju}`)[0].division === "3본부");
+  await asUser(U.owner, (tx) => tx`select set_member_profile(${U.gwangju}, 'CONSULTANT', '80000000-0000-4000-8000-000000000004', null)`);
+}
+
+console.log("\n[9] 2차·3차 미팅 · 진행 메모");
+{
+  const ACE = "30000000-0000-4000-8000-000000000019"; // 컨설턴트 B, 2차 미팅 예정
+  const r = await asUser(U.c2, async (tx) => (await tx`select submit_meeting_report(${ACE}, 'DONE', 'HIGH', 'REVISIT', 'REVISIT', null, '2차: 인력 서류 확인 완료', null, null,
+    array['기업부설연구소'], '{}'::text[], null, now() + interval '5 days') as r`)[0].r);
+  const [ace] = await sql`select status, meeting_round from leads where id = ${ACE}`;
+  check("재방문 with a date books the 3rd meeting", r.ok && ace.status === "ASSIGNED" && ace.meeting_round === 3, JSON.stringify(ace));
+  const rounds = await sql`select round from meeting_reports where lead_id = ${ACE} order by round`;
+  check("reports keep their round (1차, 2차)", rounds.map((x) => x.round).join(",") === "1,2");
+  const busy = await asUser(U.c2, async (tx) => (await tx`select claim_lead(${OPEN_LEAD_3}) as r`)[0].r);
+  check("2차·3차 meetings don't count toward the 1-person limit (still limited by 1차 우림식품)", busy.code === "LIMIT_REACHED" && busy.active_lead_id === C2_ACTIVE, JSON.stringify(busy));
+  const DAEMYUNG = "30000000-0000-4000-8000-000000000012"; // FOLLOW_UP, 컨설턴트 A
+  check("another consultant cannot book the next meeting", await expectError(() => asUser(U.c2, (tx) => tx`select schedule_next_meeting(${DAEMYUNG}, now() + interval '4 days')`), "FORBIDDEN"));
+  await asUser(U.c1, (tx) => tx`select schedule_next_meeting(${DAEMYUNG}, now() + interval '4 days')`);
+  const [dm] = await sql`select status, meeting_round from leads where id = ${DAEMYUNG}`;
+  const pending = await sql`select count(*)::int as n from follow_ups where lead_id = ${DAEMYUNG} and status = 'PENDING'`;
+  check("다음 미팅 잡기: FOLLOW_UP → ASSIGNED 2차, open to-dos closed", dm.status === "ASSIGNED" && dm.meeting_round === 2 && pending[0].n === 0);
+  await asUser(U.c1, (tx) => tx`select add_lead_note(${DAEMYUNG}, '대표님이 재무제표 준비 중')`);
+  const notes = await asUser(U.owner, (tx) => tx`select detail->>'text' as t from activity_logs where lead_id = ${DAEMYUNG} and action = 'NOTE'`);
+  check("진행 메모 saved and visible to 단장", notes.length === 1 && notes[0].t === "대표님이 재무제표 준비 중");
+  check("unrelated consultant cannot add a note", await expectError(() => asUser(U.c5, (tx) => tx`select add_lead_note(${DAEMYUNG}, 'x')`), "FORBIDDEN"));
 }
 
 await sql`update profiles set is_active = false where id = ${U.manager}`;

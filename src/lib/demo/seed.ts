@@ -12,23 +12,42 @@ export const USERS = {
   owner:       { id: "10000000-0000-4000-8000-000000000001", email: "owner@leadflow.local",    name: "송하균",     role: "OWNER",      phone: "010-1000-0001" },
   leaderB:     { id: "10000000-0000-4000-8000-000000000002", email: "leader-3@leadflow.local", name: "정행래",     role: "LEADER",     phone: "010-1000-0002", division: "3본부" },
   caller:      { id: "10000000-0000-4000-8000-000000000003", email: "caller@leadflow.local",   name: "이제원",     role: "CALLER",     phone: "010-1000-0003", title: "콜팀장" },
-  consultant1: { id: "10000000-0000-4000-8000-000000000004", email: "c-a@leadflow.local",      name: "컨설턴트 A", role: "CONSULTANT", phone: "010-1000-0004" },
-  consultant2: { id: "10000000-0000-4000-8000-000000000005", email: "c-b@leadflow.local",      name: "컨설턴트 B", role: "CONSULTANT", phone: "010-1000-0005" },
-  consultant3: { id: "10000000-0000-4000-8000-000000000006", email: "c-c@leadflow.local",      name: "컨설턴트 C", role: "CONSULTANT", phone: "010-1000-0006" },
+  consultant1: { id: "10000000-0000-4000-8000-000000000004", email: "c-a@leadflow.local",      name: "컨설턴트 A", role: "CONSULTANT", phone: "010-1000-0004", division: "직할본부" },
+  consultant2: { id: "10000000-0000-4000-8000-000000000005", email: "c-b@leadflow.local",      name: "컨설턴트 B", role: "CONSULTANT", phone: "010-1000-0005", division: "직할본부" },
+  consultant3: { id: "10000000-0000-4000-8000-000000000006", email: "c-c@leadflow.local",      name: "컨설턴트 C", role: "CONSULTANT", phone: "010-1000-0006", division: "2본부" },
   leader:      { id: "10000000-0000-4000-8000-000000000007", email: "leader-2@leadflow.local", name: "서인수",     role: "LEADER",     phone: "010-1000-0007", division: "2본부" },
-  consultant6: { id: "10000000-0000-4000-8000-000000000008", email: "c-f@leadflow.local",      name: "컨설턴트 F", role: "CONSULTANT", phone: "010-1000-0008" },
-  consultant4: { id: "10000000-0000-4000-8000-000000000009", email: "c-d@leadflow.local",      name: "컨설턴트 D", role: "CONSULTANT", phone: "010-1000-0009" },
-  consultant5: { id: "10000000-0000-4000-8000-000000000010", email: "c-e@leadflow.local",      name: "컨설턴트 E", role: "CONSULTANT", phone: "010-1000-0010" },
+  consultant6: { id: "10000000-0000-4000-8000-000000000008", email: "c-f@leadflow.local",      name: "컨설턴트 F", role: "CONSULTANT", phone: "010-1000-0008", division: "3본부" },
+  consultant4: { id: "10000000-0000-4000-8000-000000000009", email: "c-d@leadflow.local",      name: "컨설턴트 D", role: "CONSULTANT", phone: "010-1000-0009", division: "2본부" },
+  consultant5: { id: "10000000-0000-4000-8000-000000000010", email: "c-e@leadflow.local",      name: "컨설턴트 E", role: "CONSULTANT", phone: "010-1000-0010", division: "3본부" },
+  secretary:   { id: "10000000-0000-4000-8000-000000000018", email: "secretary@leadflow.local", name: "이미라",    role: "MANAGER",    phone: "010-1000-0018", title: "비서 팀장" },
+  branchA:     { id: "10000000-0000-4000-8000-000000000011", email: "branch-a@leadflow.local", name: "지점장 A",   role: "CONSULTANT", phone: "010-1000-0011", title: "지점장", division: "직할본부" },
+  teamA:       { id: "10000000-0000-4000-8000-000000000012", email: "team-a@leadflow.local",   name: "팀장 A",     role: "CONSULTANT", phone: "010-1000-0012", title: "팀장", division: "직할본부" },
+  branchB:     { id: "10000000-0000-4000-8000-000000000013", email: "branch-b@leadflow.local", name: "지점장 B",   role: "CONSULTANT", phone: "010-1000-0013", title: "지점장", division: "2본부" },
+  teamB:       { id: "10000000-0000-4000-8000-000000000014", email: "team-b@leadflow.local",   name: "팀장 B",     role: "CONSULTANT", phone: "010-1000-0014", title: "팀장", division: "2본부" },
+  branchC:     { id: "10000000-0000-4000-8000-000000000015", email: "branch-c@leadflow.local", name: "지점장 C",   role: "CONSULTANT", phone: "010-1000-0015", title: "지점장", division: "3본부" },
+  teamC:       { id: "10000000-0000-4000-8000-000000000016", email: "team-c@leadflow.local",   name: "팀장 C",     role: "CONSULTANT", phone: "010-1000-0016", title: "팀장", division: "3본부" },
+  gwangju:     { id: "10000000-0000-4000-8000-000000000017", email: "gwangju@leadflow.local",  name: "컨설턴트 G", role: "CONSULTANT", phone: "010-1000-0017", division: "광주 상무본부" },
   otherOwner:  { id: "20000000-0000-4000-8000-000000000001", email: "other@leadflow.local",    name: "다른단장",   role: "OWNER",      phone: "010-2000-0001", org: ORG2_ID },
 } satisfies Record<string, SeedUser>;
 
 export const DEMO_DEFAULT_USER_ID = USERS.owner.id;
+
+/** 본부. 광주 상무본부는 교육만 쓰고 서울·경기 공통 DB는 받지 않는다. */
+export const DIVISIONS = [
+  { id: "80000000-0000-4000-8000-000000000001", name: "직할본부", sort: 1, claims: true },
+  { id: "80000000-0000-4000-8000-000000000002", name: "2본부", sort: 2, claims: true },
+  { id: "80000000-0000-4000-8000-000000000003", name: "3본부", sort: 3, claims: true },
+  { id: "80000000-0000-4000-8000-000000000004", name: "광주 상무본부", sort: 4, claims: false },
+];
+const DIV = (name?: string) => DIVISIONS.find((d) => d.name === name)?.id ?? null;
 
 interface ReportSeed { outcome: string; reaction: string; result: string; next: string; due?: number; memo: string; topics?: string[]; materials?: string[]; nextNote?: string }
 interface LeadSeed {
   id: string; company: string; region: string; industry: string; at: Date; method: string; status: string;
   assignee?: SeedUser; summary: string; contact: string[]; topic: string; interest: string[]; concern: string[];
   traits: string; reason: string; mustKnow: string; caution: string; report?: ReportSeed; cancelReason?: string;
+  /** 본부 DB: created by that 본부장 and seen only by 단장·비서 and that 본부. */
+  division?: string; createdBy?: SeedUser; round?: number;
 }
 
 const KST = 9 * 60;
@@ -37,6 +56,14 @@ function kst(dayOffset: number, hour: number, minute = 0): Date {
   const local = new Date(Date.now() + KST * 60000);
   const d = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() + dayOffset, hour, minute));
   return new Date(d.getTime() - KST * 60000);
+}
+/** Like kst() but never on a weekend (미팅은 평일): past → Friday before, future → Monday after. */
+function wd(dayOffset: number, hour: number, minute = 0): Date {
+  const d = kst(dayOffset, hour, minute);
+  const day = new Date(d.getTime() + KST * 60000).getUTCDay();
+  if (dayOffset === 0 || (day !== 0 && day !== 6)) return d;
+  const shift = dayOffset < 0 ? (day === 6 ? -1 : -2) : (day === 6 ? 2 : 1);
+  return kst(dayOffset + shift, hour, minute);
 }
 function kstDay(dayOffset: number): string {
   return new Date(kst(dayOffset, 12).getTime() + KST * 60000).toISOString().slice(0, 10);
@@ -51,83 +78,108 @@ const ADDRESS: Record<number, string> = {
   7: "경기 성남시 분당구 판교로 256", 8: "인천 부평구 부평대로 283", 9: "경기 안산시 단원구 강촌로 211",
   10: "충북 청주시 흥덕구 오송생명로 181", 11: "경기 시흥시 공단1대로 204", 12: "경기 김포시 양촌읍 황금로 109",
   13: "부산 사상구 새벽로 215", 14: "대구 서구 국채보상로 97", 15: "서울 구로구 디지털로 300",
+  16: "경기 평택시 포승읍 평택항로 156", 17: "경기 용인시 기흥구 흥덕중앙로 120", 18: "서울 송파구 법원로 128",
+  19: "경기 수원시 영통구 광교로 107", 20: "서울 영등포구 여의대로 108",
 };
 const L = (id: number) => `30000000-0000-4000-8000-0000000000${String(id).padStart(2, "0")}`;
 
 const leads = (): LeadSeed[] => [
   // DRAFT — registered today by caller, waiting for owner to publish
-  { id: L(1), company: "한솔이엔지(주)", region: "경기 화성시", industry: "건설·설비 · 인테리어·설비", at: kst(3, 10), method: "VISIT", status: "DRAFT",
+  { id: L(1), company: "한솔이엔지(주)", region: "경기 화성시", industry: "건설·설비 · 인테리어·설비", at: wd(3, 10), method: "VISIT", status: "DRAFT",
     summary: "설비 공사업, 직원 12명, 정책자금 관심", contact: ["김영호", "대표", "010-3333-0001"],
     topic: "운전자금 정책자금", interest: ["정책자금", "고용지원금"], concern: ["기존 대출 부담"],
     traits: "말이 빠르고 숫자에 민감. 결론부터 듣기를 원함", reason: "올해 설비 증설 계획이 있어 자금 조달 방법 상담 요청", mustKnow: "작년 매출 18억, 신용보증 이용 이력 있음", caution: "오전 10시 이후 통화 선호" },
-  { id: L(2), company: "(주)미래푸드", region: "경기 성남시", industry: "제조 · 식품", at: kst(4, 14), method: "VISIT", status: "DRAFT",
+  { id: L(2), company: "(주)미래푸드", region: "경기 성남시", industry: "제조 · 식품", at: wd(4, 14), method: "VISIT", status: "DRAFT",
     summary: "HACCP 식품제조, 직원 25명, 연구소 설립 관심", contact: ["박지현", "이사", "010-3333-0002"],
     topic: "기업부설연구소 설립", interest: ["기업부설연구소", "세액공제"], concern: [],
     traits: "꼼꼼함. 자료를 미리 받아보길 원함", reason: "연구소 설립으로 세액공제를 받고 싶어함", mustKnow: "연구 전담 인력 2명 확보 가능", caution: "" },
 
   // OPEN — published, waiting for a consultant
-  { id: L(3), company: "태양금속(주)", region: "인천 남동구", industry: "제조 · 금속·기계", at: kst(2, 11), method: "VISIT", status: "OPEN",
+  { id: L(3), company: "태양금속(주)", region: "인천 남동구", industry: "제조 · 금속·기계", at: wd(2, 11), method: "VISIT", status: "OPEN",
     summary: "금속 가공업, 직원 30명, 고용지원금 관심", contact: ["정태양", "대표", "010-3333-0003"],
     topic: "청년 고용지원금", interest: ["고용지원금"], concern: ["서류 부담"],
     traits: "실무는 총무팀장이 담당. 대표는 큰 그림만", reason: "올해 청년 5명 채용 예정", mustKnow: "4대보험 명부 요청하면 바로 줄 수 있다고 함", caution: "총무팀장 동석 요청" },
-  { id: L(4), company: "(주)클린케어", region: "서울 금천구", industry: "서비스 · 기타 서비스", at: kst(3, 15), method: "VISIT", status: "OPEN",
+  { id: L(4), company: "(주)클린케어", region: "서울 금천구", industry: "서비스 · 기타 서비스", at: wd(3, 15), method: "VISIT", status: "OPEN",
     summary: "위생 서비스, 직원 8명, 벤처인증 관심", contact: ["오하나", "대표", "010-3333-0004"],
-    topic: "벤처기업확인", interest: ["벤처기업확인", "정책자금"], concern: ["비용"],
+    topic: "벤처인증", interest: ["벤처인증", "정책자금"], concern: ["비용"],
     traits: "친절하지만 결정이 느림", reason: "벤처인증 후 정책자금 연계 원함", mustKnow: "기술 특허 1건 보유", caution: "" },
-  { id: L(5), company: "제일하이텍(주)", region: "경기 안산시", industry: "제조 · 전자·전기", at: kst(5, 10, 30), method: "VISIT", status: "OPEN",
+  { id: L(5), company: "제일하이텍(주)", region: "경기 안산시", industry: "제조 · 전자·전기", at: wd(5, 10, 30), method: "VISIT", status: "OPEN",
     summary: "전자부품 제조, 직원 45명, 이노비즈 관심", contact: ["최은정", "관리이사", "010-3333-0005"],
     topic: "이노비즈·메인비즈 인증", interest: ["기업인증", "정책자금"], concern: [],
     traits: "온라인 미팅 선호", reason: "인증으로 금리 우대를 받고 싶어함", mustKnow: "작년 R&D 투자 3억", caution: "줌 링크 하루 전 발송 요청" },
 
   // ASSIGNED — meetings today
-  { id: L(6), company: "성진테크(주)", region: "서울 강남구", industry: "제조 · 자동차 부품", at: kst(0, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant4,
+  { id: L(6), company: "성진테크(주)", region: "서울 강남구", industry: "제조 · 자동차 부품", at: wd(0, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant4,
     summary: "자동차 부품 제조, 직원 60명, 정책자금·연구소 관심", contact: ["이명수", "대표", "010-3333-0006"],
     topic: "신규 생산라인 자금", interest: ["정책자금", "기업부설연구소"], concern: ["담보 부족"],
     traits: "결정이 빠름. 실행 계획을 구체적으로 원함", reason: "신규 생산라인 도입 검토 중, 자금 조달 상담 요청", mustKnow: "매출 80억, 기존 연구소 없음", caution: "제품 소개 자료 지참 요청" },
-  { id: L(7), company: "(주)한빛솔루션", region: "경기 성남시", industry: "IT·소프트웨어 · 소프트웨어 개발", at: kst(0, 14), method: "VISIT", status: "ASSIGNED", assignee: U.leader,
+  { id: L(7), company: "(주)한빛솔루션", region: "경기 성남시", industry: "IT·소프트웨어 · 소프트웨어 개발", at: wd(0, 14), method: "VISIT", status: "ASSIGNED", assignee: U.leader,
     summary: "SW 개발, 직원 15명, 고용지원금 관심", contact: ["박민지", "이사", "010-3333-0007"],
-    topic: "청년 채용 지원금", interest: ["고용지원금", "벤처기업확인"], concern: [],
+    topic: "청년 채용 지원금", interest: ["고용지원금", "벤처인증"], concern: [],
     traits: "IT 용어에 익숙. 빠른 진행 선호", reason: "하반기 개발자 4명 채용 예정", mustKnow: "벤처인증 만료 임박", caution: "" },
-  { id: L(8), company: "우림식품(주)", region: "인천 부평구", industry: "도소매·유통 · 도매", at: kst(0, 16), method: "VISIT", status: "ASSIGNED", assignee: U.consultant2,
+  { id: L(8), company: "우림식품(주)", region: "인천 부평구", industry: "도소매·유통 · 도매", at: wd(0, 16), method: "VISIT", status: "ASSIGNED", assignee: U.consultant2,
     summary: "식품 유통, 직원 20명, 절세 관심", contact: ["김태호", "대표", "010-3333-0008"],
-    topic: "법인 절세", interest: ["법인컨설팅", "가지급금"], concern: ["세무사 교체 부담"],
+    topic: "법인 절세", interest: ["절세·법인", "가지급금"], concern: ["세무사 교체 부담"],
     traits: "보수적. 기존 세무사와 관계 중시", reason: "가지급금 정리 방법 문의", mustKnow: "가지급금 약 3억", caution: "세무사 비판 금지" },
 
   // ASSIGNED — tomorrow
-  { id: L(9), company: "대성산업(주)", region: "경기 안산시", industry: "제조 · 금속·기계", at: kst(1, 11), method: "VISIT", status: "ASSIGNED", assignee: U.leaderB,
+  { id: L(9), company: "대성산업(주)", region: "경기 안산시", industry: "제조 · 금속·기계", at: wd(1, 11), method: "VISIT", status: "ASSIGNED", assignee: U.leaderB,
     summary: "기계부품 제조, 직원 35명, 연구소 관심", contact: ["정은주", "이사", "010-3333-0009"],
     topic: "연구소 설립·세액공제", interest: ["기업부설연구소"], concern: [], traits: "", reason: "연구소 설립으로 세액공제 원함", mustKnow: "", caution: "" },
 
   // ASSIGNED — meeting passed, NO REPORT (the core owner pain)
-  { id: L(10), company: "(주)그린바이오", region: "충북 청주시", industry: "제조 · 바이오·의료기기", at: kst(-2, 14), method: "VISIT", status: "ASSIGNED", assignee: U.consultant3,
+  { id: L(10), company: "(주)그린바이오", region: "충북 청주시", industry: "제조 · 바이오·의료기기", at: wd(-2, 14), method: "VISIT", status: "ASSIGNED", assignee: U.consultant3,
     summary: "바이오 소재, 직원 18명, 정책자금 관심", contact: ["윤재석", "대표", "010-3333-0010"],
     topic: "R&D 자금", interest: ["정책자금", "정부지원사업"], concern: [], traits: "", reason: "R&D 과제 신청 준비", mustKnow: "", caution: "" },
-  { id: L(11), company: "하나정밀(주)", region: "경기 시흥시", industry: "제조 · 금속·기계", at: kst(-5, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant6,
+  { id: L(11), company: "하나정밀(주)", region: "경기 시흥시", industry: "제조 · 금속·기계", at: wd(-5, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant6,
     summary: "정밀가공, 직원 22명, 고용지원금 관심", contact: ["송하나", "대표", "010-3333-0011"],
     topic: "고용지원금", interest: ["고용지원금"], concern: [], traits: "", reason: "직원 채용 계획", mustKnow: "", caution: "" },
 
   // FOLLOW_UP — report submitted, follow-ups pending
-  { id: L(12), company: "대명플라스틱(주)", region: "경기 김포시", industry: "제조 · 화학·플라스틱", at: kst(-3, 10), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant1,
+  { id: L(12), company: "대명플라스틱(주)", region: "경기 김포시", industry: "제조 · 화학·플라스틱", at: wd(-3, 10), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant1,
     summary: "사출 제조, 직원 40명, 정책자금 관심", contact: ["김민수", "대표", "010-3333-0012"],
     topic: "시설자금", interest: ["정책자금"], concern: [], traits: "", reason: "설비 교체", mustKnow: "", caution: "",
     report: { outcome: "DONE", reaction: "HIGH", result: "MATERIAL_REQUEST", next: "SEND_MATERIAL", due: 0, memo: "설비 교체 시설자금 관심 높음. 다음 주 재방문 가능",
       topics: ["정책자금"], materials: ["재무제표", "부가세 과세표준증명"], nextNote: "정책자금 안내자료 보내고 재무제표 3년치 받기" } },
-  { id: L(13), company: "(주)블루오션", region: "부산 사상구", industry: "제조 · 기타 제조", at: kst(-10, 15), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant3,
+  { id: L(13), company: "(주)블루오션", region: "부산 사상구", industry: "제조 · 기타 제조", at: wd(-10, 15), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant3,
     summary: "조선기자재, 직원 55명, 인증 관심", contact: ["강동원", "이사", "010-3333-0013"],
     topic: "메인비즈 인증", interest: ["기업인증"], concern: ["시간 부족"], traits: "", reason: "인증 갱신", mustKnow: "", caution: "",
     report: { outcome: "DONE", reaction: "MID", result: "REVIEW_THEN_CONTACT", next: "CALL", due: -8, memo: "내부 검토 후 연락 주기로 함",
       topics: ["기업인증"], materials: ["회사소개서"], nextNote: "인증 갱신 일정 확인 전화" } },
 
   // CLOSED
-  { id: L(14), company: "동아섬유(주)", region: "대구 서구", industry: "제조 · 섬유·의류", at: kst(-7, 11), method: "VISIT", status: "CLOSED", assignee: U.consultant1,
+  { id: L(14), company: "동아섬유(주)", region: "대구 서구", industry: "제조 · 섬유·의류", at: wd(-7, 11), method: "VISIT", status: "CLOSED", assignee: U.consultant1,
     summary: "섬유 제조, 직원 28명", contact: ["이동아", "대표", "010-3333-0014"],
     topic: "정책자금", interest: ["정책자금"], concern: ["시기 부적절"], traits: "", reason: "", mustKnow: "", caution: "",
     report: { outcome: "DONE", reaction: "LOW", result: "HARD", next: "NONE", memo: "내년 상반기에 다시 검토 예정", topics: ["정책자금"] } },
 
   // CANCELLED
-  { id: L(15), company: "(주)서울테크", region: "서울 구로구", industry: "IT·소프트웨어 · IT 서비스", at: kst(2, 13), method: "VISIT", status: "CANCELLED",
+  { id: L(15), company: "(주)서울테크", region: "서울 구로구", industry: "IT·소프트웨어 · IT 서비스", at: wd(2, 13), method: "VISIT", status: "CANCELLED",
     summary: "IT 서비스, 직원 10명", contact: ["박서울", "대표", "010-3333-0015"], topic: "", interest: [], concern: [], traits: "", reason: "", mustKnow: "", caution: "",
     cancelReason: "업체 요청으로 미팅 취소" },
+
+  // --- more samples (20 in total)
+  { id: L(16), company: "(주)한결정밀", region: "경기 평택시", industry: "제조 · 금속·기계", at: wd(3, 15), method: "VISIT", status: "DRAFT",
+    division: "2본부", createdBy: U.leader,
+    summary: "제조 · 금속·기계, 정책자금·가업승계 관심", contact: ["한결", "대표", "010-3333-0016"],
+    topic: "", interest: ["정책자금", "가업승계"], concern: [], traits: "", reason: "2본부 자체 발굴 DB. 부친 회사 승계 예정", mustKnow: "매출 45억", caution: "" },
+  { id: L(17), company: "새봄식품(주)", region: "경기 용인시", industry: "제조 · 식품", at: wd(4, 10), method: "VISIT", status: "OPEN",
+    division: "2본부", createdBy: U.leader,
+    summary: "제조 · 식품, 고용지원금·사내근로복지기금 관심", contact: ["봄새", "전무이사", "010-3333-0017"],
+    topic: "", interest: ["고용지원금", "사내근로복지기금"], concern: [], traits: "", reason: "2본부 공개 DB. 직원 복지 제도 문의", mustKnow: "직원 38명", caution: "" },
+  { id: L(18), company: "(주)다온물류", region: "서울 송파구", industry: "서비스 · 물류·운송", at: wd(2, 14), method: "VISIT", status: "OPEN",
+    summary: "서비스 · 물류·운송, 절세·법인·가지급금 관심", contact: ["김다온", "대표", "010-3333-0018"],
+    topic: "", interest: ["절세·법인", "가지급금"], concern: [], traits: "숫자에 밝음", reason: "법인세 부담 상담 요청", mustKnow: "가지급금 약 2억", caution: "오후 미팅 선호" },
+  { id: L(19), company: "(주)에이스전자", region: "경기 수원시", industry: "제조 · 전자·전기", at: wd(2, 11), method: "VISIT", status: "ASSIGNED", assignee: U.consultant2, round: 2,
+    summary: "제조 · 전자·전기, 기업부설연구소·벤처인증 관심", contact: ["최에이스", "상무이사", "010-3333-0019"],
+    topic: "", interest: ["기업부설연구소", "벤처인증"], concern: [], traits: "", reason: "연구소 설립 상담", mustKnow: "연구 인력 3명", caution: "",
+    report: { outcome: "DONE", reaction: "HIGH", result: "REVISIT", next: "REVISIT", due: 2, memo: "1차: 연구소 요건 설명, 대표 긍정적. 2차 때 인력 서류 확인",
+      topics: ["기업부설연구소", "벤처인증"], materials: ["4대보험 가입자 명부"], nextNote: "2차 미팅: 연구 인력 서류 확인" } },
+  { id: L(20), company: "(주)대한테크", region: "서울 영등포구", industry: "IT·소프트웨어 · 플랫폼·앱", at: wd(-4, 14), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant6,
+    division: "3본부", createdBy: U.leaderB,
+    summary: "IT·소프트웨어 · 플랫폼·앱, M&A·절세·법인 관심", contact: ["정대한", "대표", "010-3333-0020"],
+    topic: "", interest: ["M&A", "절세·법인"], concern: [], traits: "", reason: "3본부 자체 DB. 회사 매각 검토", mustKnow: "", caution: "",
+    report: { outcome: "DONE", reaction: "MID", result: "REVIEW_THEN_CONTACT", next: "CALL", due: 1, memo: "M&A 시점 검토 중", topics: ["M&A", "절세·법인"], nextNote: "매각 희망가 자료 받기" } },
 ];
 
 /** Wipes and recreates both demo organizations. Runs inside the caller's transaction. */
@@ -146,13 +198,18 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
   await tx`delete from lead_private_details where organization_id in ${tx(orgs)}`;
   await tx`delete from leads where organization_id in ${tx(orgs)}`;
   await tx`delete from profiles where organization_id in ${tx(orgs)}`;
+  await tx`delete from divisions where organization_id in ${tx(orgs)}`;
   await tx`delete from organizations where id in ${tx(orgs)}`;
   await tx`delete from auth.users where id in ${tx(users.map((u) => u.id))}`;
 
   await tx`insert into organizations(id, name, invite_code) values (${ORG_ID}, '스마트 사업단', 'SMART2026'), (${ORG2_ID}, '다른 사업단', 'OTHER0001')`;
+  for (const d of DIVISIONS) {
+    await tx`insert into divisions(id, organization_id, name, sort, claims_org_leads) values (${d.id}, ${ORG_ID}, ${d.name}, ${d.sort}, ${d.claims})`;
+  }
   for (const u of users) {
     await tx`insert into auth.users(id, email) values (${u.id}, ${u.email})`;
-    await tx`insert into profiles(id, organization_id, role, full_name, phone, title, division) values (${u.id}, ${u.org ?? ORG_ID}, ${u.role}, ${u.name}, ${u.phone}, ${u.title ?? null}, ${u.division ?? null})`;
+    await tx`insert into profiles(id, organization_id, role, full_name, phone, title, division, division_id)
+      values (${u.id}, ${u.org ?? ORG_ID}, ${u.role}, ${u.name}, ${u.phone}, ${u.title ?? null}, ${u.division ?? null}, ${DIV(u.division)})`;
   }
 
   for (const l of all) {
@@ -160,17 +217,19 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
     const published = l.status === "DRAFT" ? null : new Date(l.at.getTime() - 3 * 86400000);
     const createdAt = published ?? kst(0, 17);
     const assignedAt = assigned && published ? new Date(published.getTime() + 3600000) : null;
-    await tx`insert into leads(id, organization_id, company_name, region, industry, meeting_at, meeting_method, public_summary, status, created_by, caller_id, assigned_to, assigned_at, published_at, closed_at, cancel_reason, created_at)
-      values (${l.id}, ${ORG_ID}, ${l.company}, ${l.region}, ${l.industry}, ${l.at}, ${l.method}, ${l.summary}, ${l.status}, ${U.caller.id}, ${U.caller.id},
+    const creator = l.createdBy ?? U.caller;
+    const round = l.round ?? 1;
+    await tx`insert into leads(id, organization_id, company_name, region, industry, meeting_at, meeting_method, public_summary, status, created_by, caller_id, assigned_to, assigned_at, published_at, closed_at, cancel_reason, created_at, division_id, meeting_round)
+      values (${l.id}, ${ORG_ID}, ${l.company}, ${l.region}, ${l.industry}, ${l.at}, ${l.method}, ${l.summary}, ${l.status}, ${creator.id}, ${l.createdBy ? null : U.caller.id},
         ${assigned}, ${assignedAt}, ${published},
-        ${["CLOSED", "CANCELLED"].includes(l.status) ? new Date() : null}, ${l.cancelReason ?? null}, ${createdAt})`;
+        ${["CLOSED", "CANCELLED"].includes(l.status) ? new Date() : null}, ${l.cancelReason ?? null}, ${createdAt}, ${DIV(l.division)}, ${round})`;
     // Same shape as the one-page form: one comment instead of separate memo boxes.
     const comment = [l.reason, l.mustKnow, l.traits, l.caution && `주의: ${l.caution}`].filter(Boolean).join("\n") || null;
     await tx`insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, address, interest_tags, extra_note)
       values (${l.id}, ${ORG_ID}, ${l.contact[0]}, ${l.contact[1]}, ${l.contact[2]}, ${ADDRESS[Number(l.id.slice(-2))] ?? null}, ${l.interest}, ${comment})`;
-    await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, to_status, created_at) values (${ORG_ID}, ${l.id}, ${U.caller.id}, 'CREATE', 'DRAFT', ${createdAt})`;
+    await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, to_status, created_at) values (${ORG_ID}, ${l.id}, ${creator.id}, 'CREATE', 'DRAFT', ${createdAt})`;
     if (published) {
-      await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, from_status, to_status, created_at) values (${ORG_ID}, ${l.id}, ${U.owner.id}, 'PUBLISH', 'DRAFT', 'OPEN', ${published})`;
+      await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, from_status, to_status, created_at) values (${ORG_ID}, ${l.id}, ${l.createdBy ? creator.id : U.owner.id}, 'PUBLISH', 'DRAFT', 'OPEN', ${published})`;
     }
     if (assigned && assignedAt) {
       await tx`insert into lead_assignments(organization_id, lead_id, consultant_id, assigned_by, method, created_at) values (${ORG_ID}, ${l.id}, ${assigned}, ${assigned}, 'CLAIM', ${assignedAt})`;
@@ -178,12 +237,14 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
     }
     if (l.report && assigned) {
       const r = l.report;
-      const reportedAt = new Date(l.at.getTime() + 2 * 3600000);
+      const nextRound = l.status === "ASSIGNED" && round > 1;
+      // A 2차 lead's report belongs to the 1st meeting, a week earlier.
+      const reportedAt = nextRound ? new Date(l.at.getTime() - 7 * 86400000 + 2 * 3600000) : new Date(l.at.getTime() + 2 * 3600000);
       const due = r.due === undefined ? null : kstDay(r.due);
-      const [{ id: reportId }] = await tx<{ id: string }[]>`insert into meeting_reports(organization_id, lead_id, reporter_id, outcome, reaction, result, next_action, next_action_date, memo, topics, materials, next_note, created_at)
-        values (${ORG_ID}, ${l.id}, ${assigned}, ${r.outcome}, ${r.reaction}, ${r.result}, ${r.next}, ${due}, ${r.memo}, ${r.topics ?? []}, ${r.materials ?? []}, ${r.nextNote ?? null}, ${reportedAt}) returning id`;
+      const [{ id: reportId }] = await tx<{ id: string }[]>`insert into meeting_reports(organization_id, lead_id, reporter_id, outcome, reaction, result, next_action, next_action_date, memo, topics, materials, next_note, created_at, round)
+        values (${ORG_ID}, ${l.id}, ${assigned}, ${r.outcome}, ${r.reaction}, ${r.result}, ${r.next}, ${due}, ${r.memo}, ${r.topics ?? []}, ${r.materials ?? []}, ${r.nextNote ?? null}, ${reportedAt}, ${nextRound ? round - 1 : round}) returning id`;
       let followId: string | null = null;
-      if (r.next !== "NONE") {
+      if (r.next !== "NONE" && l.status === "FOLLOW_UP") {
         const [{ id }] = await tx<{ id: string }[]>`insert into follow_ups(organization_id, lead_id, assignee_id, action, due_date, memo, created_by, created_at)
           values (${ORG_ID}, ${l.id}, ${assigned}, ${r.next}, ${due}, ${r.nextNote ?? r.memo}, ${assigned}, ${reportedAt}) returning id`;
         followId = id;
@@ -211,6 +272,8 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
 // same shape the AI produces so the demo shows the finished experience.
 interface TrainingSeed {
   id: string; title: string; day: number; hour: number; instructor: SeedUser; content: string | null;
+  /** 교육 안내 (공지) shown before the session. `at` pins an exact date. */
+  notice?: string; at?: Date;
   summary: null | { one_line: string; key_points: string[]; action_items: string[]; talk_tracks: string[]; keywords: string[] };
   file?: { name: string; text: string }; readers: SeedUser[];
 }
@@ -221,7 +284,7 @@ function trainings(): TrainingSeed[] {
   const local = new Date(Date.now() + KST * 60000);
   const monday = -((local.getUTCDay() + 6) % 7); // offset (days) to this week's Monday
   return [
-    { id: T(1), title: "4분기 정책자금 상담 전략 — 한도보다 '준비 순서'", day: monday, hour: 9, instructor: U.owner,
+    { id: T(1), title: "4분기 정책자금 상담 전략 — 한도보다 '준비 순서'", day: monday - 7, hour: 10, instructor: U.owner,
       content: `오늘은 4분기 정책자금 상담을 어떻게 끌고 갈지 이야기하겠습니다. 대표님들은 항상 "얼마까지 나와요?"부터 물어보십니다. 그런데 한도는 우리가 약속할 수 있는 숫자가 아닙니다. 한도를 먼저 말하면 나중에 신뢰를 잃습니다.
 그래서 첫 미팅에서는 한도 대신 준비 순서를 보여드려야 합니다. 재무제표 3년치, 부가세 과세표준증명, 4대보험 가입자 명부, 기존 대출 현황. 이 네 가지만 받으면 우리가 가능성을 판단할 수 있다고 말씀드리세요.
 기존 대출이 많은 기업은 무조건 안 된다고 단정하지 마세요. 자금 용도가 명확하고 매출이 늘고 있으면 이야기가 달라집니다. 반드시 용도와 시기를 먼저 확인해야 합니다.
@@ -277,7 +340,7 @@ function trainings(): TrainingSeed[] {
       },
       readers: [U.consultant1, U.consultant2, U.consultant3, U.leaderB] },
 
-    { id: T(3), title: "기업부설연구소, 설립보다 사후관리가 계약을 만든다", day: monday - 7, hour: 10, instructor: U.owner,
+    { id: T(3), title: "기업부설연구소, 설립보다 사후관리가 계약을 만든다", day: monday - 14, hour: 10, instructor: U.owner,
       content: `연구소 설립은 이제 많은 곳에서 합니다. 우리가 달라야 하는 부분은 설립 이후입니다.
 설립 후에 대표님들이 제일 어려워하는 건 연구노트, 인력 변동 신고, 그리고 세액공제 증빙입니다. 연구원이 퇴사했는데 신고를 안 해서 문제가 되는 경우가 실제로 많습니다.
 그래서 설립 상담을 할 때부터 사후관리까지 같이 설명하세요. "설립해 드리고 끝"이 아니라 "매달 챙겨드린다"는 그림을 보여줘야 합니다.
@@ -332,7 +395,7 @@ function trainings(): TrainingSeed[] {
       },
       readers: [U.consultant1, U.consultant3, U.leader] },
 
-    { id: T(5), title: "벤처·이노비즈 인증을 정책자금과 묶어서 제안하기", day: monday - 14, hour: 10, instructor: U.owner,
+    { id: T(5), title: "벤처·이노비즈 인증을 정책자금과 묶어서 제안하기", day: monday - 21, hour: 10, instructor: U.owner,
       content: `인증 하나만 따로 팔면 대표님은 비용으로 생각합니다. 인증이 정책자금이나 세제 혜택과 어떻게 연결되는지를 보여줘야 투자로 생각합니다.
 인증 상담 전에 특허, 연구개발 투자, 매출 추세를 확인하세요. 준비 기간이 필요하기 때문에 일정표를 같이 드리는 게 좋습니다.
 인증이 만료되는 고객도 기회입니다. 만료일을 기록해 두고 미리 연락하세요.`,
@@ -355,16 +418,30 @@ function trainings(): TrainingSeed[] {
       },
       readers: [U.consultant1, U.consultant2, U.consultant3, U.consultant4, U.consultant5, U.leader, U.leaderB] },
 
-    { id: T(6), title: "절세·법인 상담 입문: 가지급금 대화 시작하기", day: monday + 2, hour: 10, instructor: U.leader,
+    { id: T(6), title: "절세·법인 상담 입문: 가지급금 대화 시작하기", day: monday + 2, hour: 19, instructor: U.leader,
+      notice: "2본부 서인수 본부장이 진행합니다. 가지급금이 있는 법인 대표님과 첫 5분에 무슨 말을 해야 하는지, 실제 상담 사례로 연습합니다.",
       content: null, summary: null, readers: [] },
+    // 오늘 저녁 단장 교육 (실제 공지 문구)
+    { id: T(7), title: "개인투자조합으로 벤처인증까지 — 법인영업 실전 교육", day: 0, hour: 19, at: new Date("2026-09-28T19:00:00+09:00"), instructor: U.owner,
+      notice: [
+        "오늘 저녁 7시, 법인영업의 판을 바꿀 실전 교육이 시작됩니다!",
+        "개인투자조합 하나로 벤처인증까지 연결하는 구조를 처음부터 끝까지 파헤칩니다.",
+        "창업기업 대표에게 꼭 필요한 사람이 되는 접근법과 제안 포인트를 공개합니다.",
+        "상담에서 끝나지 않고 실제 계약으로 이어지는 연결고리까지 단계별로 짚어드립니다.",
+        "오늘은 평소보다 훨씬 디테일하게 진행합니다. 놓치면 후회할 시간, 꼭 함께하세요!",
+      ].join("\n\n"),
+      content: null, summary: null, readers: [] },
+    { id: T(8), title: "월요일 정기 교육 (주제 추후 공지)", day: monday + 7, hour: 19, instructor: U.owner, content: null, summary: null, readers: [] },
+    { id: T(9), title: "3본부 상담 사례 공유", day: monday + 9, hour: 19, instructor: U.leaderB,
+      notice: "3본부 정행래 본부장 진행. 이번 달 계약으로 이어진 상담 3건을 처음부터 끝까지 풀어 봅니다.", content: null, summary: null, readers: [] },
   ];
 }
 
 async function seedTrainings(tx: TransactionSql) {
   for (const t of trainings()) {
-    const heldAt = kst(t.day, t.hour);
-    await tx`insert into trainings(id, organization_id, title, held_at, instructor_id, content, summary, summary_source, summarized_at, created_by, created_at)
-      values (${t.id}, ${ORG_ID}, ${t.title}, ${heldAt}, ${t.instructor.id}, ${t.content}, ${t.summary ? tx.json(t.summary) : null},
+    const heldAt = t.at ?? kst(t.day, t.hour);
+    await tx`insert into trainings(id, organization_id, title, held_at, instructor_id, content, notice, summary, summary_source, summarized_at, created_by, created_at)
+      values (${t.id}, ${ORG_ID}, ${t.title}, ${heldAt}, ${t.instructor.id}, ${t.content}, ${t.notice ?? null}, ${t.summary ? tx.json(t.summary) : null},
         ${t.summary ? "AI" : null}, ${t.summary ? new Date(heldAt.getTime() + 3 * 3600000) : null}, ${t.instructor.id}, ${new Date(heldAt.getTime() - 86400000)})`;
     if (t.file) {
       const data = Buffer.from(t.file.text, "utf8");
@@ -376,4 +453,14 @@ async function seedTrainings(tx: TransactionSql) {
       await tx`insert into training_reads(training_id, profile_id, organization_id, read_at) values (${t.id}, ${r.id}, ${ORG_ID}, ${new Date(heldAt.getTime() + 5 * 3600000)})`;
     }
   }
+}
+
+/** 샘플 DB 모두 지우기: people and trainings stay, every DB and its history goes. */
+export async function clearDemoLeads(tx: TransactionSql): Promise<void> {
+  await tx`delete from activity_logs where organization_id = ${ORG_ID} and lead_id is not null`;
+  await tx`delete from follow_ups where organization_id = ${ORG_ID}`;
+  await tx`delete from meeting_reports where organization_id = ${ORG_ID}`;
+  await tx`delete from lead_assignments where organization_id = ${ORG_ID}`;
+  await tx`delete from lead_private_details where organization_id = ${ORG_ID}`;
+  await tx`delete from leads where organization_id = ${ORG_ID}`;
 }

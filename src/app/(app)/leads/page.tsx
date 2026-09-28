@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PlusCircle, Search, List, Map as MapIcon, Lock } from "lucide-react";
-import { requireViewer, isManager, canCreateLead } from "@/lib/auth/session";
+import { requireViewer, isManager, canCreateLead, isLeader, usesDb } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 import { withUser } from "@/lib/db";
 import { listLeads, type LeadTab } from "@/lib/queries";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -10,23 +11,27 @@ import { LeadMap } from "@/components/leads/LeadMap";
 
 export const dynamic = "force-dynamic";
 
-const TABS: { key: LeadTab; label: string; roles: ("manager" | "caller" | "consultant")[] }[] = [
-  { key: "open", label: "신청 가능", roles: ["manager", "caller", "consultant"] },
-  { key: "mine", label: "내 담당", roles: ["consultant"] },
+type Kind = "manager" | "caller" | "consultant" | "leader";
+const TABS: { key: LeadTab; label: string; roles: Kind[] }[] = [
+  { key: "open", label: "신청 가능", roles: ["manager", "caller", "consultant", "leader"] },
+  { key: "mine", label: "내 담당", roles: ["consultant", "leader"] },
+  { key: "division", label: "우리 본부 DB", roles: ["leader"] },
   { key: "today", label: "오늘 미팅", roles: ["manager", "caller"] },
   { key: "needs_report", label: "결과 미입력", roles: ["manager", "caller"] },
-  { key: "draft", label: "공개 대기", roles: ["manager", "caller"] },
+  { key: "draft", label: "공개 대기", roles: ["manager", "caller", "leader"] },
   { key: "follow_up", label: "후속 진행", roles: ["manager", "caller", "consultant"] },
   { key: "all", label: "전체", roles: ["manager", "caller", "consultant"] },
-  { key: "closed", label: "종료·취소", roles: ["manager", "caller", "consultant"] },
+  { key: "closed", label: "종료·취소", roles: ["manager", "caller", "consultant", "leader"] },
 ];
 
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string; view?: string }> }) {
   const viewer = await requireViewer();
   const sp = await searchParams;
-  const kind = isManager(viewer) ? "manager" : viewer.profile.role === "CALLER" ? "caller" : "consultant";
+  if (!usesDb(viewer)) redirect("/");
+  const kind: Kind = isManager(viewer) ? "manager" : viewer.profile.role === "CALLER" ? "caller" : isLeader(viewer) ? "leader" : "consultant";
+  const claimer = kind === "consultant" || kind === "leader";
   const tabs = TABS.filter((t) => t.roles.includes(kind));
-  const defaultTab: LeadTab = kind === "consultant" ? "open" : "all";
+  const defaultTab: LeadTab = claimer ? "open" : "all";
   const tab = (tabs.some((t) => t.key === sp.tab) ? sp.tab : defaultTab) as LeadTab;
   const q = sp.q ?? "";
   const view = sp.view === "map" ? "map" : "list";
@@ -40,21 +45,22 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   const limit = viewer.organization.claim_limit;
   const [leads, active] = await withUser(viewer.session.userId, (tx) => Promise.all([
     listLeads(tx, { tab, userId: viewer.session.userId, q }),
-    kind === "consultant" && tab === "open"
-      ? tx<{ n: number }[]>`select count(*)::int as n from leads where assigned_to = ${viewer.session.userId} and status = 'ASSIGNED'`.then((r) => r[0].n)
+    claimer && tab === "open"
+      ? tx<{ n: number }[]>`select count(*)::int as n from leads where assigned_to = ${viewer.session.userId} and status = 'ASSIGNED' and meeting_round = 1`.then((r) => r[0].n)
       : Promise.resolve(0),
   ]));
-  const claimable = kind === "consultant" && tab === "open" && !(limit > 0 && active >= limit);
+  const claimable = claimer && tab === "open" && !(limit > 0 && active >= limit);
 
   const titles: Record<LeadTab, string> = {
-    open: "신청 가능한 DB", mine: "내 담당 미팅", today: "오늘 미팅", needs_report: "결과 미입력 DB", draft: "공개 대기 DB", follow_up: "후속 진행 중", all: "전체 DB", closed: "종료·취소된 DB",
+    open: "신청 가능한 DB", mine: "내 담당 미팅", division: `${viewer.division?.name ?? "우리 본부"} DB`, today: "오늘 미팅", needs_report: "결과 미입력 DB", draft: "공개 대기 DB", follow_up: "후속 진행 중", all: "전체 DB", closed: "종료·취소된 DB",
   };
   const help: Partial<Record<LeadTab, string>> = {
-    open: kind === "consultant"
+    open: claimer
       ? `원하는 DB를 눌러 [이 미팅 신청하기]를 누르면 선착순으로 담당이 확정됩니다.${viewer.organization.claim_limit ? ` 한 사람당 ${viewer.organization.claim_limit}건씩, 결과를 입력하면 다음 DB를 신청할 수 있습니다.` : ""}`
       : "컨설턴트가 선착순으로 신청할 수 있는 상태입니다.",
     needs_report: "미팅 시간이 지났지만 결과가 입력되지 않은 DB입니다.",
-    draft: "콜팀이 등록했고 아직 컨설턴트에게 공개되지 않은 DB입니다.",
+    draft: kind === "leader" ? "본부에서 등록했고 아직 본부원에게 공개하지 않은 DB입니다." : "콜팀이 등록했고 아직 컨설턴트에게 공개되지 않은 DB입니다.",
+    division: "본부장님이 등록한 본부 전용 DB입니다. 단장·비서와 우리 본부 사람만 봅니다. 콜팀에게는 보이지 않습니다.",
   };
 
   return (
@@ -103,13 +109,13 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         <LeadMap leads={leads.map((l) => ({ id: l.id, company_name: l.company_name, region: l.region, status: l.status, needs_report: l.needs_report, meeting_at: l.meeting_at, assignee_name: l.assignee_name }))} />
       ) : (
         <>
-          {kind === "consultant" && tab === "open" && !claimable && limit > 0 && leads.length > 0 && (
+          {claimer && tab === "open" && !claimable && limit > 0 && leads.length > 0 && (
             <p className="mb-3 flex gap-2.5 rounded-xl border border-line bg-canvas px-4 py-3 text-[0.96875rem] text-ink-2" data-testid="claim-limit-note">
               <Lock size={19} className="mt-0.5 shrink-0 text-ink-3" />
               <span>진행 중인 미팅이 있어 지금은 새로 신청할 수 없습니다. <Link prefetch={false} href="/leads?tab=mine" className="font-semibold text-primary underline-offset-2 hover:underline">내 미팅</Link>에서 결과를 입력하면 바로 신청할 수 있습니다.</span>
             </p>
           )}
-          <LeadList leads={leads} emptyText={q ? `"${q}"에 해당하는 DB가 없습니다.` : "해당하는 DB가 없습니다."} showAssignee={kind !== "consultant" || tab !== "mine"} claimable={claimable} />
+          <LeadList leads={leads} emptyText={q ? `"${q}"에 해당하는 DB가 없습니다.` : "해당하는 DB가 없습니다."} showAssignee={!claimer || tab !== "mine"} claimable={claimable} />
         </>
       )}
     </div>

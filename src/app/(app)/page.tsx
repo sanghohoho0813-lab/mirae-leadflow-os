@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Map as MapIcon } from "lucide-react";
 import { Database, Clock, CalendarCheck, AlertCircle, RefreshCw, Inbox, PlusCircle, ChevronRight, Sparkles, Lock } from "lucide-react";
-import { requireViewer, isManager } from "@/lib/auth/session";
+import { requireViewer, isManager, isLeader, usesDb } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
-import { getCallerDashboard, getConsultantDashboard, getManagerDashboard } from "@/lib/queries";
+import { getCallerDashboard, getConsultantDashboard, getManagerDashboard, listLeads } from "@/lib/queries";
 import { KpiTile } from "@/components/ui/KpiTile";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { LeadList } from "@/components/leads/LeadRow";
@@ -138,13 +138,34 @@ export default async function HomePage() {
     );
   }
 
+  // 광주 상무본부 등: 교육만.
+  if (!usesDb(viewer)) {
+    const h = await withUser(uid, (tx) => getTrainingHighlights(tx, uid));
+    return (
+      <div className="fade-up">
+        <Greeting text={hello} sub={`${viewer.division?.name ?? ""} — 매주 교육 자료와 핵심 요약을 여기에서 받아 보세요.`} />
+        <div className="grid gap-4 @4xl:grid-cols-2">
+          <TrainingHomeCard h={h} className="fade-up-2" />
+          <Card className="fade-up-2">
+            <CardHeader icon={<CalendarCheck size={20} />} title="교육 일정" href="/trainings/schedule" hrefLabel="달력 보기" />
+            <CardBody><p className="text-[1rem] text-ink-2">월요일 단장 교육 · 수요일 본부장 교육 일정을 달력으로 확인할 수 있습니다.</p></CardBody>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // CONSULTANT / LEADER — 신청 가능한 DB first, then my meetings, then 교육.
-  const [d, h] = await withUser(uid, (tx) => Promise.all([getConsultantDashboard(tx, uid), getTrainingHighlights(tx, uid)]));
+  const leader = isLeader(viewer);
+  const [d, h, division] = await withUser(uid, (tx) => Promise.all([
+    getConsultantDashboard(tx, uid), getTrainingHighlights(tx, uid),
+    leader ? listLeads(tx, { tab: "division", userId: uid, limit: 6 }) : Promise.resolve([]),
+  ]));
   const c = d.counts;
   const limit = viewer.organization.claim_limit;
-  const active = c.needs_report + c.upcoming; // every ASSIGNED meeting without a result
+  const active = c.first_active; // 1차 meetings without a result (2차·3차 don't count)
   const blocked = limit > 0 && active >= limit;
-  const blocker = d.needsReport[0] ?? d.today[0] ?? d.upcoming[0] ?? null;
+  const blocker = [...d.needsReport, ...d.today, ...d.upcoming].find((l) => l.meeting_round === 1) ?? null;
   const myMeetings = [...d.today.filter((l) => !l.needs_report), ...d.upcoming];
   return (
     <div className="fade-up">
@@ -174,6 +195,17 @@ export default async function HomePage() {
           <LeadList leads={d.open} emptyText="지금은 신청 가능한 DB가 없습니다. 단장님이 공개하면 여기에 나타납니다." showAssignee={false} claimable={!blocked} />
         </CardBody>
       </Card>
+
+      {leader && (
+        <Card className="fade-up-2 mb-4" testId="home-division">
+          <CardHeader icon={<Database size={20} />} title={`${viewer.division?.name ?? "우리 본부"} DB`} count={division.length} href="/leads?tab=division" hrefLabel="본부 DB 관리"
+            right={<LinkButton href="/leads/new" size="sm"><PlusCircle size={17} /> 본부 DB 등록</LinkButton>} />
+          <CardBody>
+            <p className="mb-3 text-[0.9375rem] text-ink-2">본부장님이 등록한 DB는 단장·비서와 우리 본부 사람만 봅니다. 콜팀에게는 보이지 않습니다.</p>
+            <LeadList leads={division} emptyText="아직 본부 DB가 없습니다. 직접 발굴한 DB를 등록해 본부원에게 배분해 보세요." />
+          </CardBody>
+        </Card>
+      )}
 
       <div className="grid gap-4 @4xl:grid-cols-2">
         <Card className="fade-up-2">
