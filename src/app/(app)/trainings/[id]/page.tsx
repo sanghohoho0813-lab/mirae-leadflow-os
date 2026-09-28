@@ -8,7 +8,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { LinkButton } from "@/components/ui/Button";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { DeleteTrainingButton, FileRow, ReadButton, SummarizeButton } from "@/components/trainings/TrainingClient";
-import { DateBlock, sessionKind } from "@/components/trainings/TrainingCard";
+import { DateBlock, KindBadge, sessionKind } from "@/components/trainings/TrainingCard";
+import { isDemoMode } from "@/lib/auth/mode";
 import { fmtDateTime, fmtRelativeTime } from "@/lib/time";
 import type { Training } from "@/lib/types";
 
@@ -42,56 +43,11 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
   const readers = reads?.filter((r) => r.read_at) ?? [];
   const notYet = reads?.filter((r) => !r.read_at && r.id !== t.instructor_id) ?? [];
 
-  return (
-    <div className="fade-up mx-auto max-w-4xl">
-      <PageHeader back="/trainings" backLabel="교육 자료실" title={t.title}
-        eyebrow={<span className="text-[0.9375rem] font-semibold text-ink-3">{sessionKind(t)}</span>}
-        action={canEdit ? <><LinkButton href={`/trainings/${t.id}/edit`} variant="secondary"><Pencil size={18} /> 수정</LinkButton><DeleteTrainingButton id={t.id} /></> : undefined} />
-
-      <div className="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-white p-4 shadow-card">
-        <DateBlock d={t.held_at} />
-        <div className="leading-snug">
-          <div className="text-[1.0625rem] font-bold text-ink">{fmtDateTime(t.held_at)}</div>
-          <div className="text-[1rem] text-ink-2">강사 {t.instructor_name ?? "미정"}</div>
-          {t.summarized_at && <div className="text-[0.875rem] text-ink-3">요약 {fmtRelativeTime(t.summarized_at)} · {t.summary_source === "AI" ? "AI 정리" : "기본 요약"}</div>}
-        </div>
-      </div>
-
-      {t.notice && (
-        <section className="mb-5 rounded-2xl border border-primary/30 bg-soft/60 p-5" data-testid="training-notice">
-          <h2 className="mb-2 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><Megaphone size={20} className="text-primary" /> 교육 공지</h2>
-          <p className="whitespace-pre-line text-[1.0625rem] leading-relaxed text-ink">{t.notice}</p>
-        </section>
-      )}
-
-      {/* 자료 */}
-      <section className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-3 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><Paperclip size={20} className="text-primary" /> 교육 자료 <span className="text-[1rem] font-semibold text-ink-3">{files.length + t.links.length}개</span></h2>
-        {files.length + t.links.length === 0 ? (
-          <p className="text-[1rem] text-ink-3">올라온 자료가 없습니다.{canEdit ? " [수정]에서 PPT·PDF·녹음 파일을 올릴 수 있습니다." : ""}</p>
-        ) : (
-          <ul className="grid gap-2">
-            {files.map((f) => <FileRow key={f.id} f={f} trainingId={t.id} canDelete={canEdit} />)}
-            {t.links.map((l, i) => (
-              <li key={i}>
-                <a href={l.url} target="_blank" rel="noopener noreferrer" className="lift flex items-center gap-3 rounded-xl border border-line bg-white p-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-soft text-primary"><Link2 size={20} /></span>
-                  <span className="min-w-0 flex-1 leading-tight">
-                    <span className="block truncate text-[1rem] font-semibold text-ink">{l.label || "링크"}</span>
-                    <span className="block truncate text-[0.875rem] text-ink-3">{l.url}</span>
-                  </span>
-                  <ExternalLink size={18} className="shrink-0 text-ink-3" />
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {/* 핵심 정리 */}
+  // 핵심 정리: 요약이 있으면 맨 위(복습), 없으면 공지 다음.
+  const summarySection = (
       <section className="mb-5 overflow-hidden rounded-2xl border border-line bg-white shadow-card" data-testid="training-summary">
         <header className="flex flex-wrap items-center justify-between gap-2 bg-shell px-5 py-4 text-white">
-          <h2 className="flex items-center gap-2 text-[1.1875rem] font-bold"><Sparkles size={20} className="text-highlight" /> 핵심 정리</h2>
+          <h2 className="flex items-center gap-2 text-[1.1875rem] font-bold"><Sparkles size={20} className="text-highlight" /> 핵심 정리 <span className="text-[0.9375rem] font-semibold text-white/70">· 3분 복습</span></h2>
           {s && <span className="rounded-md bg-white/12 px-2 py-0.5 text-[0.8125rem] font-semibold text-white/80">{t.summary_source === "AI" ? "AI 정리" : "기본 요약 · AI 연결 시 더 정확"}</span>}
         </header>
         {s ? (
@@ -154,6 +110,56 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
           </div>
         )}
       </section>
+  );
+
+  return (
+    <div className="fade-up mx-auto max-w-4xl">
+      <PageHeader back="/trainings" backLabel="교육 요약" title={t.title}
+        eyebrow={<span className="flex flex-wrap items-center gap-2 text-[0.9375rem] font-semibold text-ink-3">{(t.is_sample || isDemoMode()) && <KindBadge sample={t.is_sample} size="lg" />}{sessionKind(t)}</span>}
+        action={canEdit ? <><LinkButton href={`/trainings/${t.id}/edit`} variant="secondary"><Pencil size={18} /> 수정</LinkButton><DeleteTrainingButton id={t.id} /></> : undefined} />
+
+      {t.is_sample && (
+        <div className="mb-4 flex gap-2.5 rounded-2xl border-2 border-dashed border-warning/60 bg-warning-bg/70 px-4 py-3.5 text-[1rem] text-ink" data-testid="sample-banner">
+          <Info size={20} className="mt-0.5 shrink-0 text-warning" />
+          <span><b className="text-warning">예시 교육입니다.</b> 체험을 위해 만든 샘플 내용이라 실제 교육과 다릅니다.</span>
+        </div>
+      )}
+
+      <div className="mb-5 flex items-center gap-3 rounded-2xl border border-line bg-white p-4 shadow-card">
+        <DateBlock d={t.held_at} muted={t.is_sample} />
+        <div className="leading-snug">
+          <div className="text-[1.0625rem] font-bold text-ink">{fmtDateTime(t.held_at)}</div>
+          <div className="text-[1rem] text-ink-2">강사 {t.instructor_name ?? "미정"}</div>
+          {t.summarized_at && <div className="text-[0.875rem] text-ink-3">요약 {fmtRelativeTime(t.summarized_at)} · {t.summary_source === "AI" ? "AI 정리" : "기본 요약"}</div>}
+        </div>
+      </div>
+
+{s ? (<>
+      {summarySection}
+
+      {/* 자료 */}
+      <section className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card">
+        <h2 className="mb-3 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><Paperclip size={20} className="text-primary" /> 교육 자료 <span className="text-[1rem] font-semibold text-ink-3">{files.length + t.links.length}개</span></h2>
+        {files.length + t.links.length === 0 ? (
+          <p className="text-[1rem] text-ink-3">올라온 자료가 없습니다.{canEdit ? " [수정]에서 PPT·PDF·녹음 파일을 올릴 수 있습니다." : ""}</p>
+        ) : (
+          <ul className="grid gap-2">
+            {files.map((f) => <FileRow key={f.id} f={f} trainingId={t.id} canDelete={canEdit} />)}
+            {t.links.map((l, i) => (
+              <li key={i}>
+                <a href={l.url} target="_blank" rel="noopener noreferrer" className="lift flex items-center gap-3 rounded-xl border border-line bg-white p-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-soft text-primary"><Link2 size={20} /></span>
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block truncate text-[1rem] font-semibold text-ink">{l.label || "링크"}</span>
+                    <span className="block truncate text-[0.875rem] text-ink-3">{l.url}</span>
+                  </span>
+                  <ExternalLink size={18} className="shrink-0 text-ink-3" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {t.content && (
         <details className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card">
@@ -172,6 +178,67 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
           )}
         </section>
       )}
+
+      {t.notice && (
+        <details className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card" data-testid="training-notice">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-[1.0625rem] font-bold text-ink-2"><Megaphone size={19} className="text-primary" /> 교육 전 공지 <span className="ml-auto text-[0.9375rem] font-semibold text-primary">펼치기</span></summary>
+          <p className="mt-3 whitespace-pre-line text-[1.0312rem] leading-relaxed text-ink">{t.notice}</p>
+        </details>
+      )}
+
+      </>) : (<>
+      {t.notice && (
+        <section className="mb-5 rounded-2xl border border-primary/30 bg-soft/60 p-5" data-testid="training-notice">
+          <h2 className="mb-2 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><Megaphone size={20} className="text-primary" /> 교육 공지</h2>
+          <p className="whitespace-pre-line text-[1.0625rem] leading-relaxed text-ink">{t.notice}</p>
+        </section>
+      )}
+
+      {/* 자료 */}
+      <section className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card">
+        <h2 className="mb-3 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><Paperclip size={20} className="text-primary" /> 교육 자료 <span className="text-[1rem] font-semibold text-ink-3">{files.length + t.links.length}개</span></h2>
+        {files.length + t.links.length === 0 ? (
+          <p className="text-[1rem] text-ink-3">올라온 자료가 없습니다.{canEdit ? " [수정]에서 PPT·PDF·녹음 파일을 올릴 수 있습니다." : ""}</p>
+        ) : (
+          <ul className="grid gap-2">
+            {files.map((f) => <FileRow key={f.id} f={f} trainingId={t.id} canDelete={canEdit} />)}
+            {t.links.map((l, i) => (
+              <li key={i}>
+                <a href={l.url} target="_blank" rel="noopener noreferrer" className="lift flex items-center gap-3 rounded-xl border border-line bg-white p-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-soft text-primary"><Link2 size={20} /></span>
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block truncate text-[1rem] font-semibold text-ink">{l.label || "링크"}</span>
+                    <span className="block truncate text-[0.875rem] text-ink-3">{l.url}</span>
+                  </span>
+                  <ExternalLink size={18} className="shrink-0 text-ink-3" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {summarySection}
+
+      {t.content && (
+        <details className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-[1.1875rem] font-bold text-ink"><NotebookText size={20} className="text-primary" /> 강의 원문 (메모·녹취) <span className="ml-auto text-[0.9375rem] font-semibold text-primary">펼치기</span></summary>
+          <div className="mt-3 max-h-[480px] overflow-y-auto whitespace-pre-wrap rounded-xl bg-canvas p-4 text-[1rem] leading-relaxed text-ink">{t.content}</div>
+        </details>
+      )}
+
+      {reads && (
+        <section className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card" data-testid="read-status">
+          <h2 className="mb-2 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><Users size={20} className="text-primary" /> 확인 현황
+            <span className="text-[1rem] font-semibold text-ink-3">{reads.length}명 중 {readers.length}명 확인</span></h2>
+          <div className="mb-3 h-2.5 overflow-hidden rounded-full bg-neutral-bg"><div className="h-full rounded-full bg-primary" style={{ width: `${reads.length ? Math.round((readers.length / reads.length) * 100) : 0}%` }} /></div>
+          {notYet.length > 0 && (
+            <p className="text-[0.9688rem] text-ink-2"><b className="text-ink">아직 안 본 사람</b> · {notYet.map((r) => r.full_name).join(", ")}</p>
+          )}
+        </section>
+      )}
+
+      </>)}
 
       {!t.is_mine && (
         <div className="sticky bottom-[76px] z-10 lg:bottom-4">

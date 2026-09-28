@@ -104,6 +104,8 @@ export function LeadMap({ leads }: { leads: MapLead[] }) {
     const m = map.current;
     const g = layer.current;
     if (!m || !g) return;
+    // 탭·검색이 바뀌면 이전 목록의 말풍선이 남지 않게 먼저 닫는다.
+    m.closePopup();
     g.clearLayers();
     located.forEach((p, i) => {
       const icon = L.divIcon({

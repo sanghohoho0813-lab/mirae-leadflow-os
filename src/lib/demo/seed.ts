@@ -276,6 +276,8 @@ interface TrainingSeed {
   notice?: string; at?: Date;
   summary: null | { one_line: string; key_points: string[]; action_items: string[]; talk_tracks: string[]; keywords: string[] };
   file?: { name: string; text: string }; readers: SeedUser[];
+  /** false = 실제로 진행한 교육 (기본은 예시). */
+  sample?: boolean;
 }
 
 /** 송하균 단장 2026-09-28 교육 원문 (강의 노트 그대로). */
@@ -471,7 +473,7 @@ function trainings(): TrainingSeed[] {
         ]
 },
       file: { name: "0928_법인영업_실전교육_체크리스트.txt", text: "[0928 법인영업 실전 교육 — 확인 체크리스트]\n\n□ 고객이 원하는 것: 벤처인증 / 소득공제 / 둘 다\n□ 투자 방식: 신주 · 전환사채 · RCPS (구주 매입은 투자 아님)\n□ 투자형 벤처 요건: 투자금 5천만 원 이상 + 자본금 대비 비율 (최신 기준 확인)\n□ 일정: 조합결성계획 승인 약 3주 → 벤처인증까지 약 3개월\n□ 원천징수 15.4% · 지급명세서 다음 해 2월 말\n□ 창업 감면: 사업장 · 대표이사 · 직원 실체, 임대차 계약서\n□ 벤처인증 후 법인세 감면은 직접 신청\n" },
-      readers: [U.secretary, U.leader, U.leaderB, U.consultant1] },
+      readers: [U.secretary, U.leader, U.leaderB, U.consultant1], sample: false },
     { id: T(8), title: "월요일 정기 교육 (주제 추후 공지)", day: monday + 7, hour: 19, instructor: U.owner, content: null, summary: null, readers: [] },
     { id: T(9), title: "3본부 상담 사례 공유", day: monday + 9, hour: 19, instructor: U.leaderB,
       notice: "3본부 정행래 본부장 진행. 이번 달 계약으로 이어진 상담 3건을 처음부터 끝까지 풀어 봅니다.", content: null, summary: null, readers: [] },
@@ -481,9 +483,9 @@ function trainings(): TrainingSeed[] {
 async function seedTrainings(tx: TransactionSql) {
   for (const t of trainings()) {
     const heldAt = t.at ?? kst(t.day, t.hour);
-    await tx`insert into trainings(id, organization_id, title, held_at, instructor_id, content, notice, summary, summary_source, summarized_at, created_by, created_at)
+    await tx`insert into trainings(id, organization_id, title, held_at, instructor_id, content, notice, summary, summary_source, summarized_at, created_by, created_at, is_sample)
       values (${t.id}, ${ORG_ID}, ${t.title}, ${heldAt}, ${t.instructor.id}, ${t.content}, ${t.notice ?? null}, ${t.summary ? tx.json(t.summary) : null},
-        ${t.summary ? "AI" : null}, ${t.summary ? new Date(heldAt.getTime() + 3 * 3600000) : null}, ${t.instructor.id}, ${new Date(heldAt.getTime() - 86400000)})`;
+        ${t.summary ? "AI" : null}, ${t.summary ? new Date(heldAt.getTime() + 2 * 3600000) : null}, ${t.instructor.id}, ${new Date(heldAt.getTime() - 86400000)}, ${t.sample ?? true})`;
     if (t.file) {
       const data = Buffer.from(t.file.text, "utf8");
       const [{ id }] = await tx<{ id: string }[]>`insert into training_files(organization_id, training_id, name, mime, size, chunk_count, complete, created_by)

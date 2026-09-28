@@ -494,10 +494,13 @@ test("14. Map view: pins for 수도권, others listed, tab kept when switching",
   await p.getByTestId("tab-open").click();
   await p.waitForURL(/tab=open/);
   expect(new URL(p.url()).searchParams.get("view")).toBe("map");
+  // 주소가 먼저 바뀌고 핀은 잠시 뒤에 다시 그려진다 — 새 목록(신청 가능만)으로 바뀐 뒤에 누른다.
+  await expect.poll(() => p.locator(".leaflet-marker-icon").count()).toBeLessThan(pins);
   await expect(p.locator(".lf-pin").first()).toBeVisible();
   // Popup link goes to the lead.
   await p.locator(".leaflet-marker-icon").first().click({ force: true });
-  await p.locator(".lf-popup-link").click();
+  // 닫힌 말풍선은 0.2초 동안 투명하게 사라지므로, 방금 연 말풍선(맨 뒤)을 누른다.
+  await p.locator(".lf-popup-link").last().click();
   await p.waitForURL(/\/leads\/[0-9a-f-]{36}$/);
   await p.context().close();
 });
@@ -1010,4 +1013,49 @@ test("30. 소개 영상: 들어오면 가운데에 뜨고, 닫으면 새로고�
   await d.keyboard.press("Escape");
   await expect(d.getByTestId("intro-video")).toHaveCount(0);
   await pc.close();
+});
+
+test("31. 교육: 예시는 점선·'예시', 9/28 단장 교육은 '실제 교육' · 탭·거르기·복습 카드", async ({ browser }) => {
+  const REAL = "50000000-0000-4000-8000-000000000007";
+  const SAMPLE = "50000000-0000-4000-8000-000000000001";
+  const p = await loginAs(browser, U.cA, { width: 390, height: 844 });
+  await go(p, "/trainings");
+  // 맨 위 복습 카드는 실제 교육
+  const review = p.getByTestId("training-review");
+  await expect(review).toContainText("실제 교육");
+  await expect(review).toContainText("개인투자조합으로 벤처인증까지");
+  await expect(p.getByTestId("badge-sample").first()).toBeVisible();
+  await expect(p.locator('[data-testid="training-card"][data-sample="1"]').first()).toBeVisible();
+  expect(await p.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await shot(p, "m390-31-trainings");
+
+  // 실제 교육만 → 예시 카드 없음 / 예시만 → 실제 교육 없음
+  await p.getByTestId("training-filter-real").click();
+  await p.waitForURL(/show=real/);
+  await expect(p.locator('[data-testid="training-card"][data-sample="1"]')).toHaveCount(0);
+  await expect(p.getByTestId("training-review")).toBeVisible();
+  await p.getByTestId("training-filter-sample").click();
+  await p.waitForURL(/show=sample/);
+  await expect(p.getByTestId("badge-real")).toHaveCount(0);
+
+  // 상세: 예시 안내 / 실제 교육은 핵심 정리가 자료보다 먼저
+  await go(p, `/trainings/${SAMPLE}`);
+  await expect(p.getByTestId("sample-banner")).toContainText("예시 교육입니다");
+  await go(p, `/trainings/${REAL}`);
+  await expect(p.getByTestId("sample-banner")).toHaveCount(0);
+  await expect(p.getByTestId("badge-real")).toBeVisible();
+  const sumY = (await p.getByTestId("training-summary").boundingBox())!.y;
+  const fileY = (await p.getByTestId("training-file").first().boundingBox())!.y;
+  expect(sumY).toBeLessThan(fileY);
+  await shot(p, "m390-31-real-detail");
+
+  // 탭: 교육 요약 · 교육 일정 · 자료 모음
+  await go(p, "/trainings");
+  await p.getByTestId("trainings-view-schedule").click();
+  await p.waitForURL(/\/trainings\/schedule/);
+  await expect(p.getByTestId("schedule-list")).toContainText("실제 교육");
+  await p.getByTestId("trainings-view-files").click();
+  await p.waitForURL(/view=files/);
+  await expect(p.getByTestId("file-library")).toContainText("예시");
+  await p.context().close();
 });

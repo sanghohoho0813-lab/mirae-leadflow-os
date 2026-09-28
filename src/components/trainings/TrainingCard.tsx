@@ -11,10 +11,18 @@ export function sessionKind(t: { held_at: Date; instructor_role: string | null; 
   return `${w}요일 · 특별 교육`;
 }
 
-export function DateBlock({ d, highlight }: { d: Date; highlight?: boolean }) {
+/** 예시(체험용 샘플) / 실제 교육 표시. */
+export function KindBadge({ sample, size = "md" }: { sample: boolean; size?: "md" | "lg" }) {
+  const sz = size === "lg" ? "px-2.5 py-1 text-[0.9375rem]" : "px-1.5 py-0.5 text-[0.8125rem]";
+  return sample
+    ? <span className={`rounded-md border border-dashed border-warning/70 bg-warning-bg font-bold text-warning ${sz}`} data-testid="badge-sample">예시</span>
+    : <span className={`rounded-md bg-success font-bold text-white ${sz}`} data-testid="badge-real">실제 교육</span>;
+}
+
+export function DateBlock({ d, highlight, muted }: { d: Date; highlight?: boolean; muted?: boolean }) {
   const [, m, day] = kstDateString(d).split("-");
   return (
-    <div className={`flex w-[64px] shrink-0 flex-col items-center justify-center self-start rounded-xl py-2 leading-tight ${highlight ? "bg-primary text-white" : "bg-soft text-primary"}`}>
+    <div className={`flex w-[64px] shrink-0 flex-col items-center justify-center self-start rounded-xl py-2 leading-tight ${highlight ? "bg-primary text-white" : muted ? "bg-neutral-bg text-ink-3" : "bg-soft text-primary"}`}>
       <span className="text-[0.8125rem] font-semibold opacity-85">{Number(m)}월</span>
       <span className="text-[1.5rem] font-extrabold">{Number(day)}</span>
       <span className="text-[0.8125rem] font-semibold opacity-85">{weekdayKo(d)}요일</span>
@@ -22,14 +30,21 @@ export function DateBlock({ d, highlight }: { d: Date; highlight?: boolean }) {
   );
 }
 
-export function TrainingCard({ t, upcoming }: { t: TrainingListItem; upcoming?: boolean }) {
+/**
+ * showKind: 예시가 섞여 있을 때만 예시/실제 표시를 붙인다 (실제 교육만 있으면 군더더기).
+ * 예시 카드는 점선 테두리·흐린 배경으로 한눈에 구분.
+ */
+export function TrainingCard({ t, upcoming, showKind }: { t: TrainingListItem; upcoming?: boolean; showKind?: boolean }) {
   const isToday = kstDateString(t.held_at) === kstDateString();
   const isNew = !upcoming && !t.read_by_me && !!t.summary;
+  const sample = showKind && t.is_sample;
   return (
-    <Link prefetch={false} href={`/trainings/${t.id}`} className="lift press group flex gap-3.5 rounded-2xl border border-line bg-white p-4 shadow-card" data-testid="training-card">
-      <DateBlock d={t.held_at} highlight={isToday} />
+    <Link prefetch={false} href={`/trainings/${t.id}`} data-testid="training-card" data-sample={t.is_sample ? "1" : undefined}
+      className={`lift press group flex gap-3.5 rounded-2xl p-4 ${sample ? "border-2 border-dashed border-line-strong bg-canvas/70" : showKind ? "border-2 border-success/40 bg-white shadow-card" : "border border-line bg-white shadow-card"}`}>
+      <DateBlock d={t.held_at} highlight={isToday && !sample} muted={sample} />
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[0.8438rem] font-semibold">
+          {showKind && <KindBadge sample={t.is_sample} />}
           <span className="text-ink-3">{sessionKind(t)}</span>
           {isToday && <span className="rounded-md bg-primary px-1.5 py-0.5 text-white">오늘</span>}
           {isNew && <span className="rounded-md bg-danger px-1.5 py-0.5 text-white" data-testid="training-new">새 요약</span>}

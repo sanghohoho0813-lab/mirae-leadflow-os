@@ -8,7 +8,7 @@ export const FILE_MAX = 30 * 1024 * 1024;
 export const FILE_MAX_COUNT = 10;
 
 const LIST = (uid: string) => `
-  select t.id, t.title, t.held_at, t.notice, t.instructor_id, coalesce(p.full_name, t.instructor_name) as instructor_name, p.role as instructor_role, p.division as instructor_division,
+  select t.id, t.title, t.held_at, t.notice, t.is_sample, t.instructor_id, coalesce(p.full_name, t.instructor_name) as instructor_name, p.role as instructor_role, p.division as instructor_division,
     t.summary, t.summary_source,
     (select count(*)::int from training_files f where f.training_id = t.id and f.complete) as file_count,
     (select count(*)::int from training_reads r where r.training_id = t.id) as read_count,
@@ -75,14 +75,14 @@ export async function getTrainingHighlights(tx: Tx, uid: string) {
 
 export type TrainingHighlights = Awaited<ReturnType<typeof getTrainingHighlights>>;
 
-export interface LibraryFile extends TrainingFile { training_id: string; training_title: string; held_at: Date; instructor_name: string | null }
+export interface LibraryFile extends TrainingFile { training_id: string; training_title: string; held_at: Date; instructor_name: string | null; is_sample: boolean }
 
 /** 자료 모아보기: every uploaded material, newest session first. */
 export async function listAllFiles(tx: Tx, q?: string): Promise<LibraryFile[]> {
   const like = q?.trim() ? `%${q.trim().replace(/[%_\\]/g, (m) => `\\${m}`)}%` : null;
   return tx<LibraryFile[]>`
     select f.id, f.name, f.mime, f.size, f.chunk_count, f.created_by, f.created_at,
-      t.id as training_id, t.title as training_title, t.held_at, coalesce(p.full_name, t.instructor_name) as instructor_name
+      t.id as training_id, t.title as training_title, t.held_at, t.is_sample, coalesce(p.full_name, t.instructor_name) as instructor_name
     from training_files f join trainings t on t.id = f.training_id left join profiles p on p.id = t.instructor_id
     where f.complete and (${like}::text is null or f.name ilike ${like} or t.title ilike ${like})
     order by t.held_at desc, f.created_at limit 300`;
@@ -91,7 +91,7 @@ export async function listAllFiles(tx: Tx, q?: string): Promise<LibraryFile[]> {
 export interface ScheduleItem {
   id: string; title: string; held_at: Date; notice: string | null;
   instructor_name: string | null; instructor_role: MemberRole | null; instructor_division: string | null;
-  has_summary: boolean; file_count: number;
+  has_summary: boolean; file_count: number; is_sample: boolean;
 }
 
 /** 교육 일정: every session in one month ("YYYY-MM", Korea time). */
@@ -100,7 +100,7 @@ export async function listTrainingMonth(tx: Tx, ym: string): Promise<ScheduleIte
   const from = new Date(Date.UTC(y, m - 1, 1) - 9 * 3_600_000);
   const to = new Date(Date.UTC(y, m, 1) - 9 * 3_600_000);
   return tx<ScheduleItem[]>`
-    select t.id, t.title, t.held_at, t.notice, coalesce(p.full_name, t.instructor_name) as instructor_name, p.role as instructor_role, p.division as instructor_division,
+    select t.id, t.title, t.held_at, t.notice, t.is_sample, coalesce(p.full_name, t.instructor_name) as instructor_name, p.role as instructor_role, p.division as instructor_division,
       t.summary is not null as has_summary,
       (select count(*)::int from training_files f where f.training_id = t.id and f.complete) as file_count
     from trainings t left join profiles p on p.id = t.instructor_id

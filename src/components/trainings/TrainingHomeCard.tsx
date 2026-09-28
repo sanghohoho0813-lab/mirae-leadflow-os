@@ -3,6 +3,7 @@ import { GraduationCap, ChevronRight, Sparkles, CalendarClock } from "lucide-rea
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import type { TrainingHighlights } from "@/lib/trainings";
 import { fmtShortDate, fmtTime } from "@/lib/time";
+import { KindBadge } from "./TrainingCard";
 
 /** 홈의 교육 카드: 다음 교육 + 가장 최근 요약 (안 봤으면 강조). */
 export function TrainingHomeCard({ h, showReads, className = "" }: { h: TrainingHighlights; showReads?: boolean; className?: string }) {
@@ -14,7 +15,7 @@ export function TrainingHomeCard({ h, showReads, className = "" }: { h: Training
         {latest?.summary && (
           <Link prefetch={false} href={`/trainings/${latest.id}`} className="lift press group block rounded-xl border border-line p-4">
             <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[0.875rem] font-semibold text-ink-3">
-              <Sparkles size={15} className="text-gold" /> 지난 교육 핵심 · {fmtShortDate(latest.held_at)} {latest.instructor_name}
+              {latest.is_sample ? <KindBadge sample /> : <Sparkles size={15} className="text-gold" />} 지난 교육 핵심 · {fmtShortDate(latest.held_at)} {latest.instructor_name}
               {!latest.read_by_me && <span className="rounded-md bg-danger px-1.5 py-0.5 text-[0.7812rem] text-white">새 요약</span>}
             </div>
             <div className="text-[1.0625rem] font-bold text-ink group-hover:text-primary">{latest.title}</div>

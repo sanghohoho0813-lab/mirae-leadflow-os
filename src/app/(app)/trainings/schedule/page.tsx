@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { LinkButton } from "@/components/ui/Button";
 import { Empty } from "@/components/ui/Empty";
 import { monthCells, scheduleTone, shiftMonth, WEEKDAYS } from "@/components/trainings/schedule";
+import { EducationTabs } from "@/components/trainings/EducationTabs";
+import { KindBadge } from "@/components/trainings/TrainingCard";
 
 export const dynamic = "force-dynamic";
 
@@ -24,17 +26,20 @@ export default async function TrainingSchedulePage({ searchParams }: { searchPar
     byDay.set(d, [...(byDay.get(d) ?? []), t]);
   }
   const [y, mo] = ym.split("-").map(Number);
+  const hasSamples = items.some((t) => t.is_sample);
   const legend = Array.from(new Map(items.map((t) => { const tone = scheduleTone(t); return [tone.label, tone]; })).values());
 
   return (
     <div className="fade-up">
       <PageHeader
         title="교육 일정"
-        sub="월요일 단장 교육 · 수요일 본부장 교육. 날짜를 누르면 그날 교육으로 이동합니다."
+        sub="월요일 단장 교육 · 수요일 본부장 교육. 날짜를 누르면 그날 교육이 보입니다."
         action={teacher ? (
           <LinkButton href={`/trainings/schedule/bulk?m=${ym}`} size="lg"><CalendarPlus size={20} /> 한 달 일정 등록</LinkButton>
         ) : undefined}
       />
+
+      <EducationTabs active="schedule" />
 
       <div className="mb-3 flex items-center justify-between gap-2">
         <Link prefetch={false} href={`/trainings/schedule?m=${shiftMonth(ym, -1)}`} aria-label="이전 달" className="press flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-white text-ink-2 hover:text-primary"><ChevronLeft size={22} /></Link>
@@ -60,7 +65,7 @@ export default async function TrainingSchedulePage({ searchParams }: { searchPar
                 <span className={`inline-flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-[0.9375rem] font-bold ${isToday ? "bg-primary text-white" : dow === 0 ? "text-danger" : dow === 6 ? "text-info" : "text-ink"}`}>{Number(d.slice(8))}</span>
                 <div className="mt-1 hidden flex-col gap-1 @2xl:flex">
                   {list.map((t) => (
-                    <span key={t.id} className={`truncate rounded-md px-1.5 py-0.5 text-[0.8125rem] font-semibold ${scheduleTone(t).chip}`}>{fmtTime(t.held_at).replace(":00", "시")} {t.instructor_name}</span>
+                    <span key={t.id} className={`truncate rounded-md px-1.5 py-0.5 text-[0.8125rem] font-semibold ${scheduleTone(t).chip} ${hasSamples && t.is_sample ? "opacity-60 outline-dashed outline-1 -outline-offset-1" : ""}`}>{fmtTime(t.held_at).replace(":00", "시")} {t.instructor_name}</span>
                   ))}
                 </div>
                 <div className="mt-1 flex justify-center gap-1 @2xl:hidden">
@@ -81,6 +86,7 @@ export default async function TrainingSchedulePage({ searchParams }: { searchPar
       {legend.length > 0 && (
         <div className="mb-5 flex flex-wrap gap-x-4 gap-y-1.5 px-1" aria-label="색 구분">
           {legend.map((l) => <span key={l.label} className="inline-flex items-center gap-1.5 text-[0.9062rem] font-semibold text-ink-2"><span className={`h-3 w-3 rounded-full ${l.dot}`} /> {l.label}</span>)}
+          {hasSamples && <span className="inline-flex items-center gap-1.5 text-[0.9062rem] font-semibold text-ink-3"><span className="h-3 w-5 rounded-sm border border-dashed border-ink-3" /> 흐린 점선 = 예시</span>}
         </div>
       )}
 
@@ -93,7 +99,7 @@ export default async function TrainingSchedulePage({ searchParams }: { searchPar
                 const tone = scheduleTone(t);
                 const past = d < today;
                 return (
-                  <Link prefetch={false} key={t.id} href={`/trainings/${t.id}`} className={`lift press mb-2 flex gap-3.5 rounded-2xl border bg-white p-4 shadow-card ${d === today ? "border-primary" : "border-line"} ${past ? "opacity-80" : ""}`} data-testid="schedule-item">
+                  <Link prefetch={false} key={t.id} href={`/trainings/${t.id}`} className={`lift press mb-2 flex gap-3.5 rounded-2xl p-4 ${hasSamples && t.is_sample ? "border-2 border-dashed border-line-strong bg-canvas/70" : `border bg-white shadow-card ${d === today ? "border-primary" : hasSamples ? "border-2 border-success/40" : "border-line"}`} ${past ? "opacity-85" : ""}`} data-testid="schedule-item" data-sample={t.is_sample ? "1" : undefined}>
                     <div className={`flex w-[64px] shrink-0 flex-col items-center justify-center self-start rounded-xl py-2 leading-tight ${tone.chip}`}>
                       <span className="text-[0.8125rem] font-semibold opacity-85">{Number(d.slice(5, 7))}월</span>
                       <span className="text-[1.5rem] font-extrabold">{Number(d.slice(8))}</span>
@@ -101,6 +107,7 @@ export default async function TrainingSchedulePage({ searchParams }: { searchPar
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[0.8438rem] font-semibold text-ink-3">
+                        {hasSamples && <KindBadge sample={t.is_sample} />}
                         {tone.label}
                         {d === today && <span className="rounded-md bg-primary px-1.5 py-0.5 text-white">오늘</span>}
                       </div>
