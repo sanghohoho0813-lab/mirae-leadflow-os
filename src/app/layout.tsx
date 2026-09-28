@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
 import { FontLoader } from "@/components/layout/FontLoader";
+import { ThemeSync } from "@/components/layout/ThemePicker";
+import { THEME_BOOT_SCRIPT } from "@/lib/themes";
 
 export const metadata: Metadata = {
   title: { default: "리드플로우", template: "%s · 리드플로우" },
@@ -17,9 +19,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body>
         <FontLoader />
+        <ThemeSync />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

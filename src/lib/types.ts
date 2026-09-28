@@ -58,6 +58,7 @@ export interface LeadPrivateDetails {
   contact_name: string | null;
   contact_title: string | null;
   contact_phone: string | null;
+  address: string | null;
   call_topic: string | null;
   interest_tags: string[];
   concern_tags: string[];

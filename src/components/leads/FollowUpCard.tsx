@@ -21,7 +21,7 @@ const ACTION_ICON: Record<NextAction, React.ReactNode> = {
 
 export function FollowUpList({ items, emptyText, canComplete, showAssignee }: { items: FollowUp[]; emptyText: string; canComplete?: boolean; showAssignee?: boolean }) {
   if (items.length === 0) return <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-[16px] text-ink-3">{emptyText}</p>;
-  return <div className="grid gap-2">{items.map((f) => <FollowUpCard key={f.id} item={f} canComplete={canComplete} showAssignee={showAssignee} />)}</div>;
+  return <div className="stagger grid gap-2">{items.map((f) => <FollowUpCard key={f.id} item={f} canComplete={canComplete} showAssignee={showAssignee} />)}</div>;
 }
 
 export function FollowUpCard({ item, canComplete, showAssignee }: { item: FollowUp; canComplete?: boolean; showAssignee?: boolean }) {

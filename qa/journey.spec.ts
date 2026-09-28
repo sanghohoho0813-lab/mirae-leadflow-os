@@ -19,7 +19,7 @@ async function loginAs(browser: Browser, userId: string, viewport = { width: 144
   await go(page, "/login");
   await page.click(`[data-testid="login-${userId}"]`);
   await page.waitForURL("**/");
-  await page.waitForSelector('body[data-hydrated="1"]');
+  await settle(page);
   return page;
 }
 
@@ -32,8 +32,15 @@ async function shot(page: Page, name: string, fullPage = true) {
 /** Navigates and waits until React has hydrated (body[data-hydrated]). */
 async function go(page: Page, url: string) {
   const res = await page.goto(url);
-  await page.waitForSelector('body[data-hydrated="1"]', { timeout: 15000 });
+  await settle(page);
   return res;
+}
+
+/** Hydrated, and streamed Suspense content has replaced the loading skeleton. */
+async function settle(page: Page) {
+  await page.waitForSelector('body[data-hydrated="1"]', { timeout: 15000 });
+  // A not-found page can leave one inert template behind; don't wait forever for it.
+  await page.waitForFunction(() => !document.querySelector('div[hidden][id^="S:"]'), null, { timeout: 3000 }).catch(() => {});
 }
 
 function tomorrow(): string {
@@ -56,7 +63,9 @@ test("1. CALLER registers a new DB (DRAFT)", async ({ browser }) => {
   await shot(page, "01-caller-home");
   await go(page, "/leads/new");
   await page.fill("#company_name", "QA테스트기업(주)");
-  await page.fill("#region", "경기 수원시");
+  // Pasting the full address fills 지역 automatically.
+  await page.fill("#address", "경기도 수원시 영통구 광교로 147, 3층");
+  await expect(page.locator("#region")).toHaveValue("경기 수원시");
   await page.fill("#industry", "정밀 부품 제조");
   await page.fill("#meeting_date", tomorrow());
   await page.fill("#meeting_time", "14:30");
@@ -132,11 +141,12 @@ test("3. Two consultants click 신청 simultaneously — exactly one wins", asyn
   await shot(loser, "07-consultant-claim-lost");
   await expect(winner.getByTestId("contact-phone")).toContainText("010-5555-1234");
   await expect(winner.getByTestId("caution")).toContainText("오후 2시");
+  await expect(winner.getByRole("main").getByTestId("address-text")).toHaveText("경기도 수원시 영통구 광교로 147, 3층");
   await shot(winner, "08-consultant-claim-won");
 
   // Loser reloads: sees assigned status, no private info, no report access.
   await loser.reload();
-  await loser.waitForSelector('body[data-hydrated="1"]');
+  await settle(loser);
   await expect(loser.getByText("배정 완료").first()).toBeVisible();
   await expect(loser.getByTestId("contact-phone")).toHaveCount(0);
   await go(loser, `/leads/${leadId}/report`);
@@ -329,7 +339,7 @@ test("10. Device View: PC / Mobile / PC+Mobile with route sync, no recursion", a
 
   // Persisted after reload
   await p.reload();
-  await p.waitForSelector('body[data-hydrated="1"]');
+  await settle(p);
   await expect(p.getByTestId("dual-view")).toBeVisible();
   const dualScroll = await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
   expect(dualScroll).toBe(true);
@@ -392,4 +402,98 @@ test("12. Demo mode on mobile 390: role bar fits without horizontal scroll", asy
   await expect(p.getByRole("heading", { name: /최민수 컨설턴트님/ })).toBeVisible();
   await shot(p, "m390-08-demo-bar", false);
   await ctx.close();
+});
+
+test("13. Address: copy address, copy meeting info, open in map apps", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.grantPermissions(["clipboard-read", "clipboard-write"]);
+  const p = await ctx.newPage();
+  await go(p, "/");
+  await p.getByTestId(`persona-${U.minsu}`).click();
+  await expect(p.getByRole("heading", { name: /최민수/ })).toBeVisible();
+  const sungjin = "30000000-0000-4000-8000-000000000006";
+  await go(p, `/leads/${sungjin}`);
+  const main = p.getByRole("main");
+  await expect(main.getByTestId("address-text")).toHaveText("서울 강남구 테헤란로 123");
+  await main.getByTestId("copy-address").click();
+  expect(await p.evaluate(() => navigator.clipboard.readText())).toBe("서울 강남구 테헤란로 123");
+  await main.getByTestId("copy-meeting-info").click();
+  const info = await p.evaluate(() => navigator.clipboard.readText());
+  expect(info).toContain("[미팅] 성진테크(주)");
+  expect(info).toContain("장소: 서울 강남구 테헤란로 123");
+  expect(info).toContain("010-3333-0006");
+  await expect(main.getByRole("link", { name: /카카오맵/ })).toHaveAttribute("href", /map\.kakao\.com\/link\/search\//);
+  await expect(main.getByRole("link", { name: /네이버지도/ })).toHaveAttribute("href", /map\.naver\.com\/p\/search\//);
+  expect(await p.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await main.getByTestId("meeting-address").scrollIntoViewIfNeeded();
+  await shot(p, "m390-09-address", false);
+
+  // Before claiming, another consultant sees neither the address nor the copy buttons.
+  await p.getByTestId(`persona-${U.jiyoung}`).click();
+  await expect(main.getByTestId("private-locked")).toBeVisible();
+  await expect(main.getByTestId("meeting-address")).toHaveCount(0);
+  await ctx.close();
+});
+
+test("14. Map view: pins for 수도권, others listed, tab kept when switching", async ({ browser }) => {
+  const p = await loginAs(browser, U.owner);
+  await go(p, "/leads?tab=all");
+  await p.getByTestId("view-map").click();
+  await p.waitForURL(/view=map/);
+  expect(new URL(p.url()).searchParams.get("tab")).toBe("all");
+  await expect(p.locator(".lf-pin").first()).toBeVisible();
+  const pins = await p.locator(".lf-pin").count();
+  expect(pins).toBeGreaterThanOrEqual(8);
+  await expect(p.getByTestId("map-outside")).toContainText("충북 청주시");
+  await p.locator(".leaflet-marker-icon").first().click({ force: true });
+  await expect(p.locator(".lf-popup-title")).toBeVisible();
+  await shot(p, "21-map-all", false);
+  // Switching tab keeps the map view.
+  await p.getByTestId("tab-open").click();
+  await p.waitForURL(/tab=open/);
+  expect(new URL(p.url()).searchParams.get("view")).toBe("map");
+  await expect(p.locator(".lf-pin").first()).toBeVisible();
+  // Popup link goes to the lead.
+  await p.locator(".leaflet-marker-icon").first().click({ force: true });
+  await p.locator(".lf-popup-link").click();
+  await p.waitForURL(/\/leads\/[0-9a-f-]{36}$/);
+  await p.context().close();
+});
+
+test("15. Theme: pick a color theme, it applies, persists, and reaches the mobile preview", async ({ browser }) => {
+  const p = await loginAs(browser, U.owner);
+  await p.getByTestId("theme-button").click();
+  await expect(p.getByTestId("theme-dialog")).toBeVisible();
+  // Dialog must be fully on screen (not trapped in the header).
+  const box = await p.getByRole("dialog").boundingBox();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  await shot(p, "22-theme-dialog", false);
+  await p.getByTestId("theme-deep-teal").click();
+  await expect(p.getByTestId("theme-dialog")).toHaveCount(0);
+  const primary = () => p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--theme-primary").trim());
+  expect(await primary()).toBe("#087a83");
+  await p.reload();
+  await settle(p);
+  expect(await primary()).toBe("#087a83");
+  await p.getByRole("tab", { name: "PC+Mobile" }).click();
+  const frameTheme = p.frameLocator('[data-testid="device-frame"] iframe').locator("html");
+  await expect(frameTheme).toHaveAttribute("data-theme", "deep-teal");
+  await shot(p, "23-theme-deep-teal-dual", false);
+  await p.getByRole("tab", { name: "PC", exact: true }).click();
+  // Back to default.
+  await p.getByTestId("theme-button").click();
+  await p.getByTestId("theme-navy").click();
+  expect(await primary()).toBe("#2563eb");
+  await p.context().close();
+});
+
+test("16. Mobile nav: tapped tab highlights immediately", async ({ browser }) => {
+  const p = await loginAs(browser, U.minsu, { width: 390, height: 844 });
+  for (const label of ["신청 가능", "후속조치", "홈"]) {
+    const t = Date.now();
+    await p.getByTestId("bottom-nav").getByText(label, { exact: true }).click();
+    await expect(p.getByTestId("bottom-nav").locator('a[aria-current="page"]')).toContainText(label, { timeout: 1000 });
+    expect(Date.now() - t).toBeLessThan(700);
+  }
+  await p.context().close();
 });

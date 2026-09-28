@@ -1,15 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { requireViewer, canCreateLead, isManager } from "@/lib/auth/session";
 import { withUser, toActionError } from "@/lib/db";
 import { messageFor } from "@/lib/errors";
 import { kstToDate } from "@/lib/time";
+import { regionFromAddress } from "@/lib/geo";
 import type { MeetingMethod, MeetingOutcome, MeetingResult, NextAction, ReactionLevel } from "@/lib/types";
 
 export interface ActionResult { ok: boolean; code?: string; message?: string; id?: string }
-export interface FormState { error?: string; fields?: Record<string, string> }
+/**
+ * `redirectTo` is followed by the client (router.push). A server-side redirect()
+ * from these form actions intermittently left the page stuck on "저장 중…" when the
+ * target sits under the (app) loading boundary (see DECISIONS D-16).
+ */
+export interface FormState { error?: string; redirectTo?: string }
 
 function str(fd: FormData, k: string): string {
   return String(fd.get(k) ?? "").trim();
@@ -32,11 +37,12 @@ export async function createLead(_prev: FormState, fd: FormData): Promise<FormSt
   if (!canCreateLead(viewer)) return { error: "DB를 등록할 권한이 없습니다." };
 
   const company = str(fd, "company_name");
-  const region = str(fd, "region");
+  const address = str(fd, "address");
+  const region = str(fd, "region") || (address && regionFromAddress(address)) || "";
   const date = str(fd, "meeting_date");
   const time = str(fd, "meeting_time");
   const method = str(fd, "meeting_method") as MeetingMethod;
-  if (!company || !region || !date || !time) return { error: "업체명, 지역, 미팅 날짜와 시간은 꼭 입력해 주세요." };
+  if (!company || !region || !date || !time) return { error: "업체명, 지역(또는 주소), 미팅 날짜와 시간은 꼭 입력해 주세요." };
   if (!["VISIT", "PHONE", "ONLINE"].includes(method)) return { error: "미팅 방식을 선택해 주세요." };
 
   let id = "";
@@ -48,8 +54,8 @@ export async function createLead(_prev: FormState, fd: FormData): Promise<FormSt
           ${str(fd, "public_summary") || null}, 'DRAFT', ${viewer.session.userId}, ${viewer.session.userId})
         returning id`;
       await tx`
-        insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, call_topic, interest_tags, concern_tags, contact_traits, meeting_reason, must_know, caution, extra_note)
-        values (${lead.id}, ${viewer.profile.organization_id}, ${str(fd, "contact_name") || null}, ${str(fd, "contact_title") || null}, ${str(fd, "contact_phone") || null},
+        insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, address, call_topic, interest_tags, concern_tags, contact_traits, meeting_reason, must_know, caution, extra_note)
+        values (${lead.id}, ${viewer.profile.organization_id}, ${str(fd, "contact_name") || null}, ${str(fd, "contact_title") || null}, ${str(fd, "contact_phone") || null}, ${address || null},
           ${str(fd, "call_topic") || null}, ${tags(fd, "interest_tags")}, ${tags(fd, "concern_tags")}, ${str(fd, "contact_traits") || null},
           ${str(fd, "meeting_reason") || null}, ${str(fd, "must_know") || null}, ${str(fd, "caution") || null}, ${str(fd, "extra_note") || null})`;
       await tx`select lf_log(${lead.id}, 'CREATE', null, 'DRAFT', ${JSON.stringify({ company_name: company })}::jsonb)`;
@@ -62,17 +68,18 @@ export async function createLead(_prev: FormState, fd: FormData): Promise<FormSt
     return { error: messageFor(toActionError(e).code) };
   }
   revalidateLead(id);
-  redirect(`/leads/${id}?created=1`);
+  return { redirectTo: `/leads/${id}?created=1` };
 }
 
 export async function updateLead(id: string, _prev: FormState, fd: FormData): Promise<FormState> {
   const viewer = await requireViewer();
   const company = str(fd, "company_name");
-  const region = str(fd, "region");
+  const address = str(fd, "address");
+  const region = str(fd, "region") || (address && regionFromAddress(address)) || "";
   const date = str(fd, "meeting_date");
   const time = str(fd, "meeting_time");
   const method = str(fd, "meeting_method") as MeetingMethod;
-  if (!company || !region || !date || !time) return { error: "업체명, 지역, 미팅 날짜와 시간은 꼭 입력해 주세요." };
+  if (!company || !region || !date || !time) return { error: "업체명, 지역(또는 주소), 미팅 날짜와 시간은 꼭 입력해 주세요." };
 
   try {
     await withUser(viewer.session.userId, async (tx) => {
@@ -86,7 +93,7 @@ export async function updateLead(id: string, _prev: FormState, fd: FormData): Pr
       if (rows.length === 0) throw new Error("FORBIDDEN");
       await tx`
         update lead_private_details set contact_name = ${str(fd, "contact_name") || null}, contact_title = ${str(fd, "contact_title") || null},
-          contact_phone = ${str(fd, "contact_phone") || null}, call_topic = ${str(fd, "call_topic") || null},
+          contact_phone = ${str(fd, "contact_phone") || null}, address = ${address || null}, call_topic = ${str(fd, "call_topic") || null},
           interest_tags = ${tags(fd, "interest_tags")}, concern_tags = ${tags(fd, "concern_tags")}, contact_traits = ${str(fd, "contact_traits") || null},
           meeting_reason = ${str(fd, "meeting_reason") || null}, must_know = ${str(fd, "must_know") || null}, caution = ${str(fd, "caution") || null},
           extra_note = ${str(fd, "extra_note") || null}
@@ -99,7 +106,7 @@ export async function updateLead(id: string, _prev: FormState, fd: FormData): Pr
     return { error: messageFor(toActionError(e).code) };
   }
   revalidateLead(id);
-  redirect(`/leads/${id}?updated=1`);
+  return { redirectTo: `/leads/${id}?updated=1` };
 }
 
 // ---------------------------------------------------------------- transitions

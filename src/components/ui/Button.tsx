@@ -4,9 +4,9 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "success";
 type Size = "md" | "lg" | "sm";
 
-const base = "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-base select-none whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px";
+const base = "press inline-flex items-center justify-center gap-2 rounded-xl font-semibold select-none whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(17,24,39,0.10)] disabled:hover:translate-y-0 disabled:hover:shadow-none";
 const variants: Record<Variant, string> = {
-  primary: "bg-primary text-white hover:bg-primary-strong shadow-[0_1px_2px_rgba(37,99,235,0.25)]",
+  primary: "bg-primary text-white hover:bg-primary-strong",
   secondary: "bg-white text-ink border border-line-strong hover:bg-soft hover:border-primary/40",
   ghost: "bg-transparent text-ink-2 hover:bg-neutral-bg",
   danger: "bg-white text-danger border border-danger/40 hover:bg-danger-bg",

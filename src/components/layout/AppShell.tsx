@@ -5,6 +5,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Home, Database, CalendarCheck, RefreshCw, History, Users, PlusCircle, MoreHorizontal, LogOut, X, Menu, Inbox } from "lucide-react";
 import { DeviceSwitch } from "./DeviceView";
+import { ThemePicker } from "./ThemePicker";
+import { NavProgress } from "./NavProgress";
 import { ROLE_LABEL } from "@/lib/labels";
 import type { MemberRole } from "@/lib/types";
 import { logout } from "@/lib/actions/auth";
@@ -56,16 +58,23 @@ export function AppShell({ user, children, demo = false, topBar }: { user: Shell
   const pathname = usePathname();
   const search = useSearchParams();
   const [drawer, setDrawer] = useState(false);
+  // Highlight the tapped tab immediately, before the server responds.
+  const [tapped, setTapped] = useState<string | null>(null);
   const nav = navFor(user.role);
   const all = [...nav.primary, ...nav.more];
-  useEffect(() => setDrawer(false), [pathname, search]);
+  useEffect(() => { setDrawer(false); setTapped(null); }, [pathname, search]);
   // A login form submitted from a scrolled page must not carry its scroll offset into the app.
   useEffect(() => window.scrollTo(0, 0), []);
 
-  const isActive = (item: NavItem) => item.match(pathname, search);
+  const isActive = (item: NavItem) => {
+    if (tapped) return tapped === item.href;
+    return item.match(pathname, search);
+  };
+  const tap = (href: string) => () => setTapped(href);
 
   return (
     <div className="flex min-h-dvh w-full bg-canvas">
+      <NavProgress />
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-[250px] shrink-0 flex-col bg-shell text-white lg:flex" data-testid="sidebar">
         <div className="px-5 pb-4 pt-6">
@@ -91,10 +100,13 @@ export function AppShell({ user, children, demo = false, topBar }: { user: Shell
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
+                onClick={tap(item.href)}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-12 items-center gap-3 rounded-xl px-3 text-[16px] font-semibold transition-base ${active ? "bg-white/12 text-white" : "text-[#e5e7eb] hover:bg-white/8 hover:text-white"}`}
+                className={`press group relative flex h-12 items-center gap-3 rounded-xl px-3 text-[16px] font-semibold ${active ? "bg-white/12 text-white" : "text-[#e5e7eb] hover:bg-white/8 hover:text-white"}`}
               >
-                <span className={`icon-tile ${item.tile}`}>{item.icon}</span>
+                <span className={`absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-white transition-all duration-200 ${active ? "opacity-100" : "opacity-0"}`} />
+                <span className={`icon-tile ${item.tile} transition-transform duration-200 group-hover:scale-110`}>{item.icon}</span>
                 {item.label}
               </Link>
             );
@@ -121,19 +133,20 @@ export function AppShell({ user, children, demo = false, topBar }: { user: Shell
       <div className="flex min-w-0 flex-1 flex-col">
         {topBar}
         {/* Top header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-white/95 px-4 backdrop-blur lg:h-[68px] lg:px-8">
+        <header className="@container/header sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-white/95 px-4 backdrop-blur lg:h-[68px] lg:px-8">
           <div className="flex items-center gap-2.5 lg:hidden">
             <Link href="/" className="flex items-center gap-2">
               <Logo size={30} />
               <span className="text-[18px] font-extrabold tracking-tight text-ink">리드플로우</span>
             </Link>
           </div>
-          <div className="hidden items-center gap-2 lg:flex">
-            <span className="text-[15px] font-semibold text-ink-2">{user.orgName}</span>
+          <div className="hidden min-w-0 items-center gap-2 lg:flex">
+            <span className="truncate whitespace-nowrap text-[15px] font-semibold text-ink-2">{user.orgName}</span>
           </div>
           <div className="flex items-center gap-2">
+            <ThemePicker />
             <DeviceSwitch />
-            <div className="hidden items-center gap-2 rounded-xl border border-line bg-white py-1.5 pl-1.5 pr-3 lg:flex">
+            <div className="hidden items-center gap-2 whitespace-nowrap rounded-xl border border-line bg-white py-1.5 pl-1.5 pr-3 @4xl/header:flex">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-soft text-[14px] font-bold text-primary">{user.name.slice(0, 1)}</span>
               <span className="text-[15px] font-semibold text-ink">{user.name} <span className="text-ink-3">{ROLE_LABEL[user.role]}</span></span>
             </div>
@@ -151,13 +164,14 @@ export function AppShell({ user, children, demo = false, topBar }: { user: Shell
         {nav.primary.slice(0, 4).map((item) => {
           const active = isActive(item);
           return (
-            <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`flex h-[64px] flex-col items-center justify-center gap-0.5 text-[12.5px] font-semibold ${active ? "text-primary" : "text-ink-2"}`}>
-              {item.icon}
+            <Link key={item.href} href={item.href} prefetch onClick={tap(item.href)} aria-current={active ? "page" : undefined} className={`press relative flex h-[64px] flex-col items-center justify-center gap-0.5 text-[12.5px] font-semibold ${active ? "text-primary" : "text-ink-2"}`}>
+              <span className={`absolute top-0 h-[3px] w-10 rounded-b-full bg-primary transition-all duration-200 ${active ? "opacity-100" : "scale-x-0 opacity-0"}`} />
+              <span className={`transition-transform duration-200 ${active ? "-translate-y-0.5" : ""}`}>{item.icon}</span>
               <span>{item.label.replace(" DB", "").replace("관리", "")}</span>
             </Link>
           );
         })}
-        <button type="button" onClick={() => setDrawer(true)} className="flex h-[64px] flex-col items-center justify-center gap-0.5 text-[12.5px] font-semibold text-ink-2">
+        <button type="button" onClick={() => setDrawer(true)} className="press flex h-[64px] flex-col items-center justify-center gap-0.5 text-[12.5px] font-semibold text-ink-2">
           <MoreHorizontal size={20} />
           <span>더보기</span>
         </button>
@@ -189,6 +203,7 @@ export function AppShell({ user, children, demo = false, topBar }: { user: Shell
                   {item.label}
                 </Link>
               ))}
+              <ThemePicker variant="row" onPicked={() => setDrawer(false)} />
               {!demo && (
                 <form action={logout}>
                   <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 text-[16px] font-semibold text-ink-2 hover:bg-neutral-bg" style={{ height: 52 }}>

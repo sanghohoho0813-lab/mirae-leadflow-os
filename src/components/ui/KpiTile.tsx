@@ -40,9 +40,9 @@ export function KpiTile({ label, value, tone = "info", icon, href, sub, emphasis
   const shown = useCountUp(value);
   const s = toneStyle[tone];
   const inner = (
-    <div className={`flex h-full flex-col gap-2 rounded-2xl border p-4 transition-base ${s.bg} ${href ? "hover:-translate-y-0.5 hover:shadow-card" : ""} ${emphasis && value > 0 ? "ring-2 ring-danger/50" : ""}`} data-testid={testId}>
+    <div className={`group flex h-full flex-col gap-2 rounded-2xl border p-4 ${s.bg} ${href ? "lift press" : ""} ${emphasis && value > 0 ? "ring-2 ring-danger/50" : ""}`} data-testid={testId}>
       <div className="flex items-center gap-2.5">
-        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${s.icon}`}>{icon}</span>
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110 ${s.icon}`}>{icon}</span>
         <span className={`text-[16px] font-semibold ${s.text}`}>{label}</span>
       </div>
       <div className="flex items-baseline gap-1">

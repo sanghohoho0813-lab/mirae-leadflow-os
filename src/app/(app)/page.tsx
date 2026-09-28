@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Map as MapIcon } from "lucide-react";
 import { Database, Clock, CalendarCheck, AlertCircle, RefreshCw, Inbox, AlarmClock, PlusCircle, ChevronRight, Sparkles } from "lucide-react";
 import { requireViewer, isManager } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
@@ -68,7 +69,7 @@ export default async function HomePage() {
           </Card>
 
           <Card className="fade-up-2">
-            <CardHeader icon={<CalendarCheck size={20} />} title="오늘의 미팅" count={d.todayMeetings.length} href="/leads?tab=today" />
+            <CardHeader icon={<CalendarCheck size={20} />} title="오늘의 미팅" count={d.todayMeetings.length} right={<MapLink href="/leads?tab=today&view=map" />} href="/leads?tab=today" />
             <CardBody><LeadList leads={d.todayMeetings} emptyText="오늘 예정된 미팅이 없습니다." /></CardBody>
           </Card>
 
@@ -184,12 +185,20 @@ export default async function HomePage() {
           <CardBody><LeadList leads={d.upcoming} emptyText="예정된 미팅이 없습니다. 신청 가능한 DB를 확인해 보세요." showAssignee={false} /></CardBody>
         </Card>
         <Card className="fade-up-3" tone="soft">
-          <CardHeader icon={<Sparkles size={20} />} title="신청 가능한 DB" count={c.open} href="/leads?tab=open" hrefLabel="모두 보기" />
+          <CardHeader icon={<Sparkles size={20} />} title="신청 가능한 DB" count={c.open} right={<MapLink href="/leads?tab=open&view=map" />} href="/leads?tab=open" hrefLabel="모두 보기" />
           <CardBody>
             <LeadList leads={d.open} emptyText="지금은 신청 가능한 DB가 없습니다. 단장님이 공개하면 여기에 나타납니다." showAssignee={false} />
           </CardBody>
         </Card>
       </div>
     </div>
+  );
+}
+
+function MapLink({ href }: { href: string }) {
+  return (
+    <Link href={href} className="press ml-auto mr-2 inline-flex h-9 items-center gap-1 rounded-lg border border-line px-2.5 text-[14px] font-semibold text-ink-2 hover:border-primary/40 hover:text-primary">
+      <MapIcon size={15} /> 지도
+    </Link>
   );
 }

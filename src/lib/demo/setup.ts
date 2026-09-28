@@ -2,12 +2,16 @@ import { withService } from "@/lib/db";
 import { ORG_ID, seedDemo } from "./seed";
 import shimSql from "../../../supabase/local/0000_supabase_shim.sql";
 import initSql from "../../../supabase/migrations/0001_init.sql";
+import addressSql from "../../../supabase/migrations/0002_lead_address.sql";
 
 // Bundled as strings (webpack asset/source) so they exist on Vercel.
 // Names match scripts/migrate.mjs so both record into the same _migrations table.
 // Add new migration files here as well as in supabase/migrations/.
 const SHIM = { name: "supabase/local/0000_supabase_shim.sql", sql: shimSql };
-const MIGRATIONS = [{ name: "supabase/migrations/0001_init.sql", sql: initSql }];
+const MIGRATIONS = [
+  { name: "supabase/migrations/0001_init.sql", sql: initSql },
+  { name: "supabase/migrations/0002_lead_address.sql", sql: addressSql },
+];
 
 // Same check as the shim, re-run on every start so a DB set up by an older
 // shim (without the PG16 SET grant) repairs itself.

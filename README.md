@@ -3,6 +3,7 @@
 컨설팅 사업단의 **DB 배정 → 선착순 신청 → 미팅 → 결과보고 → 후속관리**를 카카오톡 대신 한 화면에서 운영하는 시스템.
 
 - 문서: [MVP_SPEC.md](MVP_SPEC.md) · [DECISIONS.md](DECISIONS.md) · [MVP_STATE.md](MVP_STATE.md) · [QA_REPORT.md](QA_REPORT.md)
+- 주요 기능: 선착순 신청(원자 처리) · 클릭형 결과 입력 · 후속조치 · 결과 미입력 대시보드 · **미팅 주소 복사/지도앱 열기** · **서울·경기 지도 보기** · **9가지 화면 색상** · PC/Mobile 동시 미리보기
 - 스택: Next.js 15 (App Router) · TypeScript · Tailwind 4 · PostgreSQL/Supabase (Auth + RLS) · Vercel
 
 ## 지금 바로 써보기 — 체험 모드 (로그인 없음)

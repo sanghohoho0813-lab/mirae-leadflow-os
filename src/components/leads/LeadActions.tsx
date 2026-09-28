@@ -46,8 +46,10 @@ export function ClaimButton({ id }: { id: string }) {
   return (
     <Button size="lg" className="w-full text-[19px]" disabled={pending} data-testid="claim-button" onClick={() => start(async () => {
       const r = await claimLead(id);
-      if (r.ok) { router.replace(`/leads/${id}?claimed=1`); router.refresh(); }
-      else if (r.code === "ALREADY_ASSIGNED" || r.code === "NOT_OPEN") { setLost(r.message ?? "이미 배정되었습니다."); router.replace(`/leads/${id}?lost=1`); router.refresh(); }
+      // replace() alone refetches (the action revalidated this path); adding refresh()
+      // races with it under the loading boundary and can leave the page stuck.
+      if (r.ok) { router.replace(`/leads/${id}?claimed=1`); }
+      else if (r.code === "ALREADY_ASSIGNED" || r.code === "NOT_OPEN") { setLost(r.message ?? "이미 배정되었습니다."); router.replace(`/leads/${id}?lost=1`); }
       else toast("error", r.message ?? "실패했습니다.");
     })}>
       <Hand size={22} /> {pending ? "신청 중…" : "이 미팅 신청하기"}

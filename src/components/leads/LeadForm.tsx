@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
 import { Field, Input, Textarea } from "@/components/ui/Field";
 import { ChoiceGroup, TagPicker } from "@/components/ui/Choice";
@@ -9,6 +10,7 @@ import { INTEREST_TAG_OPTIONS, CONCERN_TAG_OPTIONS } from "@/lib/labels";
 import type { FormState } from "@/lib/actions/leads";
 import type { LeadPrivateDetails, Lead, MeetingMethod } from "@/lib/types";
 import { kstDateString, kstTimeString } from "@/lib/time";
+import { regionFromAddress } from "@/lib/geo";
 
 interface Props {
   action: (prev: FormState, fd: FormData) => Promise<FormState>;
@@ -21,9 +23,20 @@ interface Props {
 
 export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submitLabel }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
+  const router = useRouter();
+  useEffect(() => { if (state.redirectTo) router.push(state.redirectTo); }, [state, router]);
+  const busy = pending || Boolean(state.redirectTo);
   const [method, setMethod] = useState<MeetingMethod>(lead?.meeting_method ?? "VISIT");
   const [interest, setInterest] = useState<string[]>(priv?.interest_tags ?? []);
   const [concern, setConcern] = useState<string[]>(priv?.concern_tags ?? []);
+  const [region, setRegion] = useState(lead?.region ?? "");
+  // Region follows the pasted address until the user edits it by hand.
+  const regionTouched = useRef(Boolean(lead?.region));
+  const onAddress = (value: string) => {
+    if (regionTouched.current) return;
+    const r = regionFromAddress(value);
+    if (r) setRegion(r);
+  };
 
   return (
     <form action={formAction} className="grid gap-5">
@@ -32,7 +45,9 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
         <p className="mb-4 text-[15px] text-ink-2">컨설턴트에게 <b>신청 전에도 공개</b>되는 정보입니다.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="업체명" required htmlFor="company_name"><Input id="company_name" name="company_name" defaultValue={lead?.company_name} placeholder="예: 성진테크(주)" required autoFocus /></Field>
-          <Field label="지역" required htmlFor="region"><Input id="region" name="region" defaultValue={lead?.region} placeholder="예: 서울 강남구" required /></Field>
+          <Field label="지역" required htmlFor="region" hint="아래 ‘미팅 장소 주소’를 붙여넣으면 자동으로 채워집니다.">
+            <Input id="region" name="region" value={region} onChange={(e) => { regionTouched.current = true; setRegion(e.target.value); }} placeholder="예: 서울 강남구" required />
+          </Field>
           <Field label="업종" htmlFor="industry"><Input id="industry" name="industry" defaultValue={lead?.industry ?? ""} placeholder="예: 자동차 부품 제조" /></Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="미팅 날짜" required htmlFor="meeting_date"><Input id="meeting_date" name="meeting_date" type="date" defaultValue={lead ? kstDateString(lead.meeting_at) : ""} required /></Field>
@@ -53,8 +68,13 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
       </section>
 
       <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-1 text-[19px] font-bold text-ink">2. 미팅 상대방</h2>
-        <p className="mb-4 text-[15px] text-ink-2"><b>배정된 담당자와 운영진에게만</b> 공개됩니다.</p>
+        <h2 className="mb-1 text-[19px] font-bold text-ink">2. 미팅 장소 · 상대방</h2>
+        <p className="mb-4 text-[15px] text-ink-2"><b>배정된 담당자와 운영진에게만</b> 공개됩니다. 담당자는 주소를 한 번에 복사하거나 지도앱으로 바로 열 수 있습니다.</p>
+        <div className="mb-4">
+          <Field label="미팅 장소 주소" htmlFor="address" hint="네이버·카카오 지도에서 복사한 주소를 그대로 붙여넣어도 됩니다.">
+            <Input id="address" name="address" defaultValue={priv?.address ?? ""} onChange={(e) => onAddress(e.target.value)} placeholder="예: 서울 강남구 테헤란로 123, 5층" autoComplete="street-address" />
+          </Field>
+        </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="이름" htmlFor="contact_name"><Input id="contact_name" name="contact_name" defaultValue={priv?.contact_name ?? ""} placeholder="예: 이명수" /></Field>
           <Field label="직책" htmlFor="contact_title"><Input id="contact_title" name="contact_title" defaultValue={priv?.contact_title ?? ""} placeholder="예: 대표" /></Field>
@@ -87,7 +107,7 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
 
       <div className="sticky bottom-[72px] z-10 flex gap-2 rounded-2xl border border-line bg-white/95 p-3 shadow-card backdrop-blur lg:bottom-4">
         <LinkButton href={cancelHref} variant="secondary" size="lg" className="flex-1">취소</LinkButton>
-        <Button type="submit" size="lg" className="flex-[2]" disabled={pending} data-testid="lead-submit"><Save size={20} /> {pending ? "저장 중…" : submitLabel}</Button>
+        <Button type="submit" size="lg" className="flex-[2]" disabled={busy} data-testid="lead-submit"><Save size={20} /> {busy ? "저장 중…" : submitLabel}</Button>
       </div>
     </form>
   );

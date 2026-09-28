@@ -40,6 +40,15 @@ function kstDay(dayOffset: number): string {
 }
 
 const U = USERS;
+
+// Fictional companies at plausible street addresses.
+const ADDRESS: Record<number, string> = {
+  1: "경기 화성시 동탄산단8길 15", 2: "경기 성남시 중원구 둔촌대로 388", 3: "인천 남동구 남동서로 173",
+  4: "서울 금천구 가산디지털1로 145", 5: "경기 안산시 단원구 산단로 67", 6: "서울 강남구 테헤란로 123",
+  7: "경기 성남시 분당구 판교로 256", 8: "인천 부평구 부평대로 283", 9: "경기 안산시 단원구 강촌로 211",
+  10: "충북 청주시 흥덕구 오송생명로 181", 11: "경기 시흥시 공단1대로 204", 12: "경기 김포시 양촌읍 황금로 109",
+  13: "부산 사상구 새벽로 215", 14: "대구 서구 국채보상로 97", 15: "서울 구로구 디지털로 300",
+};
 const L = (id: number) => `30000000-0000-4000-8000-0000000000${String(id).padStart(2, "0")}`;
 
 const leads = (): LeadSeed[] => [
@@ -146,8 +155,8 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
       values (${l.id}, ${ORG_ID}, ${l.company}, ${l.region}, ${l.industry}, ${l.at}, ${l.method}, ${l.summary}, ${l.status}, ${U.caller.id}, ${U.caller.id},
         ${assigned}, ${assignedAt}, ${published},
         ${["CLOSED", "CANCELLED"].includes(l.status) ? new Date() : null}, ${l.cancelReason ?? null}, ${createdAt})`;
-    await tx`insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, call_topic, interest_tags, concern_tags, contact_traits, meeting_reason, must_know, caution)
-      values (${l.id}, ${ORG_ID}, ${l.contact[0]}, ${l.contact[1]}, ${l.contact[2]}, ${l.topic}, ${l.interest}, ${l.concern}, ${l.traits}, ${l.reason}, ${l.mustKnow}, ${l.caution})`;
+    await tx`insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, address, call_topic, interest_tags, concern_tags, contact_traits, meeting_reason, must_know, caution)
+      values (${l.id}, ${ORG_ID}, ${l.contact[0]}, ${l.contact[1]}, ${l.contact[2]}, ${ADDRESS[Number(l.id.slice(-2))] ?? null}, ${l.topic}, ${l.interest}, ${l.concern}, ${l.traits}, ${l.reason}, ${l.mustKnow}, ${l.caution})`;
     await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, to_status, created_at) values (${ORG_ID}, ${l.id}, ${U.caller.id}, 'CREATE', 'DRAFT', ${createdAt})`;
     if (published) {
       await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, from_status, to_status, created_at) values (${ORG_ID}, ${l.id}, ${U.owner.id}, 'PUBLISH', 'DRAFT', 'OPEN', ${published})`;

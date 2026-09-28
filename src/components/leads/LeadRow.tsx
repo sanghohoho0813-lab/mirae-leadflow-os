@@ -19,7 +19,7 @@ export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now 
   return (
     <Link
       href={`/leads/${lead.id}`}
-      className={`group flex items-center gap-3 rounded-2xl border bg-white px-4 py-3.5 transition-base hover:-translate-y-px hover:border-primary/40 hover:shadow-card ${lead.needs_report ? "border-danger/30" : "border-line"} ${isCancelled ? "opacity-60" : ""}`}
+      className={`lift press group flex items-center gap-3 rounded-2xl border bg-white px-4 py-3.5 ${lead.needs_report ? "border-danger/30" : "border-line"} ${isCancelled ? "opacity-60" : ""}`}
       data-testid={`lead-row-${lead.id}`}
     >
       <div className={`hidden w-[76px] shrink-0 flex-col items-center rounded-xl py-2 sm:flex ${rel.diff === 0 ? "bg-soft text-primary" : lead.needs_report ? "bg-danger-bg text-danger" : "bg-neutral-bg text-ink-2"}`}>
@@ -44,7 +44,7 @@ export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now 
         </div>
         {lead.public_summary && <p className="mt-1 truncate text-[15px] text-ink-3">{lead.public_summary}</p>}
       </div>
-      <ChevronRight size={20} className="shrink-0 text-ink-3 group-hover:text-primary" />
+      <ChevronRight size={20} className="shrink-0 text-ink-3 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />
     </Link>
   );
 }
@@ -52,7 +52,7 @@ export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now 
 export function LeadList({ leads, emptyText, showAssignee, now }: { leads: LeadListItem[]; emptyText: string; showAssignee?: boolean; now?: Date }) {
   if (leads.length === 0) return <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-[16px] text-ink-3">{emptyText}</p>;
   return (
-    <div className="grid gap-2">
+    <div className="stagger grid gap-2">
       {leads.map((l) => <LeadRow key={l.id} lead={l} showAssignee={showAssignee} now={now} />)}
     </div>
   );

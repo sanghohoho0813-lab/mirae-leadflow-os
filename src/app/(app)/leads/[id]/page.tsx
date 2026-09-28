@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { MapPin, Clock, Building2, User, Lock, Phone, FileText, MessageSquare, History, ClipboardList, Users, AlertTriangle, Sparkles, ThumbsDown } from "lucide-react";
+import { MapPin, Clock, Building2, User, Lock, Phone, FileText, MessageSquare, History, ClipboardList, Users, AlertTriangle, Sparkles, ThumbsDown, Navigation, ClipboardCopy } from "lucide-react";
+import { CopyButton } from "@/components/ui/CopyButton";
+import { kakaoMapUrl, naverMapUrl } from "@/lib/geo";
 import { requireViewer, isManager } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
 import { getLead, getLeadAssignments, getLeadFollowUps, getLeadLogs, getLeadPrivate, getLeadReports, listConsultants } from "@/lib/queries";
@@ -86,8 +88,31 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           {/* Private details */}
           {priv ? (
             <Card className="fade-up-2" testId="private-details">
-              <CardHeader icon={<FileText size={20} />} title="담당자 · 콜 메모" right={<Badge tone="info">담당자·운영진만 열람</Badge>} />
+              <CardHeader icon={<FileText size={20} />} title="미팅 준비 정보" right={<Badge tone="info">담당자·운영진만 열람</Badge>} />
               <CardBody className="grid gap-4">
+                <div className="rounded-xl border border-primary/25 bg-soft/60 px-4 py-3.5" data-testid="meeting-address">
+                  <div className="mb-1 flex items-center gap-1.5 text-[14px] font-semibold text-ink-2"><MapPin size={15} /> 미팅 장소</div>
+                  {priv.address ? (
+                    <>
+                      <p className="mb-3 select-all text-[18px] font-bold leading-snug text-ink" data-testid="address-text">{priv.address}</p>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        <CopyButton text={priv.address} label="주소 복사" done="주소를 복사했습니다" testId="copy-address" className="col-span-2 sm:col-span-1" />
+                        <a href={kakaoMapUrl(priv.address)} target="_blank" rel="noopener noreferrer" className="press inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#FEE500] px-3 text-[15px] font-semibold text-[#191919] hover:brightness-95"><Navigation size={16} /> 카카오맵</a>
+                        <a href={naverMapUrl(priv.address)} target="_blank" rel="noopener noreferrer" className="press inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#03C75A] px-3 text-[15px] font-semibold text-white hover:brightness-95"><Navigation size={16} /> 네이버지도</a>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-[16px] text-ink-2">{lead.region} · 상세 주소 미입력</p>
+                  )}
+                </div>
+                <CopyButton
+                  text={meetingInfoText({ company: lead.company_name, when: `${fmtDateTime(lead.meeting_at)} · ${METHOD_LABEL[lead.meeting_method]}`, address: priv.address ?? lead.region, contact: [priv.contact_name, priv.contact_title, priv.contact_phone].filter(Boolean).join(" "), caution: priv.caution, mustKnow: priv.must_know })}
+                  label="미팅 정보 전체 복사"
+                  done="미팅 정보를 복사했습니다. 카톡에 그대로 붙여넣으세요"
+                  icon={<ClipboardCopy size={17} />}
+                  className="w-full"
+                  testId="copy-meeting-info"
+                />
                 <div className="grid gap-2 sm:grid-cols-3">
                   <Info label="미팅 상대" value={[priv.contact_name, priv.contact_title].filter(Boolean).join(" ") || "-"} />
                   <Info label="연락처" value={priv.contact_phone ? <a href={`tel:${priv.contact_phone.replace(/[^0-9+]/g, "")}`} className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"><Phone size={16} />{priv.contact_phone}</a> : "-"} testId="contact-phone" />
@@ -202,4 +227,15 @@ function MemoBlock({ label, value }: { label: string; value: string | null }) {
       <p className="whitespace-pre-wrap rounded-xl border border-line bg-white px-4 py-3 text-[16px] leading-relaxed text-ink">{value}</p>
     </div>
   );
+}
+
+function meetingInfoText(m: { company: string; when: string; address: string; contact: string; caution: string | null; mustKnow: string | null }): string {
+  return [
+    `[미팅] ${m.company}`,
+    `일시: ${m.when}`,
+    `장소: ${m.address}`,
+    m.contact && `상대: ${m.contact}`,
+    m.mustKnow && `참고: ${m.mustKnow}`,
+    m.caution && `주의: ${m.caution}`,
+  ].filter(Boolean).join("\n");
 }

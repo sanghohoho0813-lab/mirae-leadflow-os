@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export function Dialog({ open, onClose, title, children, testId }: { open: boolean; onClose: () => void; title: string; children: ReactNode; testId?: string }) {
@@ -11,8 +12,10 @@ export function Dialog({ open, onClose, title, children, testId }: { open: boole
     document.body.style.overflow = "hidden";
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
   }, [open, onClose]);
-  if (!open) return null;
-  return (
+  if (!open || typeof document === "undefined") return null;
+  // Portal to <body>: blurred/transformed ancestors (e.g. the sticky header) would
+  // otherwise trap `position: fixed` and clip the dialog.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/45 p-0 sm:items-center sm:p-4" onClick={onClose} data-testid={testId}>
       <div
         role="dialog"
@@ -29,6 +32,7 @@ export function Dialog({ open, onClose, title, children, testId }: { open: boole
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

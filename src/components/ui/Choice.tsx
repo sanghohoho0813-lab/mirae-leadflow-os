@@ -20,7 +20,7 @@ export function ChoiceGroup<T extends string>({ name, options, value, onChange, 
             role="radio"
             aria-checked={active}
             onClick={() => onChange(o.value)}
-            className={`flex min-h-[52px] items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-2 text-[16px] font-semibold transition-base active:scale-[0.98] ${
+            className={`press flex min-h-[52px] items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-2 text-[16px] font-semibold ${
               active ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink hover:border-primary/40"
             }`}
           >
