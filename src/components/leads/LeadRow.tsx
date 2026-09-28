@@ -1,16 +1,10 @@
 import Link from "next/link";
-import { ChevronRight, MapPin, Clock, User, Phone, Video, Building2 } from "lucide-react";
+import { ChevronRight, MapPin, Clock, User, Building2 } from "lucide-react";
 import { StatusBadge, Badge } from "@/components/ui/Badge";
-import { METHOD_LABEL, NEXT_ACTION_LABEL } from "@/lib/labels";
+import { NEXT_ACTION_LABEL } from "@/lib/labels";
 import { fmtShortDate, fmtTime, relativeDay, daysSince } from "@/lib/time";
 import type { LeadListItem } from "@/lib/types";
 import { QuickClaim } from "./LeadActions";
-
-export function MethodIcon({ method, size = 15 }: { method: LeadListItem["meeting_method"]; size?: number }) {
-  if (method === "PHONE") return <Phone size={size} />;
-  if (method === "ONLINE") return <Video size={size} />;
-  return <Building2 size={size} />;
-}
 
 /** One lead as a large tappable card row (works in table-like lists and mobile). */
 export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now = new Date() }: { lead: LeadListItem; showAssignee?: boolean; emphasizeTime?: boolean; now?: Date }) {
@@ -40,7 +34,7 @@ export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now 
           <span className={`inline-flex items-center gap-1 sm:hidden ${emphasizeTime ? "font-semibold text-ink" : ""}`}><Clock size={14} /> {fmtShortDate(lead.meeting_at)} {fmtTime(lead.meeting_at)}</span>
           <span className="hidden items-center gap-1 sm:inline-flex"><Clock size={14} /> {fmtShortDate(lead.meeting_at)}</span>
           <span className="inline-flex items-center gap-1"><MapPin size={14} /> {lead.region}</span>
-          <span className="inline-flex items-center gap-1"><MethodIcon method={lead.meeting_method} size={14} /> {METHOD_LABEL[lead.meeting_method]}</span>
+          {lead.industry && <span className="inline-flex min-w-0 items-center gap-1"><Building2 size={14} /> <span className="truncate">{lead.industry}</span></span>}
           {showAssignee && lead.assignee_name && <span className="inline-flex items-center gap-1 font-medium text-ink"><User size={14} /> {lead.assignee_name}</span>}
         </div>
         {lead.public_summary && <p className="mt-1 truncate text-[0.9375rem] text-ink-3">{lead.public_summary}</p>}

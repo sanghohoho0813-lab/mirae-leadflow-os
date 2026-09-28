@@ -39,7 +39,10 @@ export function ensureDemoReady(): Promise<void> {
 }
 
 async function prepare() {
+  const t0 = Date.now();
+  const marks: string[] = [];
   await withService(async (tx) => {
+    marks.push(`connect ${Date.now() - t0}ms`);
     await tx`select pg_advisory_xact_lock(727001)`;
     await tx`create table if not exists _migrations (name text primary key, applied_at timestamptz not null default now())`;
     const [{ has_auth }] = await tx<{ has_auth: boolean }[]>`select exists(select 1 from pg_namespace where nspname = 'auth') as has_auth`;
@@ -50,10 +53,13 @@ async function prepare() {
       await tx.unsafe(f.sql);
       await tx`insert into _migrations(name) values (${f.name})`;
     }
+    marks.push(`schema ${Date.now() - t0}ms`);
     await tx.unsafe(ENSURE_SET_ROLE);
     const [{ n }] = await tx<{ n: number }[]>`select count(*)::int as n from organizations where id = ${ORG_ID}`;
-    if (n === 0) await seedDemo(tx);
+    if (n === 0) { await seedDemo(tx); marks.push(`seed ${Date.now() - t0}ms`); }
   });
+  // One line per server start: shows in Vercel → Logs how long a cold start took.
+  console.log(`[demo] ready in ${Date.now() - t0}ms (${marks.join(", ")})`);
 }
 
 /** Restores all demo data (dates re-anchored to today). */

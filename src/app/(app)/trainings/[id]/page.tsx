@@ -57,6 +57,30 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
+      {/* 자료 */}
+      <section className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card">
+        <h2 className="mb-3 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><Paperclip size={20} className="text-primary" /> 교육 자료 <span className="text-[1rem] font-semibold text-ink-3">{files.length + t.links.length}개</span></h2>
+        {files.length + t.links.length === 0 ? (
+          <p className="text-[1rem] text-ink-3">올라온 자료가 없습니다.{canEdit ? " [수정]에서 PPT·PDF·녹음 파일을 올릴 수 있습니다." : ""}</p>
+        ) : (
+          <ul className="grid gap-2">
+            {files.map((f) => <FileRow key={f.id} f={f} trainingId={t.id} canDelete={canEdit} />)}
+            {t.links.map((l, i) => (
+              <li key={i}>
+                <a href={l.url} target="_blank" rel="noopener noreferrer" className="lift flex items-center gap-3 rounded-xl border border-line bg-white p-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-soft text-primary"><Link2 size={20} /></span>
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block truncate text-[1rem] font-semibold text-ink">{l.label || "링크"}</span>
+                    <span className="block truncate text-[0.875rem] text-ink-3">{l.url}</span>
+                  </span>
+                  <ExternalLink size={18} className="shrink-0 text-ink-3" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       {/* 핵심 정리 */}
       <section className="mb-5 overflow-hidden rounded-2xl border border-line bg-white shadow-card" data-testid="training-summary">
         <header className="flex flex-wrap items-center justify-between gap-2 bg-shell px-5 py-4 text-white">
@@ -121,30 +145,6 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
               <p className="text-[1rem] text-ink-2">아직 요약이 없습니다. 교육이 끝나면 단장·본부장님이 자료와 함께 올려 드립니다.</p>
             )}
           </div>
-        )}
-      </section>
-
-      {/* 자료 */}
-      <section className="mb-5 rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-3 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><Paperclip size={20} className="text-primary" /> 교육 자료 <span className="text-[1rem] font-semibold text-ink-3">{files.length + t.links.length}개</span></h2>
-        {files.length + t.links.length === 0 ? (
-          <p className="text-[1rem] text-ink-3">올라온 자료가 없습니다.</p>
-        ) : (
-          <ul className="grid gap-2">
-            {files.map((f) => <FileRow key={f.id} f={f} trainingId={t.id} canDelete={canEdit} />)}
-            {t.links.map((l, i) => (
-              <li key={i}>
-                <a href={l.url} target="_blank" rel="noopener noreferrer" className="lift flex items-center gap-3 rounded-xl border border-line bg-white p-3">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-soft text-primary"><Link2 size={20} /></span>
-                  <span className="min-w-0 flex-1 leading-tight">
-                    <span className="block truncate text-[1rem] font-semibold text-ink">{l.label || "링크"}</span>
-                    <span className="block truncate text-[0.875rem] text-ink-3">{l.url}</span>
-                  </span>
-                  <ExternalLink size={18} className="shrink-0 text-ink-3" />
-                </a>
-              </li>
-            ))}
-          </ul>
         )}
       </section>
 

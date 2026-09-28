@@ -6,7 +6,8 @@ import { withUser, toActionError } from "@/lib/db";
 import { messageFor } from "@/lib/errors";
 import { kstToDate } from "@/lib/time";
 import { regionFromAddress } from "@/lib/geo";
-import type { MeetingMethod, MeetingOutcome, MeetingResult, NextAction, ReactionLevel } from "@/lib/types";
+import { publicSummaryOf } from "@/lib/labels";
+import type { MeetingOutcome, MeetingResult, NextAction, ReactionLevel } from "@/lib/types";
 
 export interface ActionResult { ok: boolean; code?: string; message?: string; id?: string }
 /**
@@ -32,33 +33,47 @@ function revalidateLead(id?: string) {
 }
 
 // ---------------------------------------------------------------- create / update
+/** The simple form: 업체 · 업종 · 장소 · 일시 · 만나는 분 · 관심 분야 · 코멘트. Every meeting is a visit. */
+function readLeadForm(fd: FormData) {
+  const address = str(fd, "address");
+  const interest = [...new Set(tags(fd, "interest_tags").map((t) => t.slice(0, 20)))].slice(0, 15);
+  const industry = str(fd, "industry").slice(0, 60) || null;
+  return {
+    company: str(fd, "company_name").slice(0, 80),
+    address,
+    region: str(fd, "region") || (address && regionFromAddress(address)) || "",
+    industry,
+    date: str(fd, "meeting_date"),
+    time: str(fd, "meeting_time"),
+    interest,
+    summary: publicSummaryOf(industry, interest),
+    contactName: str(fd, "contact_name") || null,
+    contactTitle: str(fd, "contact_title") || null,
+    contactPhone: str(fd, "contact_phone") || null,
+    comment: str(fd, "extra_note") || null,
+  };
+}
+const REQUIRED = "업체명, 지역(또는 주소), 미팅 날짜와 시간은 꼭 입력해 주세요.";
+
 export async function createLead(_prev: FormState, fd: FormData): Promise<FormState> {
   const viewer = await requireViewer();
   if (!canCreateLead(viewer)) return { error: "DB를 등록할 권한이 없습니다." };
-
-  const company = str(fd, "company_name");
-  const address = str(fd, "address");
-  const region = str(fd, "region") || (address && regionFromAddress(address)) || "";
-  const date = str(fd, "meeting_date");
-  const time = str(fd, "meeting_time");
-  const method = str(fd, "meeting_method") as MeetingMethod;
-  if (!company || !region || !date || !time) return { error: "업체명, 지역(또는 주소), 미팅 날짜와 시간은 꼭 입력해 주세요." };
-  if (!["VISIT", "PHONE", "ONLINE"].includes(method)) return { error: "미팅 방식을 선택해 주세요." };
+  const f = readLeadForm(fd);
+  if (!f.company || !f.region || !f.date || !f.time) return { error: REQUIRED };
 
   let id = "";
   try {
     id = await withUser(viewer.session.userId, async (tx) => {
       const [lead] = await tx<{ id: string }[]>`
         insert into leads(organization_id, company_name, region, industry, meeting_at, meeting_method, public_summary, status, created_by, caller_id)
-        values (${viewer.profile.organization_id}, ${company}, ${region}, ${str(fd, "industry") || null}, ${kstToDate(date, time)}, ${method},
-          ${str(fd, "public_summary") || null}, 'DRAFT', ${viewer.session.userId}, ${viewer.session.userId})
+        values (${viewer.profile.organization_id}, ${f.company}, ${f.region}, ${f.industry}, ${kstToDate(f.date, f.time)}, 'VISIT',
+          ${f.summary}, 'DRAFT', ${viewer.session.userId}, ${viewer.session.userId})
         returning id`;
       await tx`
-        insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, address, call_topic, interest_tags, concern_tags, contact_traits, meeting_reason, must_know, caution, extra_note)
-        values (${lead.id}, ${viewer.profile.organization_id}, ${str(fd, "contact_name") || null}, ${str(fd, "contact_title") || null}, ${str(fd, "contact_phone") || null}, ${address || null},
-          ${str(fd, "call_topic") || null}, ${tags(fd, "interest_tags")}, ${tags(fd, "concern_tags")}, ${str(fd, "contact_traits") || null},
-          ${str(fd, "meeting_reason") || null}, ${str(fd, "must_know") || null}, ${str(fd, "caution") || null}, ${str(fd, "extra_note") || null})`;
-      await tx`select lf_log(${lead.id}, 'CREATE', null, 'DRAFT', ${JSON.stringify({ company_name: company })}::jsonb)`;
+        insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, address, interest_tags, extra_note)
+        values (${lead.id}, ${viewer.profile.organization_id}, ${f.contactName}, ${f.contactTitle}, ${f.contactPhone}, ${f.address || null},
+          ${f.interest}, ${f.comment})`;
+      await tx`select lf_log(${lead.id}, 'CREATE', null, 'DRAFT', ${JSON.stringify({ company_name: f.company })}::jsonb)`;
       if (isManager(viewer) && fd.get("publish_now") === "on") {
         await tx`select publish_lead(${lead.id})`;
       }
@@ -73,34 +88,28 @@ export async function createLead(_prev: FormState, fd: FormData): Promise<FormSt
 
 export async function updateLead(id: string, _prev: FormState, fd: FormData): Promise<FormState> {
   const viewer = await requireViewer();
-  const company = str(fd, "company_name");
-  const address = str(fd, "address");
-  const region = str(fd, "region") || (address && regionFromAddress(address)) || "";
-  const date = str(fd, "meeting_date");
-  const time = str(fd, "meeting_time");
-  const method = str(fd, "meeting_method") as MeetingMethod;
-  if (!company || !region || !date || !time) return { error: "업체명, 지역(또는 주소), 미팅 날짜와 시간은 꼭 입력해 주세요." };
+  const f = readLeadForm(fd);
+  if (!f.company || !f.region || !f.date || !f.time) return { error: REQUIRED };
 
   try {
     await withUser(viewer.session.userId, async (tx) => {
       const [before] = await tx<{ meeting_at: Date; status: string }[]>`select meeting_at, status from leads where id = ${id}`;
       if (!before) throw new Error("NOT_FOUND");
-      const newAt = kstToDate(date, time);
+      const newAt = kstToDate(f.date, f.time);
       const rows = await tx`
-        update leads set company_name = ${company}, region = ${region}, industry = ${str(fd, "industry") || null},
-          meeting_at = ${newAt}, meeting_method = ${method}, public_summary = ${str(fd, "public_summary") || null}
+        update leads set company_name = ${f.company}, region = ${f.region}, industry = ${f.industry},
+          meeting_at = ${newAt}, meeting_method = 'VISIT', public_summary = ${f.summary}
         where id = ${id} returning id`;
       if (rows.length === 0) throw new Error("FORBIDDEN");
+      // The old separate memo boxes were folded into the one comment on the form.
       await tx`
-        update lead_private_details set contact_name = ${str(fd, "contact_name") || null}, contact_title = ${str(fd, "contact_title") || null},
-          contact_phone = ${str(fd, "contact_phone") || null}, address = ${address || null}, call_topic = ${str(fd, "call_topic") || null},
-          interest_tags = ${tags(fd, "interest_tags")}, concern_tags = ${tags(fd, "concern_tags")}, contact_traits = ${str(fd, "contact_traits") || null},
-          meeting_reason = ${str(fd, "meeting_reason") || null}, must_know = ${str(fd, "must_know") || null}, caution = ${str(fd, "caution") || null},
-          extra_note = ${str(fd, "extra_note") || null}
+        update lead_private_details set contact_name = ${f.contactName}, contact_title = ${f.contactTitle},
+          contact_phone = ${f.contactPhone}, address = ${f.address || null}, interest_tags = ${f.interest}, extra_note = ${f.comment},
+          call_topic = null, concern_tags = '{}', contact_traits = null, meeting_reason = null, must_know = null, caution = null
         where lead_id = ${id}`;
       const rescheduled = before.meeting_at.getTime() !== newAt.getTime();
       await tx`select lf_log(${id}, ${rescheduled ? "RESCHEDULE" : "UPDATE"}, ${before.status}::lead_status, ${before.status}::lead_status,
-        ${JSON.stringify(rescheduled ? { from: before.meeting_at, to: newAt, reason: "정보 수정" } : { company_name: company })}::jsonb)`;
+        ${JSON.stringify(rescheduled ? { from: before.meeting_at, to: newAt, reason: "정보 수정" } : { company_name: f.company })}::jsonb)`;
     });
   } catch (e) {
     return { error: messageFor(toActionError(e).code) };

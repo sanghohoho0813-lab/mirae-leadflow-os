@@ -1,0 +1,16 @@
+import { PGlite } from "@electric-sql/pglite";
+import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
+import fs from "node:fs";
+let t = Date.now();
+const pg = await PGlite.create({ extensions: { pgcrypto } });
+console.log("fresh create", Date.now() - t, "ms");
+for (const f of ["supabase/local/0000_supabase_shim.sql", "supabase/migrations/0001_init.sql", "supabase/migrations/0002_lead_address.sql", "supabase/migrations/0003_training_and_limits.sql"]) await pg.exec(fs.readFileSync(f, "utf8"));
+t = Date.now();
+const blob = await pg.dumpDataDir("gzip");
+console.log("dump", Date.now() - t, "ms", blob.size, "bytes");
+fs.writeFileSync("/tmp/claude-0/snap.tgz", Buffer.from(await blob.arrayBuffer()));
+await pg.close();
+t = Date.now();
+const pg2 = await PGlite.create({ extensions: { pgcrypto }, loadDataDir: new Blob([fs.readFileSync("/tmp/claude-0/snap.tgz")]) });
+console.log("load from snapshot", Date.now() - t, "ms");
+console.log((await pg2.query("select count(*) from pg_tables where schemaname='public'")).rows);

@@ -12,3 +12,4 @@ qa/screenshots/*.png
 qa/screenshots/**/*.png
 !qa/screenshots/.gitkeep
 tsconfig.tsbuildinfo
+.pglite/

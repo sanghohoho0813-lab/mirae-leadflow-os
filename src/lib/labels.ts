@@ -112,3 +112,21 @@ export function personLabel(name: string, role: MemberRole, title?: string | nul
 export const TOPIC_OPTIONS = ["정책자금", "고용지원금", "기업부설연구소", "벤처·이노비즈", "기업인증", "절세·법인", "정부지원사업", "사업계획서"];
 /** 받을 자료 / 보낼 자료. */
 export const MATERIAL_OPTIONS = ["재무제표", "부가세 과세표준증명", "4대보험 가입자 명부", "사업자등록증", "기존 대출 현황", "회사소개서", "견적서·제안서"];
+
+/** 업종: 대분류 → 세부 (클릭으로 고름). 저장 값은 "제조 · 금속·기계" 형식. */
+export const INDUSTRY_TREE: { group: string; items: string[] }[] = [
+  { group: "제조", items: ["금속·기계", "전자·전기", "자동차 부품", "식품", "화학·플라스틱", "섬유·의류", "바이오·의료기기", "가구·목재", "기타 제조"] },
+  { group: "건설·설비", items: ["종합건설", "인테리어·설비", "전기·통신공사"] },
+  { group: "IT·소프트웨어", items: ["소프트웨어 개발", "플랫폼·앱", "IT 서비스"] },
+  { group: "도소매·유통", items: ["도매", "소매·온라인몰", "무역"] },
+  { group: "서비스", items: ["물류·운송", "음식점", "교육", "병·의원", "뷰티·미용", "광고·디자인", "기타 서비스"] },
+];
+
+/** 만나는 분 직책 (클릭 또는 직접 입력). */
+export const CONTACT_TITLE_OPTIONS = ["대표", "전무이사", "상무이사", "이사", "부장", "실장", "팀장"];
+
+/** 신청 전 컨설턴트에게 보이는 한 줄: 업종 + 관심 분야 (콜팀이 따로 쓰지 않아도 됨). */
+export function publicSummaryOf(industry: string | null | undefined, interest: string[]): string | null {
+  const parts = [industry?.trim(), interest.length ? `${interest.slice(0, 4).join("·")} 관심` : ""].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}

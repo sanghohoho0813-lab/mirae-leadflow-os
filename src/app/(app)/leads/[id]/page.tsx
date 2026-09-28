@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { MapPin, Clock, Building2, User, Lock, Phone, FileText, MessageSquare, History, ClipboardList, Users, AlertTriangle, Sparkles, ThumbsDown, Navigation, ClipboardCopy } from "lucide-react";
+import { MapPin, Clock, Building2, User, Lock, Phone, FileText, MessageSquare, History, ClipboardList, Users, AlertTriangle, Sparkles, Navigation, ClipboardCopy } from "lucide-react";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { kakaoMapUrl, naverMapUrl } from "@/lib/geo";
 import { requireViewer, isManager } from "@/lib/auth/session";
@@ -12,10 +12,9 @@ import { StatusBadge, Badge, Tag } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { LeadActionBar } from "@/components/leads/LeadActions";
 import { FollowUpList } from "@/components/leads/FollowUpCard";
-import { MethodIcon } from "@/components/leads/LeadRow";
 import { QueryToast } from "@/components/leads/QueryToast";
 import { ActivityTimeline } from "@/components/leads/ActivityTimeline";
-import { METHOD_LABEL, OUTCOME_LABEL, REACTION_LABEL, RESULT_LABEL, NEXT_ACTION_LABEL } from "@/lib/labels";
+import { OUTCOME_LABEL, REACTION_LABEL, RESULT_LABEL, NEXT_ACTION_LABEL } from "@/lib/labels";
 import { fmtDateTime, fmtDate, relativeDay, daysSince, fmtRelativeTime } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
@@ -64,15 +63,11 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
           {/* Meeting summary + actions */}
           <Card className="fade-up">
             <CardBody className="pt-5">
-              <div className="mb-4 grid gap-3 sm:grid-cols-3">
+              <div className="mb-4 grid gap-3 sm:grid-cols-2">
                 <div className={`rounded-xl px-4 py-3 ${rel.diff === 0 ? "bg-soft" : lead.needs_report ? "bg-danger-bg" : "bg-neutral-bg"}`}>
                   <div className="flex items-center gap-1.5 text-[0.875rem] font-semibold text-ink-2"><Clock size={15} /> 미팅 일시</div>
                   <div className="mt-0.5 text-[1.1875rem] font-extrabold text-ink" data-testid="meeting-at">{fmtDateTime(lead.meeting_at)}</div>
                   <div className={`text-[0.875rem] font-semibold ${rel.diff === 0 ? "text-primary" : lead.needs_report ? "text-danger" : "text-ink-3"}`}>{rel.label}</div>
-                </div>
-                <div className="rounded-xl bg-neutral-bg px-4 py-3">
-                  <div className="flex items-center gap-1.5 text-[0.875rem] font-semibold text-ink-2"><MethodIcon method={lead.meeting_method} /> 미팅 방식</div>
-                  <div className="mt-0.5 text-[1.1875rem] font-extrabold text-ink">{METHOD_LABEL[lead.meeting_method]}</div>
                 </div>
                 <div className="rounded-xl bg-neutral-bg px-4 py-3">
                   <div className="flex items-center gap-1.5 text-[0.875rem] font-semibold text-ink-2"><User size={15} /> 담당 컨설턴트</div>
@@ -112,39 +107,39 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                   )}
                 </div>
                 <CopyButton
-                  text={meetingInfoText({ company: lead.company_name, when: `${fmtDateTime(lead.meeting_at)} · ${METHOD_LABEL[lead.meeting_method]}`, address: priv.address ?? lead.region, contact: [priv.contact_name, priv.contact_title, priv.contact_phone].filter(Boolean).join(" "), caution: priv.caution, mustKnow: priv.must_know })}
+                  text={meetingInfoText({ company: lead.company_name, when: fmtDateTime(lead.meeting_at), address: priv.address ?? lead.region, contact: [priv.contact_name, priv.contact_title, priv.contact_phone].filter(Boolean).join(" "), interest: priv.interest_tags, comment: [priv.must_know, priv.caution && `주의: ${priv.caution}`, priv.extra_note].filter(Boolean).join("\n") })}
                   label="미팅 정보 전체 복사"
                   done="미팅 정보를 복사했습니다. 카톡에 그대로 붙여넣으세요"
                   icon={<ClipboardCopy size={17} />}
                   className="w-full"
                   testId="copy-meeting-info"
                 />
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <Info label="미팅 상대" value={[priv.contact_name, priv.contact_title].filter(Boolean).join(" ") || "-"} />
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Info label="만나는 분" value={[priv.contact_name, priv.contact_title].filter(Boolean).join(" ") || "-"} />
                   <Info label="연락처" value={priv.contact_phone ? <a href={`tel:${priv.contact_phone.replace(/[^0-9+]/g, "")}`} className="inline-flex items-center gap-1 text-primary underline-offset-2 hover:underline"><Phone size={16} />{priv.contact_phone}</a> : "-"} testId="contact-phone" />
-                  <Info label="통화 주제" value={priv.call_topic || "-"} />
                 </div>
-                {(priv.interest_tags.length > 0 || priv.concern_tags.length > 0) && (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <div>
-                      <div className="mb-1 flex items-center gap-1 text-[0.9062rem] font-semibold text-ink-2"><Sparkles size={15} className="text-success" /> 관심 보인 부분</div>
-                      <div className="flex flex-wrap gap-1.5">{priv.interest_tags.length ? priv.interest_tags.map((t) => <Tag key={t} tone="success">{t}</Tag>) : <span className="text-[0.9375rem] text-ink-3">-</span>}</div>
-                    </div>
-                    <div>
-                      <div className="mb-1 flex items-center gap-1 text-[0.9062rem] font-semibold text-ink-2"><ThumbsDown size={15} className="text-danger" /> 부정적 반응</div>
-                      <div className="flex flex-wrap gap-1.5">{priv.concern_tags.length ? priv.concern_tags.map((t) => <Tag key={t} tone="danger">{t}</Tag>) : <span className="text-[0.9375rem] text-ink-3">-</span>}</div>
-                    </div>
+                {priv.interest_tags.length > 0 && (
+                  <div>
+                    <div className="mb-1 flex items-center gap-1 text-[0.9062rem] font-semibold text-ink-2"><Sparkles size={15} className="text-success" /> 관심을 보인 분야</div>
+                    <div className="flex flex-wrap gap-1.5" data-testid="interest-tags">{priv.interest_tags.map((t) => <Tag key={t} tone="success">{t}</Tag>)}</div>
                   </div>
                 )}
+                {priv.extra_note && (
+                  <div className="rounded-xl border border-gold/50 bg-canvas px-4 py-3" data-testid="call-comment">
+                    <div className="mb-1 text-[0.875rem] font-semibold text-ink-2">콜팀 코멘트 · 특이사항</div>
+                    <p className="whitespace-pre-wrap text-[1.0625rem] leading-relaxed text-ink">{priv.extra_note}</p>
+                  </div>
+                )}
+                {/* Older DBs (before the one-page form) may still carry these. */}
                 {priv.caution && (
                   <div className="flex gap-2 rounded-xl border border-warning/40 bg-warning-bg px-4 py-3 text-[1rem] text-warning" data-testid="caution">
                     <AlertTriangle size={20} className="mt-0.5 shrink-0" /><div><b>주의사항</b> — {priv.caution}</div>
                   </div>
                 )}
+                <MemoBlock label="통화 주제" value={priv.call_topic} />
                 <MemoBlock label="미팅이 잡힌 이유" value={priv.meeting_reason} />
                 <MemoBlock label="미팅 시 꼭 알아야 할 것" value={priv.must_know} />
                 <MemoBlock label="상대방 특징" value={priv.contact_traits} />
-                <MemoBlock label="기타 코멘트" value={priv.extra_note} />
               </CardBody>
             </Card>
           ) : (
@@ -242,13 +237,13 @@ function MemoBlock({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function meetingInfoText(m: { company: string; when: string; address: string; contact: string; caution: string | null; mustKnow: string | null }): string {
+function meetingInfoText(m: { company: string; when: string; address: string; contact: string; interest: string[]; comment: string }): string {
   return [
     `[미팅] ${m.company}`,
-    `일시: ${m.when}`,
+    `일시: ${m.when} (방문)`,
     `장소: ${m.address}`,
     m.contact && `상대: ${m.contact}`,
-    m.mustKnow && `참고: ${m.mustKnow}`,
-    m.caution && `주의: ${m.caution}`,
+    m.interest.length > 0 && `관심: ${m.interest.join(", ")}`,
+    m.comment && `메모: ${m.comment}`,
   ].filter(Boolean).join("\n");
 }

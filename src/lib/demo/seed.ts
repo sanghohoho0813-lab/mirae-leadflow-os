@@ -56,76 +56,76 @@ const L = (id: number) => `30000000-0000-4000-8000-0000000000${String(id).padSta
 
 const leads = (): LeadSeed[] => [
   // DRAFT — registered today by caller, waiting for owner to publish
-  { id: L(1), company: "한솔이엔지(주)", region: "경기 화성시", industry: "건설·설비", at: kst(3, 10), method: "VISIT", status: "DRAFT",
+  { id: L(1), company: "한솔이엔지(주)", region: "경기 화성시", industry: "건설·설비 · 인테리어·설비", at: kst(3, 10), method: "VISIT", status: "DRAFT",
     summary: "설비 공사업, 직원 12명, 정책자금 관심", contact: ["김영호", "대표", "010-3333-0001"],
     topic: "운전자금 정책자금", interest: ["정책자금", "고용지원금"], concern: ["기존 대출 부담"],
     traits: "말이 빠르고 숫자에 민감. 결론부터 듣기를 원함", reason: "올해 설비 증설 계획이 있어 자금 조달 방법 상담 요청", mustKnow: "작년 매출 18억, 신용보증 이용 이력 있음", caution: "오전 10시 이후 통화 선호" },
-  { id: L(2), company: "(주)미래푸드", region: "경기 성남시", industry: "식품 제조", at: kst(4, 14), method: "VISIT", status: "DRAFT",
+  { id: L(2), company: "(주)미래푸드", region: "경기 성남시", industry: "제조 · 식품", at: kst(4, 14), method: "VISIT", status: "DRAFT",
     summary: "HACCP 식품제조, 직원 25명, 연구소 설립 관심", contact: ["박지현", "이사", "010-3333-0002"],
     topic: "기업부설연구소 설립", interest: ["기업부설연구소", "세액공제"], concern: [],
     traits: "꼼꼼함. 자료를 미리 받아보길 원함", reason: "연구소 설립으로 세액공제를 받고 싶어함", mustKnow: "연구 전담 인력 2명 확보 가능", caution: "" },
 
   // OPEN — published, waiting for a consultant
-  { id: L(3), company: "태양금속(주)", region: "인천 남동구", industry: "금속 가공", at: kst(2, 11), method: "VISIT", status: "OPEN",
+  { id: L(3), company: "태양금속(주)", region: "인천 남동구", industry: "제조 · 금속·기계", at: kst(2, 11), method: "VISIT", status: "OPEN",
     summary: "금속 가공업, 직원 30명, 고용지원금 관심", contact: ["정태양", "대표", "010-3333-0003"],
     topic: "청년 고용지원금", interest: ["고용지원금"], concern: ["서류 부담"],
     traits: "실무는 총무팀장이 담당. 대표는 큰 그림만", reason: "올해 청년 5명 채용 예정", mustKnow: "4대보험 명부 요청하면 바로 줄 수 있다고 함", caution: "총무팀장 동석 요청" },
-  { id: L(4), company: "(주)클린케어", region: "서울 금천구", industry: "위생·환경", at: kst(3, 15), method: "PHONE", status: "OPEN",
+  { id: L(4), company: "(주)클린케어", region: "서울 금천구", industry: "서비스 · 기타 서비스", at: kst(3, 15), method: "VISIT", status: "OPEN",
     summary: "위생 서비스, 직원 8명, 벤처인증 관심", contact: ["오하나", "대표", "010-3333-0004"],
     topic: "벤처기업확인", interest: ["벤처기업확인", "정책자금"], concern: ["비용"],
     traits: "친절하지만 결정이 느림", reason: "벤처인증 후 정책자금 연계 원함", mustKnow: "기술 특허 1건 보유", caution: "" },
-  { id: L(5), company: "제일하이텍(주)", region: "경기 안산시", industry: "전자 부품", at: kst(5, 10, 30), method: "ONLINE", status: "OPEN",
+  { id: L(5), company: "제일하이텍(주)", region: "경기 안산시", industry: "제조 · 전자·전기", at: kst(5, 10, 30), method: "VISIT", status: "OPEN",
     summary: "전자부품 제조, 직원 45명, 이노비즈 관심", contact: ["최은정", "관리이사", "010-3333-0005"],
     topic: "이노비즈·메인비즈 인증", interest: ["기업인증", "정책자금"], concern: [],
     traits: "온라인 미팅 선호", reason: "인증으로 금리 우대를 받고 싶어함", mustKnow: "작년 R&D 투자 3억", caution: "줌 링크 하루 전 발송 요청" },
 
   // ASSIGNED — meetings today
-  { id: L(6), company: "성진테크(주)", region: "서울 강남구", industry: "자동차 부품", at: kst(0, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant4,
+  { id: L(6), company: "성진테크(주)", region: "서울 강남구", industry: "제조 · 자동차 부품", at: kst(0, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant4,
     summary: "자동차 부품 제조, 직원 60명, 정책자금·연구소 관심", contact: ["이명수", "대표", "010-3333-0006"],
     topic: "신규 생산라인 자금", interest: ["정책자금", "기업부설연구소"], concern: ["담보 부족"],
     traits: "결정이 빠름. 실행 계획을 구체적으로 원함", reason: "신규 생산라인 도입 검토 중, 자금 조달 상담 요청", mustKnow: "매출 80억, 기존 연구소 없음", caution: "제품 소개 자료 지참 요청" },
-  { id: L(7), company: "(주)한빛솔루션", region: "경기 성남시", industry: "소프트웨어", at: kst(0, 14), method: "ONLINE", status: "ASSIGNED", assignee: U.leader,
+  { id: L(7), company: "(주)한빛솔루션", region: "경기 성남시", industry: "IT·소프트웨어 · 소프트웨어 개발", at: kst(0, 14), method: "VISIT", status: "ASSIGNED", assignee: U.leader,
     summary: "SW 개발, 직원 15명, 고용지원금 관심", contact: ["박민지", "이사", "010-3333-0007"],
     topic: "청년 채용 지원금", interest: ["고용지원금", "벤처기업확인"], concern: [],
     traits: "IT 용어에 익숙. 빠른 진행 선호", reason: "하반기 개발자 4명 채용 예정", mustKnow: "벤처인증 만료 임박", caution: "" },
-  { id: L(8), company: "우림식품(주)", region: "인천 부평구", industry: "식품 유통", at: kst(0, 16), method: "VISIT", status: "ASSIGNED", assignee: U.consultant2,
+  { id: L(8), company: "우림식품(주)", region: "인천 부평구", industry: "도소매·유통 · 도매", at: kst(0, 16), method: "VISIT", status: "ASSIGNED", assignee: U.consultant2,
     summary: "식품 유통, 직원 20명, 절세 관심", contact: ["김태호", "대표", "010-3333-0008"],
     topic: "법인 절세", interest: ["법인컨설팅", "가지급금"], concern: ["세무사 교체 부담"],
     traits: "보수적. 기존 세무사와 관계 중시", reason: "가지급금 정리 방법 문의", mustKnow: "가지급금 약 3억", caution: "세무사 비판 금지" },
 
   // ASSIGNED — tomorrow
-  { id: L(9), company: "대성산업(주)", region: "경기 안산시", industry: "기계 부품", at: kst(1, 11), method: "VISIT", status: "ASSIGNED", assignee: U.leaderB,
+  { id: L(9), company: "대성산업(주)", region: "경기 안산시", industry: "제조 · 금속·기계", at: kst(1, 11), method: "VISIT", status: "ASSIGNED", assignee: U.leaderB,
     summary: "기계부품 제조, 직원 35명, 연구소 관심", contact: ["정은주", "이사", "010-3333-0009"],
     topic: "연구소 설립·세액공제", interest: ["기업부설연구소"], concern: [], traits: "", reason: "연구소 설립으로 세액공제 원함", mustKnow: "", caution: "" },
 
   // ASSIGNED — meeting passed, NO REPORT (the core owner pain)
-  { id: L(10), company: "(주)그린바이오", region: "충북 청주시", industry: "바이오", at: kst(-2, 14), method: "VISIT", status: "ASSIGNED", assignee: U.consultant3,
+  { id: L(10), company: "(주)그린바이오", region: "충북 청주시", industry: "제조 · 바이오·의료기기", at: kst(-2, 14), method: "VISIT", status: "ASSIGNED", assignee: U.consultant3,
     summary: "바이오 소재, 직원 18명, 정책자금 관심", contact: ["윤재석", "대표", "010-3333-0010"],
     topic: "R&D 자금", interest: ["정책자금", "정부지원사업"], concern: [], traits: "", reason: "R&D 과제 신청 준비", mustKnow: "", caution: "" },
-  { id: L(11), company: "하나정밀(주)", region: "경기 시흥시", industry: "정밀 가공", at: kst(-5, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant6,
+  { id: L(11), company: "하나정밀(주)", region: "경기 시흥시", industry: "제조 · 금속·기계", at: kst(-5, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant6,
     summary: "정밀가공, 직원 22명, 고용지원금 관심", contact: ["송하나", "대표", "010-3333-0011"],
     topic: "고용지원금", interest: ["고용지원금"], concern: [], traits: "", reason: "직원 채용 계획", mustKnow: "", caution: "" },
 
   // FOLLOW_UP — report submitted, follow-ups pending
-  { id: L(12), company: "대명플라스틱(주)", region: "경기 김포시", industry: "플라스틱 사출", at: kst(-3, 10), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant1,
+  { id: L(12), company: "대명플라스틱(주)", region: "경기 김포시", industry: "제조 · 화학·플라스틱", at: kst(-3, 10), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant1,
     summary: "사출 제조, 직원 40명, 정책자금 관심", contact: ["김민수", "대표", "010-3333-0012"],
     topic: "시설자금", interest: ["정책자금"], concern: [], traits: "", reason: "설비 교체", mustKnow: "", caution: "",
     report: { outcome: "DONE", reaction: "HIGH", result: "MATERIAL_REQUEST", next: "SEND_MATERIAL", due: 0, memo: "설비 교체 시설자금 관심 높음. 다음 주 재방문 가능",
       topics: ["정책자금"], materials: ["재무제표", "부가세 과세표준증명"], nextNote: "정책자금 안내자료 보내고 재무제표 3년치 받기" } },
-  { id: L(13), company: "(주)블루오션", region: "부산 사상구", industry: "조선 기자재", at: kst(-10, 15), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant3,
+  { id: L(13), company: "(주)블루오션", region: "부산 사상구", industry: "제조 · 기타 제조", at: kst(-10, 15), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant3,
     summary: "조선기자재, 직원 55명, 인증 관심", contact: ["강동원", "이사", "010-3333-0013"],
     topic: "메인비즈 인증", interest: ["기업인증"], concern: ["시간 부족"], traits: "", reason: "인증 갱신", mustKnow: "", caution: "",
     report: { outcome: "DONE", reaction: "MID", result: "REVIEW_THEN_CONTACT", next: "CALL", due: -8, memo: "내부 검토 후 연락 주기로 함",
       topics: ["기업인증"], materials: ["회사소개서"], nextNote: "인증 갱신 일정 확인 전화" } },
 
   // CLOSED
-  { id: L(14), company: "동아섬유(주)", region: "대구 서구", industry: "섬유", at: kst(-7, 11), method: "VISIT", status: "CLOSED", assignee: U.consultant1,
+  { id: L(14), company: "동아섬유(주)", region: "대구 서구", industry: "제조 · 섬유·의류", at: kst(-7, 11), method: "VISIT", status: "CLOSED", assignee: U.consultant1,
     summary: "섬유 제조, 직원 28명", contact: ["이동아", "대표", "010-3333-0014"],
     topic: "정책자금", interest: ["정책자금"], concern: ["시기 부적절"], traits: "", reason: "", mustKnow: "", caution: "",
     report: { outcome: "DONE", reaction: "LOW", result: "HARD", next: "NONE", memo: "내년 상반기에 다시 검토 예정", topics: ["정책자금"] } },
 
   // CANCELLED
-  { id: L(15), company: "(주)서울테크", region: "서울 구로구", industry: "IT 서비스", at: kst(2, 13), method: "PHONE", status: "CANCELLED",
+  { id: L(15), company: "(주)서울테크", region: "서울 구로구", industry: "IT·소프트웨어 · IT 서비스", at: kst(2, 13), method: "VISIT", status: "CANCELLED",
     summary: "IT 서비스, 직원 10명", contact: ["박서울", "대표", "010-3333-0015"], topic: "", interest: [], concern: [], traits: "", reason: "", mustKnow: "", caution: "",
     cancelReason: "업체 요청으로 미팅 취소" },
 ];
@@ -164,8 +164,10 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
       values (${l.id}, ${ORG_ID}, ${l.company}, ${l.region}, ${l.industry}, ${l.at}, ${l.method}, ${l.summary}, ${l.status}, ${U.caller.id}, ${U.caller.id},
         ${assigned}, ${assignedAt}, ${published},
         ${["CLOSED", "CANCELLED"].includes(l.status) ? new Date() : null}, ${l.cancelReason ?? null}, ${createdAt})`;
-    await tx`insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, address, call_topic, interest_tags, concern_tags, contact_traits, meeting_reason, must_know, caution)
-      values (${l.id}, ${ORG_ID}, ${l.contact[0]}, ${l.contact[1]}, ${l.contact[2]}, ${ADDRESS[Number(l.id.slice(-2))] ?? null}, ${l.topic}, ${l.interest}, ${l.concern}, ${l.traits}, ${l.reason}, ${l.mustKnow}, ${l.caution})`;
+    // Same shape as the one-page form: one comment instead of separate memo boxes.
+    const comment = [l.reason, l.mustKnow, l.traits, l.caution && `주의: ${l.caution}`].filter(Boolean).join("\n") || null;
+    await tx`insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, address, interest_tags, extra_note)
+      values (${l.id}, ${ORG_ID}, ${l.contact[0]}, ${l.contact[1]}, ${l.contact[2]}, ${ADDRESS[Number(l.id.slice(-2))] ?? null}, ${l.interest}, ${comment})`;
     await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, to_status, created_at) values (${ORG_ID}, ${l.id}, ${U.caller.id}, 'CREATE', 'DRAFT', ${createdAt})`;
     if (published) {
       await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, from_status, to_status, created_at) values (${ORG_ID}, ${l.id}, ${U.owner.id}, 'PUBLISH', 'DRAFT', 'OPEN', ${published})`;

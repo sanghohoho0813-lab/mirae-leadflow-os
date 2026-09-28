@@ -6,6 +6,7 @@ import { toActionError, withUser } from "@/lib/db";
 import { kstToDate } from "@/lib/time";
 import { FILE_CHUNK, FILE_MAX, FILE_MAX_COUNT } from "@/lib/trainings";
 import { summarizeTrainingMaterial } from "@/lib/ai/summarize";
+import { extractText } from "@/lib/ai/extract";
 import type { ActionResult } from "./leads";
 
 export interface TrainingInput {
@@ -207,5 +208,21 @@ export async function downloadTrainingChunk(fileId: string, idx: number): Promis
       where c.file_id = ${fileId} and c.idx = ${idx} and f.complete`)[0]);
     if (!row) return { ok: false, code: "NOT_FOUND", message: "자료를 찾을 수 없습니다." };
     return { ok: true, data: Buffer.from(row.data).toString("base64") };
+  } catch (e) { return fail(e); }
+}
+
+/** Text inside a PowerPoint / Word file, for the in-app preview (no download needed). */
+export async function previewTrainingFileText(fileId: string): Promise<ActionResult & { text?: string }> {
+  const viewer = await requireViewer();
+  try {
+    const file = await withUser(viewer.session.userId, async (tx) => {
+      const [f] = await tx<{ name: string; mime: string }[]>`select name, mime from training_files where id = ${fileId} and complete`;
+      if (!f) return null;
+      const chunks = await tx<{ data: Buffer }[]>`select data from training_file_chunks where file_id = ${fileId} order by idx`;
+      return { ...f, data: Buffer.concat(chunks.map((c) => Buffer.from(c.data))) };
+    });
+    if (!file) return { ok: false, code: "NOT_FOUND", message: "자료를 찾을 수 없습니다." };
+    const text = extractText(file)?.trim() ?? "";
+    return { ok: true, text: text.length > 40_000 ? `${text.slice(0, 40_000)}\n…(이하 생략 — 전체는 [받기]로 확인)` : text };
   } catch (e) { return fail(e); }
 }

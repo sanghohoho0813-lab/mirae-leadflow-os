@@ -70,27 +70,33 @@ test("1. CALLER registers a new DB (DRAFT)", async ({ browser }) => {
   // Pasting the full address fills 지역 automatically.
   await page.fill("#address", "경기도 수원시 영통구 광교로 147, 3층");
   await expect(page.locator("#region")).toHaveValue("경기 수원시");
-  await page.fill("#industry", "정밀 부품 제조");
+  // 업종: two taps. 미팅 방식 is gone (always 방문), and so are the separate memo boxes.
+  await page.getByTestId("industry-group-제조").click();
+  await page.getByTestId("industry-금속·기계").click();
+  await expect(page.getByRole("radio", { name: "방문" })).toHaveCount(0);
+  await expect(page.locator("#public_summary, #meeting_reason, #caution")).toHaveCount(0);
   await page.fill("#meeting_date", tomorrow());
-  await page.fill("#meeting_time", "14:30");
-  await page.getByRole("radio", { name: "방문" }).click();
-  await page.fill("#public_summary", "정밀부품 제조, 직원 40명, 정책자금·연구소 관심");
+  await page.getByRole("button", { name: "14:00", exact: true }).click();
   await page.fill("#contact_name", "홍길동");
-  await page.fill("#contact_title", "대표");
+  await page.getByTestId("title-전무이사").click();
+  await expect(page.locator("#contact_title")).toHaveValue("전무이사");
   await page.fill("#contact_phone", "010-5555-1234");
-  await page.fill("#call_topic", "시설자금 정책자금");
   await page.getByRole("button", { name: "정책자금" }).click();
   await page.getByRole("button", { name: "기업부설연구소" }).click();
-  await page.getByRole("button", { name: "비용" }).click();
-  await page.fill("#meeting_reason", "설비 증설을 위한 시설자금 조달 방법 상담 요청");
-  await page.fill("#must_know", "작년 매출 35억, 신용보증 이용 이력 있음");
-  await page.fill("#caution", "오후 2시 이후 방문 선호");
+  await page.fill('[data-testid="interest-custom"]', "스마트공장");
+  await page.getByTestId("interest-add").click();
+  await expect(page.getByRole("button", { name: /스마트공장/ })).toHaveAttribute("aria-pressed", "true");
+  await page.fill("#extra_note", "작년 매출 35억, 신용보증 이용 이력 있음\n주의: 오후 2시 이후 방문 선호");
   await shot(page, "02-caller-new-form");
   await page.click('[data-testid="lead-submit"]');
   await page.waitForURL(/\/leads\/[0-9a-f-]{36}/);
   leadId = page.url().match(/\/leads\/([0-9a-f-]{36})/)![1];
   await expect(page.getByText("공개 대기").first()).toBeVisible();
   await expect(page.getByTestId("contact-phone")).toContainText("010-5555-1234"); // creator sees private
+  await expect(page.getByTestId("interest-tags")).toContainText("스마트공장");
+  await expect(page.getByTestId("meeting-at")).toContainText("14:00");
+  // The one-line public summary is written automatically from 업종 + 관심 분야.
+  await expect(page.getByRole("main")).toContainText("제조 · 금속·기계, 정책자금·기업부설연구소·스마트공장 관심");
   await shot(page, "03-caller-lead-created");
   await page.context().close();
 });
@@ -144,7 +150,8 @@ test("3. Two consultants click 신청 simultaneously — exactly one wins", asyn
   await expect(loser.getByTestId("claim-lost")).toContainText("먼저 신청");
   await shot(loser, "07-consultant-claim-lost");
   await expect(winner.getByTestId("contact-phone")).toContainText("010-5555-1234");
-  await expect(winner.getByTestId("caution")).toContainText("오후 2시");
+  await expect(winner.getByTestId("call-comment")).toContainText("오후 2시");
+  await expect(winner.getByRole("main")).toContainText("홍길동 전무이사");
   await expect(winner.getByRole("main").getByTestId("address-text")).toHaveText("경기도 수원시 영통구 광교로 147, 3층");
   await shot(winner, "08-consultant-claim-won");
 
@@ -634,7 +641,10 @@ test("20. 교육 자료실: 단장 uploads material, summary is built, files dow
   await expect(owner.getByTestId("training-summary")).toContainText("명부");
   await expect(owner.getByTestId("training-file")).toHaveCount(2);
   await shot(owner, "28-training-detail-owner");
-  // Multi-piece file comes back byte-for-byte.
+  // In-app preview of the checklist, then the multi-piece file comes back byte-for-byte.
+  await owner.getByTestId("training-file").filter({ hasText: "실습_체크리스트.txt" }).getByTestId("file-preview").click();
+  await expect(owner.getByTestId("file-preview-text")).toContainText("인원 감축 여부 질문");
+  await owner.keyboard.press("Escape");
   const [dl] = await Promise.all([owner.waitForEvent("download"), owner.getByTestId("training-file").filter({ hasText: "교육_녹화.mp4" }).getByTestId("file-download").click()]);
   expect(dl.suggestedFilename()).toBe("교육_녹화.mp4");
   const fs = await import("node:fs");
@@ -649,6 +659,14 @@ test("20. 교육 자료실: 단장 uploads material, summary is built, files dow
   await card.click();
   await c.waitForURL(/\/trainings\/[0-9a-f-]{36}$/);
   await c.getByTestId("summary-copy").click();
+  // 자료 모아보기: every material in one list, previewable by anyone.
+  const detailUrl = c.url();
+  await go(c, "/trainings?view=files");
+  await expect(c.getByTestId("file-library").getByTestId("training-file").filter({ hasText: "실습_체크리스트.txt" })).toBeVisible();
+  await c.getByTestId("training-file").filter({ hasText: "실습_체크리스트.txt" }).getByTestId("file-preview").click();
+  await expect(c.getByTestId("file-preview-text")).toContainText("최근 입사자");
+  await c.keyboard.press("Escape");
+  await go(c, detailUrl);
   await c.getByTestId("training-read").click();
   await expect(c.getByTestId("training-read-done")).toBeVisible();
   await shot(c, "m390-11-training-read", false);

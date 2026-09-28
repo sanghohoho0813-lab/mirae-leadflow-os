@@ -11,6 +11,8 @@ export function NavProgress() {
   const pathname = usePathname();
   const search = useSearchParams();
   const [state, setState] = useState<"idle" | "running" | "done">("idle");
+  // How long the current load has been running: a calm note appears if it is slow.
+  const [slow, setSlow] = useState<0 | 1 | 2>(0);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -45,15 +47,27 @@ export function NavProgress() {
       return () => clearTimeout(t);
     }
     if (state === "running") {
-      const t = setTimeout(() => setState("idle"), 12000); // never stay stuck
-      return () => clearTimeout(t);
+      const a = setTimeout(() => setSlow(1), 1500);
+      const b = setTimeout(() => setSlow(2), 5000);
+      const t = setTimeout(() => setState("idle"), 15000); // never stay stuck
+      return () => { clearTimeout(a); clearTimeout(b); clearTimeout(t); setSlow(0); };
     }
   }, [state]);
 
   if (state === "idle") return null;
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-[3px]" aria-hidden data-testid="nav-progress">
-      <div className={`h-full bg-primary shadow-[0_0_8px_var(--theme-primary)] ${state === "running" ? "nav-progress-run" : "nav-progress-done"}`} />
-    </div>
+    <>
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-[70] h-[3px]" aria-hidden data-testid="nav-progress">
+        <div className={`h-full bg-primary shadow-[0_0_8px_var(--theme-primary)] ${state === "running" ? "nav-progress-run" : "nav-progress-done"}`} />
+      </div>
+      {state === "running" && slow > 0 && (
+        <div className="toast-in pointer-events-none fixed inset-x-0 top-3 z-[70] flex justify-center px-4" role="status" data-testid="slow-notice">
+          <span className="flex items-center gap-2 rounded-full bg-ink/85 px-4 py-2 text-[0.9375rem] font-semibold text-white shadow-lg">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-highlight" />
+            {slow === 1 ? "불러오는 중입니다…" : "서버가 깨어나는 중이라 조금 걸립니다. 잠시만 기다려 주세요."}
+          </span>
+        </div>
+      )}
+    </>
   );
 }

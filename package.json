@@ -12,7 +12,8 @@
     "db:seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed.mjs",
     "db:reset": "node scripts/migrate.mjs --reset && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed.mjs",
     "test:db": "node scripts/test-db.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "prebuild": "node scripts/pglite-snapshot.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",

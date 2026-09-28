@@ -2,13 +2,13 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useSafeNavigate } from "@/components/providers/SafeActions";
-import { Save } from "lucide-react";
-import { Field, Input, Textarea } from "@/components/ui/Field";
-import { ChoiceGroup, TagPicker } from "@/components/ui/Choice";
+import { Plus, Save, X } from "lucide-react";
+import { Input, Textarea } from "@/components/ui/Field";
+import { TagPicker } from "@/components/ui/Choice";
 import { Button, LinkButton } from "@/components/ui/Button";
-import { INTEREST_TAG_OPTIONS, CONCERN_TAG_OPTIONS } from "@/lib/labels";
+import { CONTACT_TITLE_OPTIONS, INDUSTRY_TREE, INTEREST_TAG_OPTIONS } from "@/lib/labels";
 import type { FormState } from "@/lib/actions/leads";
-import type { LeadPrivateDetails, Lead, MeetingMethod } from "@/lib/types";
+import type { LeadPrivateDetails, Lead } from "@/lib/types";
 import { kstDateString, kstTimeString } from "@/lib/time";
 import { regionFromAddress } from "@/lib/geo";
 
@@ -21,80 +21,153 @@ interface Props {
   submitLabel: string;
 }
 
+const TIMES = ["10:00", "11:00", "13:00", "14:00", "15:00", "16:00"];
+
+function addDays(n: number) {
+  return kstDateString(new Date(Date.now() + n * 86400000));
+}
+
+/** Older DBs kept these in separate boxes; editing folds them into one comment. */
+function legacyComment(p?: LeadPrivateDetails | null): string {
+  if (!p) return "";
+  return [p.call_topic && `통화 주제: ${p.call_topic}`, p.meeting_reason, p.must_know, p.contact_traits, p.caution && `주의: ${p.caution}`, p.extra_note]
+    .filter(Boolean).join("\n");
+}
+
+function Row({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-2 border-b border-line py-4 first:pt-0 last:border-0 last:pb-0">
+      <div className="flex flex-wrap items-baseline gap-x-2">
+        <span className="text-[1.0625rem] font-bold text-ink">{label}{required && <span className="text-danger"> *</span>}</span>
+        {hint && <span className="text-[0.875rem] text-ink-3">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Chip({ active, onClick, children, testId }: { active: boolean; onClick: () => void; children: React.ReactNode; testId?: string }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={active} data-testid={testId}
+      className={`press min-h-[2.75rem] rounded-xl border-2 px-3.5 text-[0.9375rem] font-semibold transition-base ${active ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}>
+      {children}
+    </button>
+  );
+}
+
+/**
+ * 신규 DB 등록 — 한 장짜리. 핵심만: 업체 · 업종 · 장소 · 일시 · 만나는 분 · 관심 분야 · 코멘트.
+ * 미팅은 모두 방문. 신청 전 공개 한 줄은 업종·관심 분야로 자동으로 만든다.
+ */
 export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submitLabel }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
   const navigate = useSafeNavigate();
   useEffect(() => { if (state.redirectTo) navigate(state.redirectTo); }, [state, navigate]);
   const busy = pending || Boolean(state.redirectTo);
-  const [method, setMethod] = useState<MeetingMethod>(lead?.meeting_method ?? "VISIT");
-  const [interest, setInterest] = useState<string[]>(priv?.interest_tags ?? []);
-  const [concern, setConcern] = useState<string[]>(priv?.concern_tags ?? []);
+
+  const initialIndustry = lead?.industry ?? "";
+  const [group, setGroup] = useState<string | null>(() => INDUSTRY_TREE.find((g) => initialIndustry.startsWith(g.group))?.group ?? null);
+  const [industry, setIndustry] = useState(initialIndustry);
   const [region, setRegion] = useState(lead?.region ?? "");
-  // Region follows the pasted address until the user edits it by hand.
   const regionTouched = useRef(Boolean(lead?.region));
+  const [date, setDate] = useState(lead ? kstDateString(lead.meeting_at) : "");
+  const [time, setTime] = useState(lead ? kstTimeString(lead.meeting_at) : "10:00");
+  const [title, setTitle] = useState(priv?.contact_title ?? "");
+  const known = new Set(INTEREST_TAG_OPTIONS);
+  const [interest, setInterest] = useState<string[]>(priv?.interest_tags ?? []);
+  const [extraOptions, setExtraOptions] = useState<string[]>(() => (priv?.interest_tags ?? []).filter((t) => !known.has(t)));
+  const [custom, setCustom] = useState("");
+
   const onAddress = (value: string) => {
     if (regionTouched.current) return;
     const r = regionFromAddress(value);
     if (r) setRegion(r);
   };
+  const addCustom = () => {
+    const t = custom.trim().slice(0, 20);
+    if (!t) return;
+    if (!extraOptions.includes(t) && !known.has(t)) setExtraOptions([...extraOptions, t]);
+    if (!interest.includes(t)) setInterest([...interest, t]);
+    setCustom("");
+  };
+  const quickDays = [{ l: "오늘", v: addDays(0) }, { l: "내일", v: addDays(1) }, { l: "모레", v: addDays(2) }];
 
   return (
-    <form action={formAction} className="grid gap-5">
-      <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-1 text-[1.1875rem] font-bold text-ink">1. 미팅 기본 정보</h2>
-        <p className="mb-4 text-[0.9375rem] text-ink-2">컨설턴트에게 <b>신청 전에도 공개</b>되는 정보입니다.</p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="업체명" required htmlFor="company_name"><Input id="company_name" name="company_name" defaultValue={lead?.company_name} placeholder="예: 성진테크(주)" required autoFocus /></Field>
-          <Field label="지역" required htmlFor="region" hint="아래 ‘미팅 장소 주소’를 붙여넣으면 자동으로 채워집니다.">
-            <Input id="region" name="region" value={region} onChange={(e) => { regionTouched.current = true; setRegion(e.target.value); }} placeholder="예: 서울 강남구" required />
-          </Field>
-          <Field label="업종" htmlFor="industry"><Input id="industry" name="industry" defaultValue={lead?.industry ?? ""} placeholder="예: 자동차 부품 제조" /></Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="미팅 날짜" required htmlFor="meeting_date"><Input id="meeting_date" name="meeting_date" type="date" defaultValue={lead ? kstDateString(lead.meeting_at) : ""} required /></Field>
-            <Field label="시간" required htmlFor="meeting_time"><Input id="meeting_time" name="meeting_time" type="time" step={600} defaultValue={lead ? kstTimeString(lead.meeting_at) : "10:00"} required /></Field>
+    <form action={formAction} className="grid gap-4">
+      <section className="rounded-2xl border border-line bg-white p-5 shadow-card sm:p-6" data-testid="lead-form">
+        <p className="mb-4 rounded-xl bg-soft px-4 py-2.5 text-[0.9375rem] text-ink-2">
+          별표(*)만 채우면 등록됩니다. 연락처·주소·코멘트는 <b>배정된 담당자와 단장님만</b> 봅니다. 미팅은 모두 <b>방문</b>으로 등록됩니다.
+        </p>
+
+        <Row label="업체명" required>
+          <Input id="company_name" name="company_name" defaultValue={lead?.company_name} placeholder="예: 성진테크(주)" required autoFocus />
+        </Row>
+
+        <Row label="업종" hint="큰 분류 → 세부를 눌러 고르세요">
+          <div className="flex flex-wrap gap-2">
+            {INDUSTRY_TREE.map((g) => (
+              <Chip key={g.group} active={group === g.group} testId={`industry-group-${g.group}`}
+                onClick={() => { setGroup(g.group); if (!industry.startsWith(g.group)) setIndustry(g.group); }}>{g.group}</Chip>
+            ))}
+            <Chip active={group === "직접"} onClick={() => { setGroup("직접"); setIndustry(""); }}>직접 입력</Chip>
           </div>
-        </div>
-        <div className="mt-4">
-          <Field label="미팅 방식" required>
-            <ChoiceGroup name="meeting_method" columns={3} value={method} onChange={setMethod} options={[{ value: "VISIT", label: "방문" }, { value: "PHONE", label: "전화" }, { value: "ONLINE", label: "온라인" }]} testId="method-choice" />
-            <input type="hidden" name="meeting_method" value={method} />
-          </Field>
-        </div>
-        <div className="mt-4">
-          <Field label="공개용 한줄 정보" htmlFor="public_summary" hint="신청 전 컨설턴트가 보는 한 줄. 예: 직원 30명, 정책자금 관심">
-            <Input id="public_summary" name="public_summary" defaultValue={lead?.public_summary ?? ""} placeholder="예: 금속 가공업, 직원 30명, 고용지원금 관심" maxLength={120} />
-          </Field>
-        </div>
-      </section>
+          {group && group !== "직접" && (
+            <div className="flex flex-wrap gap-2 rounded-xl bg-canvas p-2.5">
+              {INDUSTRY_TREE.find((g) => g.group === group)!.items.map((it) => {
+                const v = `${group} · ${it}`;
+                return <Chip key={it} active={industry === v} onClick={() => setIndustry(v)} testId={`industry-${it}`}>{it}</Chip>;
+              })}
+            </div>
+          )}
+          {(group === "직접" || (industry && !group)) ? (
+            <Input id="industry" name="industry" value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="예: 반도체 장비 부품" />
+          ) : (
+            <input type="hidden" name="industry" value={industry} />
+          )}
+        </Row>
 
-      <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-1 text-[1.1875rem] font-bold text-ink">2. 미팅 장소 · 상대방</h2>
-        <p className="mb-4 text-[0.9375rem] text-ink-2"><b>배정된 담당자와 운영진에게만</b> 공개됩니다. 담당자는 주소를 한 번에 복사하거나 지도앱으로 바로 열 수 있습니다.</p>
-        <div className="mb-4">
-          <Field label="미팅 장소 주소" htmlFor="address" hint="네이버·카카오 지도에서 복사한 주소를 그대로 붙여넣어도 됩니다.">
-            <Input id="address" name="address" defaultValue={priv?.address ?? ""} onChange={(e) => onAddress(e.target.value)} placeholder="예: 서울 강남구 테헤란로 123, 5층" autoComplete="street-address" />
-          </Field>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="이름" htmlFor="contact_name"><Input id="contact_name" name="contact_name" defaultValue={priv?.contact_name ?? ""} placeholder="예: 이명수" /></Field>
-          <Field label="직책" htmlFor="contact_title"><Input id="contact_title" name="contact_title" defaultValue={priv?.contact_title ?? ""} placeholder="예: 대표" /></Field>
-          <Field label="연락처" htmlFor="contact_phone"><Input id="contact_phone" name="contact_phone" type="tel" inputMode="tel" defaultValue={priv?.contact_phone ?? ""} placeholder="010-0000-0000" /></Field>
-        </div>
-      </section>
+        <Row label="미팅 장소" required hint="지도앱 주소를 붙여넣으면 지역이 자동으로 채워집니다">
+          <Input id="address" name="address" defaultValue={priv?.address ?? ""} onChange={(e) => onAddress(e.target.value)} placeholder="주소 (예: 서울 강남구 테헤란로 123, 5층)" autoComplete="street-address" />
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 text-[0.9375rem] font-semibold text-ink-2">지역</span>
+            <Input id="region" name="region" value={region} onChange={(e) => { regionTouched.current = true; setRegion(e.target.value); }} placeholder="예: 서울 강남구" required />
+          </div>
+        </Row>
 
-      <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-1 text-[1.1875rem] font-bold text-ink">3. 상세 콜 메모</h2>
-        <p className="mb-4 text-[0.9375rem] text-ink-2">통화하면서 느낀 것을 태그로 고르고, 필요한 것만 짧게 적어 주세요. 담당자가 미팅을 준비하는 데 가장 큰 도움이 됩니다.</p>
-        <div className="grid gap-5">
-          <Field label="어떤 주제로 통화했나요?" htmlFor="call_topic"><Input id="call_topic" name="call_topic" defaultValue={priv?.call_topic ?? ""} placeholder="예: 신규 생산라인 자금" /></Field>
-          <Field label="관심을 보인 부분"><TagPicker name="interest_tags" options={INTEREST_TAG_OPTIONS} value={interest} onChange={setInterest} /></Field>
-          <Field label="부정적으로 반응한 부분"><TagPicker name="concern_tags" options={CONCERN_TAG_OPTIONS} value={concern} onChange={setConcern} /></Field>
-          <Field label="미팅이 잡힌 이유" htmlFor="meeting_reason"><Textarea id="meeting_reason" name="meeting_reason" defaultValue={priv?.meeting_reason ?? ""} placeholder="예: 신규 생산라인 도입 검토 중, 자금 조달 방법 상담 요청" /></Field>
-          <Field label="미팅 시 꼭 알아야 할 것" htmlFor="must_know"><Textarea id="must_know" name="must_know" defaultValue={priv?.must_know ?? ""} placeholder="예: 매출 80억, 기존 연구소 없음, 신용보증 이용 이력 있음" /></Field>
-          <Field label="상대방 특징" htmlFor="contact_traits"><Input id="contact_traits" name="contact_traits" defaultValue={priv?.contact_traits ?? ""} placeholder="예: 결정이 빠름, 숫자에 민감" /></Field>
-          <Field label="주의사항" htmlFor="caution" hint="담당자 화면에 눈에 띄게 표시됩니다."><Input id="caution" name="caution" defaultValue={priv?.caution ?? ""} placeholder="예: 오전 10시 이후 통화 선호, 세무사 비판 금지" /></Field>
-          <Field label="기타 코멘트" htmlFor="extra_note"><Textarea id="extra_note" name="extra_note" defaultValue={priv?.extra_note ?? ""} /></Field>
-        </div>
+        <Row label="미팅 일시" required>
+          <div className="flex flex-wrap gap-2">
+            {quickDays.map((q) => <Chip key={q.l} active={date === q.v} onClick={() => setDate(q.v)}>{q.l}</Chip>)}
+            <div className="min-w-[10rem] flex-1"><Input id="meeting_date" name="meeting_date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {TIMES.map((t) => <Chip key={t} active={time === t} onClick={() => setTime(t)}>{t}</Chip>)}
+            <div className="min-w-[8rem] flex-1"><Input id="meeting_time" name="meeting_time" type="time" step={600} value={time} onChange={(e) => setTime(e.target.value)} required /></div>
+          </div>
+        </Row>
+
+        <Row label="만나는 분" hint="대표가 아니면 직책을 눌러 바꾸세요">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Input id="contact_name" name="contact_name" defaultValue={priv?.contact_name ?? ""} placeholder="이름 (예: 이명수)" />
+            <Input id="contact_phone" name="contact_phone" type="tel" inputMode="tel" defaultValue={priv?.contact_phone ?? ""} placeholder="연락처 010-0000-0000" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {CONTACT_TITLE_OPTIONS.map((t) => <Chip key={t} active={title === t} onClick={() => setTitle(t)} testId={`title-${t}`}>{t}</Chip>)}
+            <div className="min-w-[9rem] flex-1"><Input id="contact_title" name="contact_title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="직책 직접 입력" /></div>
+          </div>
+        </Row>
+
+        <Row label="관심을 보인 분야" hint="여러 개 고를 수 있습니다">
+          <TagPicker name="interest_tags" options={[...INTEREST_TAG_OPTIONS, ...extraOptions]} value={interest} onChange={setInterest} />
+          <div className="flex gap-2">
+            <Input value={custom} onChange={(e) => setCustom(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }} placeholder="기타 (직접 입력 후 추가)" aria-label="관심 분야 직접 입력" data-testid="interest-custom" />
+            <button type="button" onClick={addCustom} className="press flex h-12 shrink-0 items-center gap-1 rounded-xl border border-line-strong bg-white px-4 text-[0.9375rem] font-semibold text-ink hover:bg-soft" data-testid="interest-add"><Plus size={17} /> 추가</button>
+          </div>
+        </Row>
+
+        <Row label="특이사항 · 코멘트" hint="담당자가 꼭 알아야 할 것만">
+          <Textarea id="extra_note" name="extra_note" defaultValue={legacyComment(priv)} className="min-h-[7rem]"
+            placeholder={"예: 매출 약 80억, 신규 설비 자금 필요\n결정이 빠른 편, 숫자로 설명하면 좋아함\n주의: 오전 10시 이후 통화 선호"} />
+        </Row>
       </section>
 
       {canPublishNow && (
@@ -103,7 +176,7 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
         </label>
       )}
 
-      {state.error && <p className="rounded-xl bg-danger-bg px-4 py-3 text-[1rem] font-medium text-danger" role="alert">{state.error}</p>}
+      {state.error && <p className="flex items-center gap-2 rounded-xl bg-danger-bg px-4 py-3 text-[1rem] font-medium text-danger" role="alert"><X size={18} /> {state.error}</p>}
 
       <div className="sticky bottom-[72px] z-10 flex gap-2 rounded-2xl border border-line bg-white/95 p-3 shadow-card backdrop-blur lg:bottom-4">
         <LinkButton href={cancelHref} variant="secondary" size="lg" className="flex-1">취소</LinkButton>

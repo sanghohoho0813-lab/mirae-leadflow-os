@@ -40,7 +40,22 @@ async function startEmbeddedPostgres(): Promise<number> {
     import("@electric-sql/pglite/contrib/pgcrypto"),
     import("@electric-sql/pglite-socket"),
   ]);
-  const pg = await PGlite.create({ extensions: { pgcrypto } });
+  // Built at `npm run build` (scripts/pglite-snapshot.mjs): schema already applied,
+  // so a cold start skips initdb. Falls back to a fresh database if it is missing.
+  let loadDataDir: Blob | undefined;
+  try {
+    const { readFile } = await import("node:fs/promises");
+    const { join } = await import("node:path");
+    loadDataDir = new Blob([new Uint8Array(await readFile(join(process.cwd(), ".pglite", "snapshot.tgz")))]);
+  } catch {}
+  let pg;
+  try {
+    pg = await PGlite.create({ extensions: { pgcrypto }, loadDataDir });
+  } catch (e) {
+    if (!loadDataDir) throw e;
+    console.warn("[db] snapshot unusable, creating a fresh database", e);
+    pg = await PGlite.create({ extensions: { pgcrypto } });
+  }
   for (let port = 54329 + Math.floor(Math.random() * 500), tries = 0; ; port++, tries++) {
     try {
       await new PGLiteSocketServer({ db: pg, port, host: "127.0.0.1" }).start();
