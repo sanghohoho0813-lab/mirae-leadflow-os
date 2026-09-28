@@ -8,9 +8,10 @@ const nextConfig: NextConfig = {
   },
   devIndicators: false,
   experimental: {
-    serverActions: { bodySizeLimit: "1mb" },
-    // Tabs are prefetched (full data, reused ≤30s) and revisits within 20s are
-    // instant; every mutation still revalidates. No loading.tsx: see DECISIONS D-16.
+    // Training files travel as 2MB pieces through server actions (see lib/actions/trainings.ts).
+    serverActions: { bodySizeLimit: "3mb" },
+    // Revisits within 20s are instant; every mutation still revalidates.
+    // No link prefetch and no loading.tsx: see DECISIONS D-16 / D-20.
     staleTimes: { dynamic: 20, static: 30 },
   },
   webpack: (config) => {

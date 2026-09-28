@@ -6,7 +6,7 @@ import { useSafeNavigate, useSafeRefresh, useSafeTransition } from "@/components
 import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
-import { deleteTraining, deleteTrainingFile, markTrainingRead, summarizeTraining } from "@/lib/actions/trainings";
+import { deleteTraining, deleteTrainingFile, downloadTrainingChunk, markTrainingRead, summarizeTraining } from "@/lib/actions/trainings";
 import type { TrainingFile } from "@/lib/types";
 
 /** "다 읽었어요" — the 단장 sees who has (and hasn't) gone through the material. */
@@ -101,13 +101,20 @@ export function fmtSize(n: number) {
   return n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(n / 1024))}KB`;
 }
 
+function fromBase64(s: string): Uint8Array<ArrayBuffer> {
+  const bin = atob(s);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
 async function fetchFile(f: TrainingFile, onProgress: (p: number) => void): Promise<Blob> {
-  const parts: ArrayBuffer[] = [];
+  const parts: Uint8Array<ArrayBuffer>[] = [];
   for (let i = 0; i < f.chunk_count; i++) {
-    let res: Response | null = null;
-    for (let attempt = 0; attempt < 3 && !res?.ok; attempt++) res = await fetch(`/api/training-files/${f.id}/${i}`).catch(() => null);
-    if (!res?.ok) throw new Error("download failed");
-    parts.push(await res.arrayBuffer());
+    let data: string | undefined;
+    for (let attempt = 0; attempt < 3 && !data; attempt++) data = (await downloadTrainingChunk(f.id, i).catch(() => null))?.data;
+    if (!data) throw new Error("download failed");
+    parts.push(fromBase64(data));
     onProgress((i + 1) / f.chunk_count);
   }
   return new Blob(parts, { type: f.mime || "application/octet-stream" });

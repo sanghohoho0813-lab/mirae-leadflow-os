@@ -81,7 +81,7 @@ export async function deleteTraining(id: string): Promise<ActionResult> {
   } catch (e) { return fail(e); }
 }
 
-/** Registers a file; the browser then sends it in FILE_CHUNK pieces to /api/training-files/[id]/[idx]. */
+/** Registers a file; the browser then sends it in FILE_CHUNK pieces with uploadTrainingChunk. */
 export async function startTrainingFile(trainingId: string, file: { name: string; mime: string; size: number }): Promise<ActionResult & { chunkSize?: number; chunkCount?: number }> {
   const viewer = await requireViewer();
   if (!canTeach(viewer)) return { ok: false, code: "FORBIDDEN", message: "자료는 단장·본부장만 올릴 수 있습니다." };
@@ -174,5 +174,38 @@ export async function summarizeTraining(id: string): Promise<SummarizeResponse> 
     if (!saved.length) return { ok: false, code: "FORBIDDEN", message: "이 교육을 정리할 권한이 없습니다." };
     revalidateTrainings(id);
     return { ok: true, source: r.source, notes: r.notes };
+  } catch (e) { return fail(e); }
+}
+
+// ------------------------------------------------------------------ file pieces
+// Server actions (not a separate API route) so they run in the same server
+// process as the pages — required for the temporary built-in DB on Vercel.
+
+/** Stores one piece (≤ FILE_CHUNK) of a file registered with startTrainingFile. */
+export async function uploadTrainingChunk(fileId: string, idx: number, form: FormData): Promise<ActionResult> {
+  const viewer = await requireViewer();
+  const blob = form.get("data");
+  if (!(blob instanceof Blob) || !blob.size || blob.size > FILE_CHUNK || !Number.isInteger(idx) || idx < 0) {
+    return { ok: false, code: "VALIDATION", message: "조각 크기가 올바르지 않습니다." };
+  }
+  const data = Buffer.from(await blob.arrayBuffer());
+  try {
+    await withUser(viewer.session.userId, (tx) => tx`
+      insert into training_file_chunks(file_id, organization_id, idx, data)
+      select f.id, f.organization_id, ${idx}, ${data} from training_files f where f.id = ${fileId}
+      on conflict (file_id, idx) do nothing`);
+    return { ok: true };
+  } catch (e) { return fail(e); }
+}
+
+/** One piece of a file, base64-encoded (≤ 2.7MB per response). */
+export async function downloadTrainingChunk(fileId: string, idx: number): Promise<ActionResult & { data?: string }> {
+  const viewer = await requireViewer();
+  try {
+    const row = await withUser(viewer.session.userId, async (tx) => (await tx<{ data: Buffer }[]>`
+      select c.data from training_file_chunks c join training_files f on f.id = c.file_id
+      where c.file_id = ${fileId} and c.idx = ${idx} and f.complete`)[0]);
+    if (!row) return { ok: false, code: "NOT_FOUND", message: "자료를 찾을 수 없습니다." };
+    return { ok: true, data: Buffer.from(row.data).toString("base64") };
   } catch (e) { return fail(e); }
 }

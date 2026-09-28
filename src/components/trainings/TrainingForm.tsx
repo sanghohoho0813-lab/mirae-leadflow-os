@@ -6,7 +6,7 @@ import { useSafeNavigate } from "@/components/providers/SafeActions";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
-import { createTraining, finishTrainingFile, startTrainingFile, summarizeTraining, updateTraining, type TrainingInput } from "@/lib/actions/trainings";
+import { createTraining, finishTrainingFile, startTrainingFile, summarizeTraining, updateTraining, uploadTrainingChunk, type TrainingInput } from "@/lib/actions/trainings";
 import { kstDateString } from "@/lib/time";
 import { fmtSize } from "./TrainingClient";
 
@@ -64,8 +64,9 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
       const body = f.slice(c * size, (c + 1) * size);
       let ok = false;
       for (let attempt = 0; attempt < 3 && !ok; attempt++) {
-        const res = await fetch(`/api/training-files/${start.id}/${c}`, { method: "PUT", body }).catch(() => null);
-        ok = !!res?.ok;
+        const form = new FormData();
+        form.append("data", body);
+        ok = !!(await uploadTrainingChunk(start.id, c, form).catch(() => null))?.ok;
       }
       if (!ok) throw new Error(`${f.name}을(를) 올리는 중 연결이 끊겼습니다. 다시 시도해 주세요.`);
       setPhase({ label: `자료 올리는 중 (${i + 1}/${n}) ${f.name}`, progress: (c + 1) / start.chunkCount! });

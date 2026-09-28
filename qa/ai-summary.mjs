@@ -22,7 +22,7 @@ const mock = http.createServer((req, res) => {
 }).listen(MOCK_PORT);
 
 const env = { ...process.env, PORT: "3100", ANTHROPIC_API_KEY: "test-key", ANTHROPIC_BASE_URL: `http://127.0.0.1:${MOCK_PORT}`, ANTHROPIC_MODEL: "claude-sonnet-5" };
-const app = spawn("npx", ["next", "start", "-p", "3100"], { env, stdio: "ignore" });
+const app = spawn("npx", ["next", "start", "-p", "3100"], { env, stdio: "ignore", detached: true });
 for (let i = 0; i < 60; i++) { try { await fetch(APP + "/setup"); break; } catch { await new Promise((r) => setTimeout(r, 500)); } }
 
 const secret = (fs.readFileSync(".env.local", "utf8").match(/AUTH_SECRET=(.*)/) || [])[1]?.trim() || "local-dev-secret";
@@ -70,7 +70,7 @@ try {
   await p.waitForSelector('[data-testid="summary-one-line"]');
   check("AI failure -> basic summary instead of an error", (await p.textContent('[data-testid="training-summary"]')).includes("기본 요약"));
 } finally {
-  await b.close(); app.kill(); mock.close();
+  await b.close(); try { process.kill(-app.pid); } catch {} mock.close();
 }
 console.log(fail ? `${fail} failed` : "all passed");
 process.exit(fail ? 1 : 0);
