@@ -68,3 +68,7 @@
 
 ## D-18 화면 색상은 기기별 저장(9 테마)
 - Master 표준 9 테마 + 7색 미리보기, localStorage 저장, 첫 화면 깜빡임 없음, Device View 미리보기에도 즉시 반영. 조직 공통 색상은 NEXT.
+
+## D-19 서버 지역을 서울(icn1)로 고정
+- WHY: 기본값 iad1(미국 동부)이라 버튼마다 한국↔미국 왕복. 사용자는 전원 한국. `vercel.json`의 `regions: ["icn1"]`.
+- DB 연결 시 같은 지역 권장: Supabase는 Seoul(ap-northeast-2) 선택.
