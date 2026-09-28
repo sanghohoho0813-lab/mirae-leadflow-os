@@ -839,8 +839,14 @@ test("26. 2차·3차 미팅: 후속 중인 DB에 2차 미팅을 잡고, 메모�
 test("27. 교육 일정: 달력·한 달 일정 등록·메뉴 속 작은 달력·오늘 교육 공지", async ({ browser }) => {
   const sec = await loginAs(browser, U.secretary);
   await expect(sec.getByTestId("mini-calendar").first()).toBeVisible();
+  // 오늘(9/28) 단장 교육: 강의가 끝나 원문·핵심 정리가 올라와 '지난 교육'으로
+  await go(sec, "/trainings/50000000-0000-4000-8000-000000000007");
+  await expect(sec.getByTestId("training-notice")).toContainText("법인영업의 판을 바꿀 실전 교육");
+  await expect(sec.getByRole("main")).toContainText("벤처인증과 투자자 소득공제는 요건·절차가 다른 별개의 일");
+  await expect(sec.getByRole("main")).toContainText("0928_법인영업_실전교육_체크리스트.txt");
+  await shot(sec, "27-lecture-0928");
   await go(sec, "/trainings");
-  await expect(sec.getByTestId("training-notice").first()).toContainText("법인영업의 판을 바꿀 실전 교육");
+  await expect(sec.getByTestId("training-notice").first()).toBeVisible();
   await go(sec, "/trainings/schedule");
   await expect(sec.getByTestId("schedule-calendar")).toBeVisible();
   await expect(sec.getByTestId("schedule-list")).toContainText("개인투자조합");

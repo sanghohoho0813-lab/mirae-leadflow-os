@@ -28,7 +28,7 @@ export function shouldAutoOpenIntro(): boolean {
   return !(until && Date.now() < until);
 }
 
-/** 서비스 소개 영상 (44초, 자막형) — 화면 가운데에 띄운다. */
+/** 서비스 소개 영상 (44초, 세로 9:16 릴스 비율, 자막형) — 화면 가운데에 띄운다. */
 export function IntroVideo({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [ended, setEnded] = useState(false);
@@ -47,22 +47,24 @@ export function IntroVideo({ open, onClose }: { open: boolean; onClose: () => vo
   const hideForDay = () => { write(HIDE_UNTIL, String(Date.now() + DAY)); onClose(); };
   const hideForever = () => { write(NEVER, "1"); onClose(); };
   const replay = () => { const v = ref.current; if (v) { v.currentTime = 0; void v.play(); setEnded(false); } };
-  const btn = "press flex min-h-[3rem] items-center justify-center rounded-xl px-4 text-[1rem] font-bold";
+  const btn = "press flex min-h-[3rem] items-center justify-center whitespace-nowrap rounded-xl px-2 text-[0.9688rem] font-bold";
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink/70 p-3 backdrop-blur-sm sm:p-6" onClick={onClose} data-testid="intro-video" role="dialog" aria-modal="true" aria-label="서비스 소개 영상">
-      <div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+      {/* 세로(9:16) 영상: 화면 높이에 맞춰 영상 높이를 정하고, 창 폭은 영상 폭과 같게 */}
+      <div className="overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}
+        style={{ ["--vid-h" as string]: "min(calc(100dvh - 15rem), calc((100vw - 1.5rem) * 16 / 9), 1100px)", width: "max(20rem, calc(var(--vid-h) * 9 / 16))", maxWidth: "calc(100vw - 1.5rem)" }}>
         <div className="flex items-center justify-between gap-2 px-4 py-3 sm:px-5">
           <div className="min-w-0">
             <div className="text-[1.0625rem] font-extrabold text-ink">리드플로우 소개 영상</div>
-            <div className="text-[0.875rem] text-ink-3">44초 · 소리 없이 자막으로 보는 영상</div>
+            <div className="text-[0.875rem] text-ink-3">44초 · 소리 없이 자막으로</div>
           </div>
           <button type="button" onClick={onClose} aria-label="닫기" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-ink-2 hover:bg-neutral-bg" data-testid="intro-close-x"><X size={24} /></button>
         </div>
-        <div className="relative bg-black">
+        <div className="relative flex justify-center bg-black">
           {/* MP4(H.264)가 먼저: 아이폰·카카오톡 브라우저. 못 트는 브라우저는 WebM으로. */}
           <video ref={ref} poster="/intro/poster.jpg" autoPlay muted playsInline controls preload="auto"
-            onEnded={() => setEnded(true)} className="block aspect-video w-full" data-testid="intro-video-player">
+            onEnded={() => setEnded(true)} className="block aspect-[9/16] w-auto" style={{ height: "var(--vid-h)" }} data-testid="intro-video-player">
             <source src="/intro/leadflow-intro.mp4" type="video/mp4" />
             <source src="/intro/leadflow-intro.webm" type="video/webm" />
           </video>
@@ -72,10 +74,10 @@ export function IntroVideo({ open, onClose }: { open: boolean; onClose: () => vo
             </button>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 sm:p-4">
+        <div className="grid grid-cols-2 gap-2 p-3">
           <button type="button" onClick={hideForDay} className={`${btn} border border-line-strong bg-white text-ink-2 hover:bg-neutral-bg`} data-testid="intro-hide-day">하루 동안 안 보기</button>
           <button type="button" onClick={hideForever} className={`${btn} border border-line-strong bg-white text-ink-2 hover:bg-neutral-bg`} data-testid="intro-hide-forever">다시 보지 않기</button>
-          <button type="button" onClick={onClose} className={`${btn} col-span-2 bg-primary text-white hover:bg-primary-strong sm:col-span-1`} data-testid="intro-close">닫기</button>
+          <button type="button" onClick={onClose} className={`${btn} col-span-2 bg-primary text-white hover:bg-primary-strong`} data-testid="intro-close">닫기</button>
         </div>
       </div>
     </div>

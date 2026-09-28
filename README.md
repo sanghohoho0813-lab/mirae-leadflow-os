@@ -61,7 +61,7 @@ qa/                                 Playwright E2E + 증거 스크린샷
 ```
 
 ## 소개 영상
-`public/intro/leadflow-intro.mp4` (44초, 자막형, 단장·본부장 관점) — 앱에 들어오면 팝업으로 뜨고, ☰ 메뉴 맨 아래 [서비스 소개 영상 보기]로 다시 볼 수 있습니다. 화면이 바뀌면 다시 만들기:
+`public/intro/leadflow-intro.mp4` (44초, 세로 9:16 릴스 비율, 자막형, 단장·본부장 관점) — 앱에 들어오면 팝업으로 뜨고, ☰ 메뉴 맨 아래 [서비스 소개 영상 보기]로 다시 볼 수 있습니다. 화면이 바뀌면 다시 만들기:
 ```bash
 npm run db:seed && npm start                 # 다른 터미널
 curl -sL -o promo/PretendardVariable.woff2 https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/woff2/PretendardVariable.woff2

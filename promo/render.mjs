@@ -14,11 +14,15 @@ const only = process.env.ONLY ? process.env.ONLY.split(",").map(Number) : null; 
 rmSync(FRAMES, { recursive: true, force: true });
 mkdirSync(FRAMES, { recursive: true });
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-await page.goto("file://" + resolve("promo/scenes.html"));
+// 기본은 세로(릴스) 9:16. 가로판은 SCENES=promo/scenes.html SIZE=1920x1080
+const SCENES = process.env.SCENES ?? "promo/scenes-vertical.html";
+const [W, H] = (process.env.SIZE ?? (SCENES.includes("vertical") ? "1080x1920" : "1920x1080")).split("x").map(Number);
+const page = await browser.newPage({ viewport: { width: W, height: H } });
+await page.goto("file://" + resolve(SCENES));
 await page.evaluate(async () => {
   await document.fonts.ready;
   await Promise.all([...document.images].map((i) => i.decode()));
+  if (window.ready) await window.ready;
 });
 const DURATION = await page.evaluate(() => window.DURATION);
 
@@ -41,7 +45,7 @@ if (only) {
   // 앱 팝업용: H.264를 못 트는 브라우저를 위한 WebM, 그리고 첫 화면(포스터)
   const base = OUT.replace(/\.mp4$/, "");
   execFileSync(FFMPEG, ["-y", "-loglevel", "error", "-i", OUT, "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "36", "-row-mt", "1", "-cpu-used", "4", "-an", `${base}.webm`], { stdio: "inherit" });
-  execFileSync(FFMPEG, ["-y", "-loglevel", "error", "-ss", "2.2", "-i", OUT, "-frames:v", "1", "-vf", "scale=1280:-1", "-q:v", "4", OUT.replace(/[^/]+$/, "poster.jpg")], { stdio: "inherit" });
+  execFileSync(FFMPEG, ["-y", "-loglevel", "error", "-ss", "2.2", "-i", OUT, "-frames:v", "1", "-vf", `scale=${Math.min(W, 1280)}:-2`, "-q:v", "4", OUT.replace(/[^/]+$/, "poster.jpg")], { stdio: "inherit" });
   console.log(`wrote ${OUT}, ${base}.webm, poster.jpg (${n} frames)`);
 }
 await browser.close().catch(() => {});
