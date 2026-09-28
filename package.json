@@ -19,6 +19,7 @@
     "@electric-sql/pglite-socket": "^0.2.11",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.58.0",
+    "fflate": "^0.8.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.544.0",
     "next": "15.5.26",

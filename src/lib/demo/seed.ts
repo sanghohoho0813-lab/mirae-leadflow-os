@@ -6,22 +6,25 @@ import type { TransactionSql } from "postgres";
 export const ORG_ID = "00000000-0000-4000-8000-000000000001";
 export const ORG2_ID = "00000000-0000-4000-8000-000000000002";
 
-interface SeedUser { id: string; email: string; name: string; role: string; phone: string; org?: string }
+interface SeedUser { id: string; email: string; name: string; role: string; phone: string; title?: string; org?: string }
 
 export const USERS = {
-  owner:       { id: "10000000-0000-4000-8000-000000000001", email: "owner@leadflow.local",    name: "김상호", role: "OWNER",      phone: "010-1000-0001" },
-  manager:     { id: "10000000-0000-4000-8000-000000000002", email: "manager@leadflow.local",  name: "박서연", role: "MANAGER",    phone: "010-1000-0002" },
-  caller:      { id: "10000000-0000-4000-8000-000000000003", email: "caller@leadflow.local",   name: "이정숙", role: "CALLER",     phone: "010-1000-0003" },
-  consultant1: { id: "10000000-0000-4000-8000-000000000004", email: "minsu@leadflow.local",    name: "최민수", role: "CONSULTANT", phone: "010-1000-0004" },
-  consultant2: { id: "10000000-0000-4000-8000-000000000005", email: "jiyoung@leadflow.local",  name: "한지영", role: "CONSULTANT", phone: "010-1000-0005" },
-  consultant3: { id: "10000000-0000-4000-8000-000000000006", email: "sehun@leadflow.local",    name: "오세훈", role: "CONSULTANT", phone: "010-1000-0006" },
-  leader:      { id: "10000000-0000-4000-8000-000000000007", email: "leader@leadflow.local",   name: "정미경", role: "LEADER",     phone: "010-1000-0007" },
-  otherOwner:  { id: "20000000-0000-4000-8000-000000000001", email: "other@leadflow.local",    name: "다른단장", role: "OWNER",     phone: "010-2000-0001", org: ORG2_ID },
+  owner:       { id: "10000000-0000-4000-8000-000000000001", email: "owner@leadflow.local",    name: "송하균",     role: "OWNER",      phone: "010-1000-0001" },
+  leaderB:     { id: "10000000-0000-4000-8000-000000000002", email: "leader-b@leadflow.local", name: "본부장 B",   role: "LEADER",     phone: "010-1000-0002" },
+  caller:      { id: "10000000-0000-4000-8000-000000000003", email: "caller@leadflow.local",   name: "이재원",     role: "CALLER",     phone: "010-1000-0003", title: "콜팀장" },
+  consultant1: { id: "10000000-0000-4000-8000-000000000004", email: "c-a@leadflow.local",      name: "컨설턴트 A", role: "CONSULTANT", phone: "010-1000-0004" },
+  consultant2: { id: "10000000-0000-4000-8000-000000000005", email: "c-b@leadflow.local",      name: "컨설턴트 B", role: "CONSULTANT", phone: "010-1000-0005" },
+  consultant3: { id: "10000000-0000-4000-8000-000000000006", email: "c-c@leadflow.local",      name: "컨설턴트 C", role: "CONSULTANT", phone: "010-1000-0006" },
+  leader:      { id: "10000000-0000-4000-8000-000000000007", email: "leader-a@leadflow.local", name: "본부장 A",   role: "LEADER",     phone: "010-1000-0007" },
+  leaderC:     { id: "10000000-0000-4000-8000-000000000008", email: "leader-c@leadflow.local", name: "본부장 C",   role: "LEADER",     phone: "010-1000-0008" },
+  consultant4: { id: "10000000-0000-4000-8000-000000000009", email: "c-d@leadflow.local",      name: "컨설턴트 D", role: "CONSULTANT", phone: "010-1000-0009" },
+  consultant5: { id: "10000000-0000-4000-8000-000000000010", email: "c-e@leadflow.local",      name: "컨설턴트 E", role: "CONSULTANT", phone: "010-1000-0010" },
+  otherOwner:  { id: "20000000-0000-4000-8000-000000000001", email: "other@leadflow.local",    name: "다른단장",   role: "OWNER",      phone: "010-2000-0001", org: ORG2_ID },
 } satisfies Record<string, SeedUser>;
 
 export const DEMO_DEFAULT_USER_ID = USERS.owner.id;
 
-interface ReportSeed { outcome: string; reaction: string; result: string; next: string; due?: number; memo: string }
+interface ReportSeed { outcome: string; reaction: string; result: string; next: string; due?: number; memo: string; topics?: string[]; materials?: string[]; nextNote?: string }
 interface LeadSeed {
   id: string; company: string; region: string; industry: string; at: Date; method: string; status: string;
   assignee?: SeedUser; summary: string; contact: string[]; topic: string; interest: string[]; concern: string[];
@@ -77,11 +80,11 @@ const leads = (): LeadSeed[] => [
     traits: "온라인 미팅 선호", reason: "인증으로 금리 우대를 받고 싶어함", mustKnow: "작년 R&D 투자 3억", caution: "줌 링크 하루 전 발송 요청" },
 
   // ASSIGNED — meetings today
-  { id: L(6), company: "성진테크(주)", region: "서울 강남구", industry: "자동차 부품", at: kst(0, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant1,
+  { id: L(6), company: "성진테크(주)", region: "서울 강남구", industry: "자동차 부품", at: kst(0, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant4,
     summary: "자동차 부품 제조, 직원 60명, 정책자금·연구소 관심", contact: ["이명수", "대표", "010-3333-0006"],
     topic: "신규 생산라인 자금", interest: ["정책자금", "기업부설연구소"], concern: ["담보 부족"],
     traits: "결정이 빠름. 실행 계획을 구체적으로 원함", reason: "신규 생산라인 도입 검토 중, 자금 조달 상담 요청", mustKnow: "매출 80억, 기존 연구소 없음", caution: "제품 소개 자료 지참 요청" },
-  { id: L(7), company: "(주)한빛솔루션", region: "경기 성남시", industry: "소프트웨어", at: kst(0, 14), method: "ONLINE", status: "ASSIGNED", assignee: U.consultant1,
+  { id: L(7), company: "(주)한빛솔루션", region: "경기 성남시", industry: "소프트웨어", at: kst(0, 14), method: "ONLINE", status: "ASSIGNED", assignee: U.leader,
     summary: "SW 개발, 직원 15명, 고용지원금 관심", contact: ["박민지", "이사", "010-3333-0007"],
     topic: "청년 채용 지원금", interest: ["고용지원금", "벤처기업확인"], concern: [],
     traits: "IT 용어에 익숙. 빠른 진행 선호", reason: "하반기 개발자 4명 채용 예정", mustKnow: "벤처인증 만료 임박", caution: "" },
@@ -91,7 +94,7 @@ const leads = (): LeadSeed[] => [
     traits: "보수적. 기존 세무사와 관계 중시", reason: "가지급금 정리 방법 문의", mustKnow: "가지급금 약 3억", caution: "세무사 비판 금지" },
 
   // ASSIGNED — tomorrow
-  { id: L(9), company: "대성산업(주)", region: "경기 안산시", industry: "기계 부품", at: kst(1, 11), method: "VISIT", status: "ASSIGNED", assignee: U.consultant2,
+  { id: L(9), company: "대성산업(주)", region: "경기 안산시", industry: "기계 부품", at: kst(1, 11), method: "VISIT", status: "ASSIGNED", assignee: U.leaderB,
     summary: "기계부품 제조, 직원 35명, 연구소 관심", contact: ["정은주", "이사", "010-3333-0009"],
     topic: "연구소 설립·세액공제", interest: ["기업부설연구소"], concern: [], traits: "", reason: "연구소 설립으로 세액공제 원함", mustKnow: "", caution: "" },
 
@@ -99,25 +102,27 @@ const leads = (): LeadSeed[] => [
   { id: L(10), company: "(주)그린바이오", region: "충북 청주시", industry: "바이오", at: kst(-2, 14), method: "VISIT", status: "ASSIGNED", assignee: U.consultant3,
     summary: "바이오 소재, 직원 18명, 정책자금 관심", contact: ["윤재석", "대표", "010-3333-0010"],
     topic: "R&D 자금", interest: ["정책자금", "정부지원사업"], concern: [], traits: "", reason: "R&D 과제 신청 준비", mustKnow: "", caution: "" },
-  { id: L(11), company: "하나정밀(주)", region: "경기 시흥시", industry: "정밀 가공", at: kst(-5, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant1,
+  { id: L(11), company: "하나정밀(주)", region: "경기 시흥시", industry: "정밀 가공", at: kst(-5, 10), method: "VISIT", status: "ASSIGNED", assignee: U.leaderC,
     summary: "정밀가공, 직원 22명, 고용지원금 관심", contact: ["송하나", "대표", "010-3333-0011"],
     topic: "고용지원금", interest: ["고용지원금"], concern: [], traits: "", reason: "직원 채용 계획", mustKnow: "", caution: "" },
 
   // FOLLOW_UP — report submitted, follow-ups pending
-  { id: L(12), company: "대명플라스틱(주)", region: "경기 김포시", industry: "플라스틱 사출", at: kst(-3, 10), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant2,
+  { id: L(12), company: "대명플라스틱(주)", region: "경기 김포시", industry: "플라스틱 사출", at: kst(-3, 10), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant1,
     summary: "사출 제조, 직원 40명, 정책자금 관심", contact: ["김민수", "대표", "010-3333-0012"],
     topic: "시설자금", interest: ["정책자금"], concern: [], traits: "", reason: "설비 교체", mustKnow: "", caution: "",
-    report: { outcome: "DONE", reaction: "HIGH", result: "MATERIAL_REQUEST", next: "SEND_MATERIAL", due: 0, memo: "정책자금 안내자료 요청. 다음 주 재방문 가능" } },
+    report: { outcome: "DONE", reaction: "HIGH", result: "MATERIAL_REQUEST", next: "SEND_MATERIAL", due: 0, memo: "설비 교체 시설자금 관심 높음. 다음 주 재방문 가능",
+      topics: ["정책자금"], materials: ["재무제표", "부가세 과세표준증명"], nextNote: "정책자금 안내자료 보내고 재무제표 3년치 받기" } },
   { id: L(13), company: "(주)블루오션", region: "부산 사상구", industry: "조선 기자재", at: kst(-10, 15), method: "VISIT", status: "FOLLOW_UP", assignee: U.consultant3,
     summary: "조선기자재, 직원 55명, 인증 관심", contact: ["강동원", "이사", "010-3333-0013"],
     topic: "메인비즈 인증", interest: ["기업인증"], concern: ["시간 부족"], traits: "", reason: "인증 갱신", mustKnow: "", caution: "",
-    report: { outcome: "DONE", reaction: "MID", result: "REVIEW_THEN_CONTACT", next: "CALL", due: -8, memo: "내부 검토 후 연락 주기로 함" } },
+    report: { outcome: "DONE", reaction: "MID", result: "REVIEW_THEN_CONTACT", next: "CALL", due: -8, memo: "내부 검토 후 연락 주기로 함",
+      topics: ["기업인증"], materials: ["회사소개서"], nextNote: "인증 갱신 일정 확인 전화" } },
 
   // CLOSED
   { id: L(14), company: "동아섬유(주)", region: "대구 서구", industry: "섬유", at: kst(-7, 11), method: "VISIT", status: "CLOSED", assignee: U.consultant1,
     summary: "섬유 제조, 직원 28명", contact: ["이동아", "대표", "010-3333-0014"],
     topic: "정책자금", interest: ["정책자금"], concern: ["시기 부적절"], traits: "", reason: "", mustKnow: "", caution: "",
-    report: { outcome: "DONE", reaction: "LOW", result: "HARD", next: "NONE", memo: "내년 상반기에 다시 검토 예정" } },
+    report: { outcome: "DONE", reaction: "LOW", result: "HARD", next: "NONE", memo: "내년 상반기에 다시 검토 예정", topics: ["정책자금"] } },
 
   // CANCELLED
   { id: L(15), company: "(주)서울테크", region: "서울 구로구", industry: "IT 서비스", at: kst(2, 13), method: "PHONE", status: "CANCELLED",
@@ -130,6 +135,10 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
   const all = leads();
   const users: SeedUser[] = Object.values(U);
   const orgs = [ORG_ID, ORG2_ID];
+  await tx`delete from training_reads where organization_id in ${tx(orgs)}`;
+  await tx`delete from training_file_chunks where organization_id in ${tx(orgs)}`;
+  await tx`delete from training_files where organization_id in ${tx(orgs)}`;
+  await tx`delete from trainings where organization_id in ${tx(orgs)}`;
   await tx`delete from activity_logs where organization_id in ${tx(orgs)}`;
   await tx`delete from follow_ups where organization_id in ${tx(orgs)}`;
   await tx`delete from meeting_reports where organization_id in ${tx(orgs)}`;
@@ -140,10 +149,10 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
   await tx`delete from organizations where id in ${tx(orgs)}`;
   await tx`delete from auth.users where id in ${tx(users.map((u) => u.id))}`;
 
-  await tx`insert into organizations(id, name, invite_code) values (${ORG_ID}, '미래AI랩 사업단', 'MIRAE2026'), (${ORG2_ID}, '다른 사업단', 'OTHER0001')`;
+  await tx`insert into organizations(id, name, invite_code) values (${ORG_ID}, '스마트 사업단', 'SMART2026'), (${ORG2_ID}, '다른 사업단', 'OTHER0001')`;
   for (const u of users) {
     await tx`insert into auth.users(id, email) values (${u.id}, ${u.email})`;
-    await tx`insert into profiles(id, organization_id, role, full_name, phone) values (${u.id}, ${u.org ?? ORG_ID}, ${u.role}, ${u.name}, ${u.phone})`;
+    await tx`insert into profiles(id, organization_id, role, full_name, phone, title) values (${u.id}, ${u.org ?? ORG_ID}, ${u.role}, ${u.name}, ${u.phone}, ${u.title ?? null})`;
   }
 
   for (const l of all) {
@@ -169,19 +178,19 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
       const r = l.report;
       const reportedAt = new Date(l.at.getTime() + 2 * 3600000);
       const due = r.due === undefined ? null : kstDay(r.due);
-      const [{ id: reportId }] = await tx<{ id: string }[]>`insert into meeting_reports(organization_id, lead_id, reporter_id, outcome, reaction, result, next_action, next_action_date, memo, created_at)
-        values (${ORG_ID}, ${l.id}, ${assigned}, ${r.outcome}, ${r.reaction}, ${r.result}, ${r.next}, ${due}, ${r.memo}, ${reportedAt}) returning id`;
+      const [{ id: reportId }] = await tx<{ id: string }[]>`insert into meeting_reports(organization_id, lead_id, reporter_id, outcome, reaction, result, next_action, next_action_date, memo, topics, materials, next_note, created_at)
+        values (${ORG_ID}, ${l.id}, ${assigned}, ${r.outcome}, ${r.reaction}, ${r.result}, ${r.next}, ${due}, ${r.memo}, ${r.topics ?? []}, ${r.materials ?? []}, ${r.nextNote ?? null}, ${reportedAt}) returning id`;
       let followId: string | null = null;
       if (r.next !== "NONE") {
         const [{ id }] = await tx<{ id: string }[]>`insert into follow_ups(organization_id, lead_id, assignee_id, action, due_date, memo, created_by, created_at)
-          values (${ORG_ID}, ${l.id}, ${assigned}, ${r.next}, ${due}, ${r.memo}, ${assigned}, ${reportedAt}) returning id`;
+          values (${ORG_ID}, ${l.id}, ${assigned}, ${r.next}, ${due}, ${r.nextNote ?? r.memo}, ${assigned}, ${reportedAt}) returning id`;
         followId = id;
       }
       await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, from_status, to_status, detail, created_at)
         values (${ORG_ID}, ${l.id}, ${assigned}, 'REPORT', 'ASSIGNED', ${l.status}, ${tx.json({ report_id: reportId, outcome: r.outcome, reaction: r.reaction, result: r.result, next_action: r.next, follow_up_id: followId })}, ${reportedAt})`;
     }
     if (l.status === "CANCELLED") {
-      await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, from_status, to_status, detail) values (${ORG_ID}, ${l.id}, ${U.manager.id}, 'CANCEL_LEAD', 'OPEN', 'CANCELLED', ${tx.json({ reason: l.cancelReason ?? null })})`;
+      await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, from_status, to_status, detail) values (${ORG_ID}, ${l.id}, ${U.owner.id}, 'CANCEL_LEAD', 'OPEN', 'CANCELLED', ${tx.json({ reason: l.cancelReason ?? null })})`;
     }
   }
 
@@ -190,5 +199,179 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
     values ('40000000-0000-4000-8000-000000000001', ${ORG2_ID}, '타조직상사(주)', '광주 북구', '유통', ${kst(2, 10)}, 'VISIT', '다른 조직의 DB', 'OPEN', ${U.otherOwner.id}, now())`;
   await tx`insert into lead_private_details(lead_id, organization_id, contact_name, contact_phone) values ('40000000-0000-4000-8000-000000000001', ${ORG2_ID}, '비밀담당자', '010-9999-9999')`;
 
+  await seedTrainings(tx);
+
   return { users: users.length, leads: all.length };
+}
+
+// ------------------------------------------------------------ 교육 자료실
+// Sample sessions: 월요일 = 단장, 수요일 = 본부장. Summaries are written in the
+// same shape the AI produces so the demo shows the finished experience.
+interface TrainingSeed {
+  id: string; title: string; day: number; hour: number; instructor: SeedUser; content: string | null;
+  summary: null | { one_line: string; key_points: string[]; action_items: string[]; talk_tracks: string[]; keywords: string[] };
+  file?: { name: string; text: string }; readers: SeedUser[];
+}
+
+const T = (n: number) => `50000000-0000-4000-8000-0000000000${String(n).padStart(2, "0")}`;
+
+function trainings(): TrainingSeed[] {
+  const local = new Date(Date.now() + KST * 60000);
+  const monday = -((local.getUTCDay() + 6) % 7); // offset (days) to this week's Monday
+  return [
+    { id: T(1), title: "4분기 정책자금 상담 전략 — 한도보다 '준비 순서'", day: monday, hour: 9, instructor: U.owner,
+      content: `오늘은 4분기 정책자금 상담을 어떻게 끌고 갈지 이야기하겠습니다. 대표님들은 항상 "얼마까지 나와요?"부터 물어보십니다. 그런데 한도는 우리가 약속할 수 있는 숫자가 아닙니다. 한도를 먼저 말하면 나중에 신뢰를 잃습니다.
+그래서 첫 미팅에서는 한도 대신 준비 순서를 보여드려야 합니다. 재무제표 3년치, 부가세 과세표준증명, 4대보험 가입자 명부, 기존 대출 현황. 이 네 가지만 받으면 우리가 가능성을 판단할 수 있다고 말씀드리세요.
+기존 대출이 많은 기업은 무조건 안 된다고 단정하지 마세요. 자금 용도가 명확하고 매출이 늘고 있으면 이야기가 달라집니다. 반드시 용도와 시기를 먼저 확인해야 합니다.
+연말에는 기관 예산이 소진되는 경우가 있어서 11월 이전에 접수 준비를 끝내는 것이 좋습니다. 이번 주에 만나는 대표님들께는 서류 목록을 꼭 문자로 남겨 주세요.
+마지막으로, 정책자금만 이야기하지 말고 고용지원금이나 연구소처럼 같이 챙길 수 있는 것을 한 가지는 함께 말씀드리세요. 그래야 다음 미팅이 생깁니다.`,
+      summary: {
+        one_line: "첫 미팅에서 한도를 약속하지 말고, 서류 4가지와 준비 순서를 보여줘서 신뢰를 먼저 얻는다.",
+        key_points: [
+          "한도는 약속할 수 없는 숫자 — 먼저 말하면 나중에 신뢰를 잃는다",
+          "첫 미팅 목표는 '서류 4가지' 받기: 재무제표 3년치 · 부가세 과세표준증명 · 4대보험 가입자 명부 · 기존 대출 현황",
+          "기존 대출이 많아도 단정 금지 — 자금 용도와 매출 추세를 먼저 확인",
+          "연말 예산 소진 가능성 → 11월 이전 접수 준비 완료가 목표",
+          "정책자금 + 한 가지(고용지원금·연구소 등)를 함께 제안해야 다음 미팅이 생긴다",
+        ],
+        action_items: [
+          "이번 주 미팅 대표님께 필요 서류 목록을 문자로 남기기",
+          "결과 입력 때 '받을 자료'를 빠짐없이 체크하기",
+          "기존 대출 현황은 금액·기관·만기까지 메모하기",
+        ],
+        talk_tracks: [
+          "\"한도는 서류를 보고 나서 정확히 말씀드리는 게 대표님께 손해가 없습니다. 이 네 가지만 먼저 보내 주세요.\"",
+          "\"자금을 어디에, 언제 쓰실 계획인지가 제일 중요합니다. 그게 정리되면 방법이 보입니다.\"",
+        ],
+        keywords: ["정책자금", "서류 4종", "자금 용도", "연말 예산", "교차 제안"],
+      },
+      file: { name: "정책자금_첫미팅_체크리스트.txt", text: "[정책자금 첫 미팅 체크리스트]\n\n□ 재무제표 3년치\n□ 부가세 과세표준증명\n□ 4대보험 가입자 명부\n□ 기존 대출 현황 (기관 · 금액 · 만기)\n□ 자금 용도와 사용 시기\n□ 함께 제안할 제도 1가지 (고용지원금 / 연구소 / 인증)\n\n※ 한도는 서류 확인 후 안내합니다.\n" },
+      readers: [U.consultant2, U.leader] },
+
+    { id: T(2), title: "고용지원금 첫 상담: 4대보험 명부로 5분 진단", day: monday - 5, hour: 10, instructor: U.leader,
+      content: `고용지원금은 대표님이 제도 이름을 몰라도 됩니다. 4대보험 가입자 명부 한 장이면 우리가 5분 안에 가능성을 볼 수 있습니다.
+명부에서 볼 것은 세 가지입니다. 최근 입사자, 나이, 고용 형태. 청년이나 신규 채용이 있으면 먼저 체크하세요.
+주의할 점은 퇴사자입니다. 최근에 권고사직 같은 인원 감축이 있으면 지원이 제한될 수 있으니 반드시 확인해야 합니다.
+대표님께는 "받을 수 있는 돈을 놓치고 계신지 확인해 드리는 것"이라고 설명하세요. 비용 이야기는 진단 후에 하는 게 좋습니다.
+채용 계획이 있는 회사라면 채용 전에 먼저 상담해야 합니다. 채용 후에 알면 놓치는 경우가 많습니다.`,
+      summary: {
+        one_line: "4대보험 명부 한 장으로 입사자·나이·고용형태를 보고 5분 안에 가능성을 진단한다.",
+        key_points: [
+          "명부에서 볼 3가지: 최근 입사자 · 나이 · 고용 형태",
+          "최근 인원 감축(권고사직 등)이 있으면 제한될 수 있으니 반드시 확인",
+          "채용 계획이 있으면 '채용 전' 상담이 핵심 — 채용 후엔 놓치기 쉽다",
+          "비용 이야기는 진단 결과를 보여준 다음에",
+        ],
+        action_items: [
+          "미팅 전 대표님께 4대보험 가입자 명부 요청 문자 보내기",
+          "명부 받으면 청년·신규 입사자에 표시하기",
+          "퇴사자·인원 감축 여부 질문 꼭 하기",
+        ],
+        talk_tracks: [
+          "\"받으실 수 있는 지원금을 놓치고 계신지 확인해 드리는 겁니다. 명부 한 장이면 5분이면 됩니다.\"",
+          "\"하반기 채용 계획이 있으시면, 뽑기 전에 한 번 저희랑 보시는 게 유리합니다.\"",
+        ],
+        keywords: ["고용지원금", "4대보험 명부", "청년 채용", "인원 감축", "채용 전 상담"],
+      },
+      readers: [U.consultant1, U.consultant2, U.consultant3, U.leaderB] },
+
+    { id: T(3), title: "기업부설연구소, 설립보다 사후관리가 계약을 만든다", day: monday - 7, hour: 10, instructor: U.owner,
+      content: `연구소 설립은 이제 많은 곳에서 합니다. 우리가 달라야 하는 부분은 설립 이후입니다.
+설립 후에 대표님들이 제일 어려워하는 건 연구노트, 인력 변동 신고, 그리고 세액공제 증빙입니다. 연구원이 퇴사했는데 신고를 안 해서 문제가 되는 경우가 실제로 많습니다.
+그래서 설립 상담을 할 때부터 사후관리까지 같이 설명하세요. "설립해 드리고 끝"이 아니라 "매달 챙겨드린다"는 그림을 보여줘야 합니다.
+연구전담요원 요건은 기업 규모에 따라 다르니 미팅 전에 직원 수와 매출을 먼저 확인하세요.
+사후관리 고객은 매달 연락할 이유가 생기기 때문에 다른 상품 제안으로 이어지기 쉽습니다.`,
+      summary: {
+        one_line: "설립만 해주는 곳과 차별화하려면 연구노트·인력 신고·증빙까지 '사후관리'를 처음부터 제안한다.",
+        key_points: [
+          "설립 후 대표님들이 가장 어려워하는 것: 연구노트 · 인력 변동 신고 · 세액공제 증빙",
+          "연구원 퇴사 후 신고 누락으로 문제 되는 사례가 많다",
+          "연구전담요원 요건은 기업 규모별로 다름 → 직원 수·매출 먼저 확인",
+          "사후관리 고객은 매달 연락할 이유가 생겨 추가 제안으로 이어진다",
+        ],
+        action_items: [
+          "설립 상담 자료에 '사후관리 1년 계획' 한 장 추가하기",
+          "기존 연구소 보유 고객에게 인력 변동 여부 확인 전화하기",
+        ],
+        talk_tracks: [
+          "\"설립은 시작이고, 연구노트랑 인력 신고를 놓치시면 그동안 받은 혜택이 문제가 될 수 있습니다. 그걸 저희가 매달 챙겨드립니다.\"",
+        ],
+        keywords: ["기업부설연구소", "사후관리", "연구노트", "변경 신고", "세액공제"],
+      },
+      file: { name: "연구소_사후관리_월간점검표.txt", text: "[연구소 사후관리 월간 점검표]\n\n□ 이번 달 연구노트 작성 여부\n□ 연구원 입사 · 퇴사 변동 (있으면 변경 신고)\n□ 연구 과제 진행 상황 메모\n□ 세액공제용 인건비 · 재료비 증빙 보관\n□ 다음 달 일정 공유\n" },
+      readers: [U.consultant1, U.consultant2, U.consultant3, U.consultant4, U.leader, U.leaderB, U.leaderC] },
+
+    { id: T(4), title: "첫 방문 10분 화법: 대표님이 말하게 만드는 질문 7가지", day: monday - 12, hour: 10, instructor: U.leaderB,
+      content: `첫 방문에서 우리가 말을 많이 하면 실패합니다. 대표님이 말하게 해야 합니다.
+처음 10분은 질문만 하세요. 회사를 어떻게 시작하셨는지, 요즘 제일 신경 쓰이는 게 뭔지, 올해 계획이 뭔지.
+대표님이 고민을 말하면 바로 해결책을 말하지 말고 한 번 더 물어보세요. "그게 왜 제일 걱정되세요?"
+메모는 꼭 하세요. 대표님은 메모하는 사람을 신뢰합니다. 그리고 미팅이 끝나면 바로 결과를 입력하세요. 기억은 한 시간이면 흐려집니다.
+마지막에는 다음 약속을 날짜로 잡고 나오세요. "다음에 연락드릴게요"는 약속이 아닙니다.`,
+      summary: {
+        one_line: "처음 10분은 질문만 하고, 끝날 때 다음 약속을 '날짜'로 잡고 나온다.",
+        key_points: [
+          "첫 10분은 질문만 — 우리가 말을 많이 하면 실패",
+          "고민을 들으면 바로 답하지 말고 '왜'를 한 번 더 묻기",
+          "메모하는 모습이 신뢰를 만든다",
+          "미팅 직후 바로 결과 입력 — 기억은 한 시간이면 흐려진다",
+          "'다음에 연락드릴게요'는 약속이 아니다 — 날짜로 잡기",
+        ],
+        action_items: [
+          "질문 7가지를 휴대폰 메모에 저장해 두기",
+          "미팅 끝나고 차에 타기 전에 결과 입력하기",
+          "다음 약속 날짜를 후속조치에 등록하기",
+        ],
+        talk_tracks: [
+          "\"요즘 회사 운영하시면서 제일 신경 쓰이시는 게 뭐세요?\"",
+          "\"그게 왜 제일 걱정되세요?\"",
+          "\"그럼 다음 주 목요일 오전에 자료 들고 다시 찾아뵐까요?\"",
+        ],
+        keywords: ["첫 방문", "질문 화법", "경청", "결과 입력", "다음 약속"],
+      },
+      readers: [U.consultant1, U.consultant3, U.leader] },
+
+    { id: T(5), title: "벤처·이노비즈 인증을 정책자금과 묶어서 제안하기", day: monday - 14, hour: 10, instructor: U.owner,
+      content: `인증 하나만 따로 팔면 대표님은 비용으로 생각합니다. 인증이 정책자금이나 세제 혜택과 어떻게 연결되는지를 보여줘야 투자로 생각합니다.
+인증 상담 전에 특허, 연구개발 투자, 매출 추세를 확인하세요. 준비 기간이 필요하기 때문에 일정표를 같이 드리는 게 좋습니다.
+인증이 만료되는 고객도 기회입니다. 만료일을 기록해 두고 미리 연락하세요.`,
+      summary: {
+        one_line: "인증은 단독 상품이 아니라 정책자금·세제 혜택으로 가는 '연결 고리'로 제안한다.",
+        key_points: [
+          "인증만 따로 제안하면 '비용', 연결해서 보여주면 '투자'",
+          "상담 전 확인: 특허 · 연구개발 투자 · 매출 추세",
+          "준비 기간이 필요하니 일정표를 함께 전달",
+          "인증 만료 예정 고객은 미리 연락할 기회",
+        ],
+        action_items: [
+          "담당 고객의 인증 만료일 정리하기",
+          "인증 → 정책자금 연결 흐름을 한 장으로 설명할 수 있게 연습하기",
+        ],
+        talk_tracks: [
+          "\"인증 자체보다, 인증을 받으면 자금 쪽에서 어떤 점이 유리해지는지가 중요합니다.\"",
+        ],
+        keywords: ["벤처기업확인", "이노비즈", "인증 만료", "교차 제안"],
+      },
+      readers: [U.consultant1, U.consultant2, U.consultant3, U.consultant4, U.consultant5, U.leader, U.leaderB] },
+
+    { id: T(6), title: "절세·법인 상담 입문: 가지급금 대화 시작하기", day: monday + 2, hour: 10, instructor: U.leaderC,
+      content: null, summary: null, readers: [] },
+  ];
+}
+
+async function seedTrainings(tx: TransactionSql) {
+  for (const t of trainings()) {
+    const heldAt = kst(t.day, t.hour);
+    await tx`insert into trainings(id, organization_id, title, held_at, instructor_id, content, summary, summary_source, summarized_at, created_by, created_at)
+      values (${t.id}, ${ORG_ID}, ${t.title}, ${heldAt}, ${t.instructor.id}, ${t.content}, ${t.summary ? tx.json(t.summary) : null},
+        ${t.summary ? "AI" : null}, ${t.summary ? new Date(heldAt.getTime() + 3 * 3600000) : null}, ${t.instructor.id}, ${new Date(heldAt.getTime() - 86400000)})`;
+    if (t.file) {
+      const data = Buffer.from(t.file.text, "utf8");
+      const [{ id }] = await tx<{ id: string }[]>`insert into training_files(organization_id, training_id, name, mime, size, chunk_count, complete, created_by)
+        values (${ORG_ID}, ${t.id}, ${t.file.name}, 'text/plain', ${data.length}, 1, true, ${t.instructor.id}) returning id`;
+      await tx`insert into training_file_chunks(file_id, organization_id, idx, data) values (${id}, ${ORG_ID}, 0, ${data})`;
+    }
+    for (const r of t.readers) {
+      await tx`insert into training_reads(training_id, profile_id, organization_id, read_at) values (${t.id}, ${r.id}, ${ORG_ID}, ${new Date(heldAt.getTime() + 5 * 3600000)})`;
+    }
+  }
 }

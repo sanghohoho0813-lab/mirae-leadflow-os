@@ -210,11 +210,14 @@ export type { Lead };
 
 /** Badge counts for the menu. Consultants: their own items; managers: whole org. */
 export async function getNavCounts(tx: Tx, userId: string, manager: boolean) {
-  const [c] = await tx<{ needs_report: number; follow_ups: number; open: number; drafts: number }[]>`
+  const [c] = await tx<{ needs_report: number; follow_ups: number; open: number; drafts: number; trainings: number }[]>`
     select
       (select count(*)::int from leads where status = 'ASSIGNED' and meeting_at < now() and (${manager} or assigned_to = ${userId})) as needs_report,
       (select count(*)::int from follow_ups where status = 'PENDING' and due_date <= (now() at time zone 'Asia/Seoul')::date and (${manager} or assignee_id = ${userId})) as follow_ups,
       (select count(*)::int from leads where status = 'OPEN') as open,
-      (select count(*)::int from leads where status = 'DRAFT') as drafts`;
+      (select count(*)::int from leads where status = 'DRAFT') as drafts,
+      (select count(*)::int from trainings t where t.held_at <= now() and t.held_at > now() - interval '30 days'
+        and t.instructor_id is distinct from ${userId} and t.created_by <> ${userId}
+        and not exists (select 1 from training_reads r where r.training_id = t.id and r.profile_id = ${userId})) as trainings`;
   return c;
 }

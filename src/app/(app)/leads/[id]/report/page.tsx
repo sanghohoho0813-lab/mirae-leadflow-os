@@ -26,7 +26,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         title={`${lead.company_name} 미팅 결과`}
         sub={`${fmtDateTime(lead.meeting_at)} · ${lead.region}${data.priv?.contact_name ? ` · ${data.priv.contact_name} ${data.priv.contact_title ?? ""}` : ""}`}
       />
-      <ReportForm leadId={id} companyName={lead.company_name} isFollowUp={lead.status === "FOLLOW_UP"} />
+      <ReportForm leadId={id} companyName={lead.company_name} isFollowUp={lead.status === "FOLLOW_UP"} interest={data.priv?.interest_tags ?? []} />
     </div>
   );
 }

@@ -9,17 +9,21 @@ export function Card({ children, className = "", tone = "white", testId }: { chi
 
 export function CardHeader({ icon, title, count, href, hrefLabel = "전체보기", right }: { icon?: ReactNode; title: string; count?: number; href?: string; hrefLabel?: string; right?: ReactNode }) {
   return (
-    <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
-      <h2 className="flex items-center gap-2 text-[19px] font-bold text-ink">
+    <header className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 pb-3 pt-5">
+      <h2 className="flex items-center gap-2 whitespace-nowrap text-[19px] font-bold text-ink">
         {icon && <span className="text-primary">{icon}</span>}
         {title}
         {typeof count === "number" && <span className="ml-1 text-[17px] font-semibold text-ink-3">{count}건</span>}
       </h2>
-      {right}
-      {href && (
-        <Link prefetch={false} href={href} className="flex items-center gap-0.5 text-[15px] font-medium text-primary hover:underline">
-          {hrefLabel} <ChevronRight size={16} />
-        </Link>
+      {(right || href) && (
+        <div className="ml-auto flex items-center gap-2 whitespace-nowrap">
+          {right}
+          {href && (
+            <Link prefetch={false} href={href} className="flex min-h-[40px] items-center gap-0.5 text-[15px] font-medium text-primary hover:underline">
+              {hrefLabel} <ChevronRight size={16} />
+            </Link>
+          )}
+        </div>
       )}
     </header>
   );

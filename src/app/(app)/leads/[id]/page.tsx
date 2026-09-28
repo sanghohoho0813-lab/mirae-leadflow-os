@@ -30,14 +30,20 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
   const data = await withUser(uid, async (tx) => {
     const lead = await getLead(tx, id);
     if (!lead) return null;
-    const [priv, reports, followUps, assignments, logs, consultants] = await Promise.all([
+    const claimer = (viewer.profile.role === "CONSULTANT" || viewer.profile.role === "LEADER") && lead.status === "OPEN";
+    const limit = viewer.organization.claim_limit;
+    const [priv, reports, followUps, assignments, logs, consultants, active] = await Promise.all([
       getLeadPrivate(tx, id), getLeadReports(tx, id), getLeadFollowUps(tx, id), getLeadAssignments(tx, id), getLeadLogs(tx, id),
       manager ? listConsultants(tx) : Promise.resolve([]),
+      claimer && limit > 0
+        ? tx<{ id: string; company_name: string; passed: boolean }[]>`select id, company_name, meeting_at < now() as passed from leads where assigned_to = ${uid} and status = 'ASSIGNED' order by meeting_at`
+        : Promise.resolve([]),
     ]);
-    return { lead, priv, reports, followUps, assignments, logs, consultants };
+    const blockedBy = limit > 0 && active.length >= limit ? active[0] : null;
+    return { lead, priv, reports, followUps, assignments, logs, consultants, blockedBy };
   });
   if (!data) notFound();
-  const { lead, priv, reports, followUps, assignments, logs, consultants } = data;
+  const { lead, priv, reports, followUps, assignments, logs, consultants, blockedBy } = data;
   const rel = relativeDay(lead.meeting_at);
   const mine = lead.assigned_to === uid;
   const consultantRole = viewer.profile.role === "CONSULTANT" || viewer.profile.role === "LEADER";
@@ -81,7 +87,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                   <div className="mt-2"><Link prefetch={false} href="/leads?tab=open" className="inline-flex h-10 items-center rounded-xl border border-warning/40 bg-white px-4 text-[15px] font-semibold text-warning">신청 가능한 DB 보기</Link></div>
                 </div>
               )}
-              <LeadActionBar lead={lead} role={viewer.profile.role} userId={uid} consultants={consultants.map((c) => ({ id: c.id, full_name: c.full_name }))} phone={priv?.contact_phone ?? null} />
+              <LeadActionBar lead={lead} role={viewer.profile.role} userId={uid} consultants={consultants.map((c) => ({ id: c.id, full_name: c.full_name }))} phone={priv?.contact_phone ?? null} blockedBy={blockedBy} claimLimit={viewer.organization.claim_limit} />
             </CardBody>
           </Card>
 
@@ -173,6 +179,13 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
                       {r.next_action !== "NONE" && <Badge tone="purple">다음: {NEXT_ACTION_LABEL[r.next_action]}{r.next_action_date ? ` · ${fmtDate(r.next_action_date)}` : ""}</Badge>}
                     </div>
                     {r.memo && <p className="text-[16px] text-ink">{r.memo}</p>}
+                    {(r.topics?.length > 0 || r.materials?.length > 0 || r.next_note) && (
+                      <dl className="mt-2 grid gap-1 rounded-lg bg-canvas px-3 py-2 text-[15px]">
+                        {r.topics?.length > 0 && <div className="flex gap-2"><dt className="w-[72px] shrink-0 font-semibold text-ink-3">상담 분야</dt><dd className="text-ink">{r.topics.join(", ")}</dd></div>}
+                        {r.materials?.length > 0 && <div className="flex gap-2"><dt className="w-[72px] shrink-0 font-semibold text-ink-3">자료</dt><dd className="text-ink">{r.materials.join(", ")}</dd></div>}
+                        {r.next_note && <div className="flex gap-2"><dt className="w-[72px] shrink-0 font-semibold text-ink-3">할 일</dt><dd className="text-ink">{r.next_note}</dd></div>}
+                      </dl>
+                    )}
                     {r.detail_memo && <p className="mt-1 whitespace-pre-wrap text-[15px] text-ink-2">{r.detail_memo}</p>}
                     <p className="mt-1 text-[14px] text-ink-3">{r.reporter_name} · {fmtDateTime(r.created_at)}</p>
                   </div>

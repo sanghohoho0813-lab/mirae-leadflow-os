@@ -11,5 +11,7 @@ export default defineConfig({
     locale: "ko-KR",
     timezoneId: "Asia/Seoul",
     screenshot: "only-on-failure",
+    // Chromium needs a UTF-8 locale to keep Korean download file names.
+    launchOptions: { env: { ...process.env, LANG: "C.UTF-8", LC_ALL: "C.UTF-8" } },
   },
 });

@@ -162,7 +162,7 @@ function FrameChildSync() {
   return null;
 }
 
-export function DeviceSwitch() {
+export function DeviceSwitch({ compact = false }: { compact?: boolean }) {
   const { mode, setMode, inFrame, ready } = useDeviceView();
   if (!ready || inFrame) return null;
   const items: { m: DeviceMode; label: string; icon: ReactNode }[] = [
@@ -171,7 +171,7 @@ export function DeviceSwitch() {
     { m: "dual", label: "PC+Mobile", icon: <Columns2 size={17} /> },
   ];
   return (
-    <div className="hidden items-center rounded-xl border border-line bg-white p-1 lg:inline-flex" data-testid="device-switch" role="tablist" aria-label="화면 보기 방식">
+    <div className="hidden items-center rounded-xl border border-line bg-white p-1 lg:inline-flex" data-testid={compact ? "device-switch-compact" : "device-switch"} role="tablist" aria-label="화면 보기 방식">
       {items.map((it) => (
         <button
           key={it.m}
@@ -179,9 +179,11 @@ export function DeviceSwitch() {
           role="tab"
           aria-selected={mode === it.m}
           onClick={() => setMode(it.m)}
-          className={`flex h-9 items-center gap-1.5 rounded-lg px-3 text-[14px] font-semibold transition-base ${mode === it.m ? "bg-primary text-white" : "text-ink-2 hover:bg-neutral-bg"}`}
+          title={it.label}
+          aria-label={it.label}
+          className={`flex h-9 items-center gap-1.5 rounded-lg ${compact ? "px-2.5" : "px-3"} text-[14px] font-semibold transition-base ${mode === it.m ? "bg-primary text-white" : "text-ink-2 hover:bg-neutral-bg"}`}
         >
-          {it.icon}{it.label}
+          {it.icon}{compact ? null : it.label}
         </button>
       ))}
     </div>

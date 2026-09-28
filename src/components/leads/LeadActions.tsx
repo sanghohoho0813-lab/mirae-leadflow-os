@@ -2,7 +2,7 @@
 
 import { useSafeTransition, useSafeRefresh, useSafeNavigate } from "@/components/providers/SafeActions";
 import { useState, type ReactNode } from "react";
-import { Hand, Megaphone, Undo2, UserCog, CalendarClock, Ban, XCircle, Pencil, ClipboardEdit, Phone, EyeOff } from "lucide-react";
+import { Hand, Megaphone, Undo2, UserCog, CalendarClock, Ban, XCircle, Pencil, ClipboardEdit, Phone, EyeOff, Lock } from "lucide-react";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
@@ -30,12 +30,37 @@ export function PublishButton({ id, size = "md" }: { id: string; size?: Size }) 
 }
 
 // ----------------------------------------------------------------- claim
+export interface ActiveMeeting { id: string; company_name: string; passed: boolean }
+
+/** Shown instead of the claim button while this person still has a meeting without a result. */
+export function ClaimLimitPanel({ active, limit }: { active: ActiveMeeting; limit: number }) {
+  return (
+    <div className="rounded-2xl border border-line bg-canvas px-4 py-4" data-testid="claim-limit">
+      <div className="flex gap-2.5 text-[16px] text-ink-2">
+        <Lock size={20} className="mt-0.5 shrink-0 text-ink-3" />
+        <span>
+          진행 중인 미팅 <b className="text-ink">{active.company_name}</b>이(가) 있어 지금은 신청할 수 없습니다.
+          {" "}{limit === 1 ? "한 사람당 한 건씩" : `한 사람당 ${limit}건까지`} 진행하며,
+          {active.passed ? " 결과를 입력하면 바로 신청할 수 있습니다." : " 미팅 후 결과를 입력하면 신청할 수 있습니다."}
+        </span>
+      </div>
+      <div className="mt-3">
+        <LinkButton href={active.passed ? `/leads/${active.id}/report` : `/leads/${active.id}`} size="md" variant={active.passed ? "primary" : "secondary"} className="w-full">
+          {active.passed ? <><ClipboardEdit size={19} /> 그 미팅 결과 입력하기</> : "진행 중인 미팅 보기"}
+        </LinkButton>
+      </div>
+    </div>
+  );
+}
+
 export function ClaimButton({ id }: { id: string }) {
   const [pending, start] = useSafeTransition();
   const [lost, setLost] = useState<string | null>(null);
+  const [limited, setLimited] = useState<string | null>(null);
   const toast = useToast();
   const refresh = useSafeRefresh();
   const navigate = useSafeNavigate();
+  if (limited) return <ClaimLimitPanel active={{ id: limited, company_name: "결과 입력 전 미팅", passed: true }} limit={1} />;
   if (lost) {
     return (
       <div className="rounded-2xl border border-warning/40 bg-warning-bg px-4 py-4 text-[16px] font-semibold text-warning" data-testid="claim-lost">
@@ -51,6 +76,7 @@ export function ClaimButton({ id }: { id: string }) {
       // races with it under the loading boundary and can leave the page stuck.
       if (r.ok) { navigate(`/leads/${id}?claimed=1`, "replace"); }
       else if (r.code === "ALREADY_ASSIGNED" || r.code === "NOT_OPEN") { setLost(r.message ?? "이미 배정되었습니다."); navigate(`/leads/${id}?lost=1`, "replace"); }
+      else if (r.code === "LIMIT_REACHED" && r.id) { setLimited(r.id); toast("error", r.message ?? "진행 중인 미팅이 있습니다."); }
       else toast("error", r.message ?? "실패했습니다.");
     })}>
       <Hand size={22} /> {pending ? "신청 중…" : "이 미팅 신청하기"}
@@ -164,8 +190,9 @@ function RescheduleButton({ lead }: { lead: LeadListItem }) {
 }
 
 // ----------------------------------------------------------------- action bar
-export function LeadActionBar({ lead, role, userId, consultants, phone }: {
+export function LeadActionBar({ lead, role, userId, consultants, phone, blockedBy = null, claimLimit = 1 }: {
   lead: LeadListItem; role: MemberRole; userId: string; consultants: { id: string; full_name: string }[]; phone: string | null;
+  blockedBy?: ActiveMeeting | null; claimLimit?: number;
 }) {
   const manager = role === "OWNER" || role === "MANAGER";
   const consultant = role === "CONSULTANT" || role === "LEADER";
@@ -177,7 +204,7 @@ export function LeadActionBar({ lead, role, userId, consultants, phone }: {
   const primary: ReactNode[] = [];
   const secondary: ReactNode[] = [];
 
-  if (consultant && lead.status === "OPEN") primary.push(<ClaimButton key="claim" id={lead.id} />);
+  if (consultant && lead.status === "OPEN") primary.push(blockedBy ? <ClaimLimitPanel key="limit" active={blockedBy} limit={claimLimit} /> : <ClaimButton key="claim" id={lead.id} />);
 
   if ((mine || manager) && (lead.status === "ASSIGNED" || lead.status === "FOLLOW_UP") && lead.assigned_to) {
     primary.push(

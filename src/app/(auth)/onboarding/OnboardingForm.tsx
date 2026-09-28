@@ -29,7 +29,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
       ) : (
         <form action={createAction} className="grid gap-4 rounded-2xl border border-line bg-white p-5 shadow-card">
           <Field label="사업단 이름" htmlFor="org_name" required>
-            <Input id="org_name" name="org_name" placeholder="예: 미래AI랩 사업단" required />
+            <Input id="org_name" name="org_name" placeholder="예: 스마트 사업단" required />
           </Field>
           <Field label="이름(사업단장)" htmlFor="full_name2" required>
             <Input id="full_name2" name="full_name" defaultValue={defaultName} required />

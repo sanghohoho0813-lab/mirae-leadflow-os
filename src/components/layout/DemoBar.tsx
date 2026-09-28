@@ -7,12 +7,12 @@ import { switchPersona, resetDemo } from "@/lib/actions/demo";
 import { useToast } from "@/components/ui/Toast";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
-import { useDeviceView } from "./DeviceView";
+import { useDeviceView, DeviceSwitch } from "./DeviceView";
+import { titleOf } from "@/lib/labels";
 import type { MemberRole } from "@/lib/types";
 
-export interface Persona { id: string; name: string; role: MemberRole }
+export interface Persona { id: string; name: string; role: MemberRole; title: string | null }
 
-const ROLE_SHORT: Record<MemberRole, string> = { OWNER: "단장", MANAGER: "운영", CALLER: "콜", LEADER: "본부장", CONSULTANT: "컨설턴트" };
 
 /** Tells a mobile preview iframe (Device View) to reload with the new persona. */
 function refreshFrames() {
@@ -74,12 +74,15 @@ export function DemoBar({ personas, currentId, ephemeral = false, instanceId }: 
                 } ${pending && target === p.id ? "cursor-wait" : ""}`}
                 data-testid={`persona-${p.id}`}
               >
-                <b>{ROLE_SHORT[p.role]}</b>
-                <span className={active ? "text-white/90" : "text-ink-2"}>{p.name}</span>
+                {p.name.startsWith(titleOf(p.role, p.title)) ? <b>{p.name}</b> : (<>
+                  <b>{titleOf(p.role, p.title)}</b>
+                  <span className={active ? "text-white/90" : "text-ink-2"}>{p.name}</span>
+                </>)}
               </button>
             );
           })}
         </div>
+        <div className="shrink-0"><DeviceSwitch compact /></div>
         <button
           type="button"
           onClick={() => setConfirmReset(true)}

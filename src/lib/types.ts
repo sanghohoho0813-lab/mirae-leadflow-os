@@ -14,6 +14,7 @@ export interface Profile {
   full_name: string;
   phone: string | null;
   division: string | null;
+  title: string | null;
   is_active: boolean;
   created_at: Date;
 }
@@ -22,6 +23,7 @@ export interface Organization {
   id: string;
   name: string;
   invite_code: string;
+  claim_limit: number;
 }
 
 export interface Lead {
@@ -81,6 +83,9 @@ export interface MeetingReport {
   next_action_date: string | null;
   memo: string | null;
   detail_memo: string | null;
+  topics: string[];
+  materials: string[];
+  next_note: string | null;
   created_at: Date;
 }
 
@@ -124,4 +129,46 @@ export interface Assignment {
   released_reason: string | null;
   created_at: Date;
   released_at: Date | null;
+}
+
+export interface TrainingSummary {
+  one_line: string;
+  key_points: string[];
+  action_items: string[];
+  talk_tracks: string[];
+  keywords: string[];
+}
+
+export interface TrainingListItem {
+  id: string;
+  title: string;
+  held_at: Date;
+  instructor_id: string | null;
+  instructor_name: string | null;
+  instructor_role: MemberRole | null;
+  summary: TrainingSummary | null;
+  summary_source: "AI" | "BASIC" | "MANUAL" | null;
+  file_count: number;
+  read_count: number;
+  read_by_me: boolean;
+  /** I teach or posted it (counts as read). */
+  is_mine: boolean;
+}
+
+export interface Training extends TrainingListItem {
+  content: string | null;
+  links: { label: string; url: string }[];
+  summarized_at: Date | null;
+  created_by: string;
+  updated_at: Date;
+}
+
+export interface TrainingFile {
+  id: string;
+  name: string;
+  mime: string;
+  size: number;
+  chunk_count: number;
+  created_by: string;
+  created_at: Date;
 }

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Copy } from "lucide-react";
+import { Copy, Hand } from "lucide-react";
 import { requireViewer } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
 import { listMembers } from "@/lib/queries";
@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { MemberRow } from "./MemberRow";
 import { InviteCode } from "./InviteCode";
+import { ClaimLimit } from "./ClaimLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,10 @@ export default async function MembersPage() {
       <Card className="mb-4" tone="soft">
         <CardHeader icon={<Copy size={20} />} title="초대코드" />
         <CardBody><InviteCode code={viewer.organization.invite_code} /></CardBody>
+      </Card>
+      <Card className="mb-4" testId="claim-limit-card">
+        <CardHeader icon={<Hand size={20} />} title="1인 동시 진행 한도" />
+        <CardBody><ClaimLimit value={viewer.organization.claim_limit} /></CardBody>
       </Card>
       <Card>
         <CardHeader title="구성원" count={members.length} />

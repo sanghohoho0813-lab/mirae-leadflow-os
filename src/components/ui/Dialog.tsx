@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
-export function Dialog({ open, onClose, title, children, testId }: { open: boolean; onClose: () => void; title: string; children: ReactNode; testId?: string }) {
+export function Dialog({ open, onClose, title, children, testId, wide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; testId?: string; wide?: boolean }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -21,7 +21,7 @@ export function Dialog({ open, onClose, title, children, testId }: { open: boole
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="fade-up w-full max-w-lg rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-2xl sm:p-6"
+        className={`fade-up w-full ${wide ? "max-w-3xl" : "max-w-lg"} rounded-t-3xl bg-white p-5 shadow-2xl sm:rounded-2xl sm:p-6`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">

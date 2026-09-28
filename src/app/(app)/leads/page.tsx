@@ -43,9 +43,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     open: "신청 가능한 DB", mine: "내 담당 미팅", today: "오늘 미팅", needs_report: "결과 미입력 DB", draft: "공개 대기 DB", follow_up: "후속 진행 중", all: "전체 DB", closed: "종료·취소된 DB",
   };
   const help: Partial<Record<LeadTab, string>> = {
-    open: kind === "consultant" ? "원하는 DB를 눌러 [이 미팅 신청하기]를 누르면 선착순으로 담당이 확정됩니다." : "컨설턴트가 선착순으로 신청할 수 있는 상태입니다.",
+    open: kind === "consultant"
+      ? `원하는 DB를 눌러 [이 미팅 신청하기]를 누르면 선착순으로 담당이 확정됩니다.${viewer.organization.claim_limit ? ` 한 사람당 ${viewer.organization.claim_limit}건씩, 결과를 입력하면 다음 DB를 신청할 수 있습니다.` : ""}`
+      : "컨설턴트가 선착순으로 신청할 수 있는 상태입니다.",
     needs_report: "미팅 시간이 지났지만 결과가 입력되지 않은 DB입니다.",
-    draft: "콜 담당이 등록했고 아직 컨설턴트에게 공개되지 않은 DB입니다.",
+    draft: "콜팀이 등록했고 아직 컨설턴트에게 공개되지 않은 DB입니다.",
   };
 
   return (

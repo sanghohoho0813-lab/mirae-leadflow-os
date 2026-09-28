@@ -1,15 +1,19 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { execSync } from "node:child_process";
 
+// 스마트 사업단 demo people. Consultant A and E start with no open meeting
+// (one active meeting per person), B has 우림식품 today, C has 그린바이오 unreported.
 const U = {
-  owner: "10000000-0000-4000-8000-000000000001",
-  manager: "10000000-0000-4000-8000-000000000002",
-  caller: "10000000-0000-4000-8000-000000000003",
-  minsu: "10000000-0000-4000-8000-000000000004",
-  jiyoung: "10000000-0000-4000-8000-000000000005",
-  sehun: "10000000-0000-4000-8000-000000000006",
+  owner: "10000000-0000-4000-8000-000000000001", // 송하균 단장
+  caller: "10000000-0000-4000-8000-000000000003", // 이재원 콜팀장
+  cA: "10000000-0000-4000-8000-000000000004",
+  cB: "10000000-0000-4000-8000-000000000005",
+  cC: "10000000-0000-4000-8000-000000000006",
+  cE: "10000000-0000-4000-8000-000000000010",
   otherOwner: "20000000-0000-4000-8000-000000000001",
 };
+const UURIM = "30000000-0000-4000-8000-000000000008"; // 우림식품, 컨설턴트 B
+const GREENBIO = "30000000-0000-4000-8000-000000000010"; // 그린바이오, 컨설턴트 C (결과 미입력)
 const SHOT = "qa/screenshots";
 
 async function loginAs(browser: Browser, userId: string, viewport = { width: 1440, height: 900 }): Promise<Page> {
@@ -92,7 +96,7 @@ test("1. CALLER registers a new DB (DRAFT)", async ({ browser }) => {
 });
 
 test("2. Consultant cannot see DRAFT lead; OWNER publishes it", async ({ browser }) => {
-  const c = await loginAs(browser, U.minsu);
+  const c = await loginAs(browser, U.cA);
   await go(c, `/leads/${leadId}`);
   await expect(c.getByText("페이지를 찾을 수 없습니다")).toBeVisible();
   await expect(c.getByText("QA테스트기업(주)")).toHaveCount(0);
@@ -117,8 +121,8 @@ async function page404Free(page: Page) {
 }
 
 test("3. Two consultants click 신청 simultaneously — exactly one wins", async ({ browser }) => {
-  const a = await loginAs(browser, U.minsu);
-  const b = await loginAs(browser, U.jiyoung);
+  const a = await loginAs(browser, U.cA);
+  const b = await loginAs(browser, U.cE);
   await go(a, `/leads/${leadId}`);
   await go(b, `/leads/${leadId}`);
   await expect(a.getByTestId("private-locked")).toBeVisible(); // before claim: no private info
@@ -152,14 +156,14 @@ test("3. Two consultants click 신청 simultaneously — exactly one wins", asyn
   await go(loser, `/leads/${leadId}/report`);
   await loser.waitForURL(`**/leads/${leadId}`);
 
-  // Make the test deterministic downstream: ensure minsu is the assignee.
+  // Make the test deterministic downstream: ensure 컨설턴트 A is the assignee.
   if (!aWon) {
     const owner = await loginAs(browser, U.owner);
     await go(owner, `/leads/${leadId}`);
     await owner.click('[data-testid="reassign-button"]');
-    await owner.selectOption('[data-testid="reassign-select"]', U.minsu);
+    await owner.selectOption('[data-testid="reassign-select"]', U.cA);
     await owner.click('[data-testid="reassign-confirm"]');
-    await expect(owner.getByTestId("assignee")).toHaveText("최민수");
+    await expect(owner.getByTestId("assignee")).toHaveText("컨설턴트 A");
     await owner.context().close();
   }
   await a.context().close();
@@ -167,9 +171,9 @@ test("3. Two consultants click 신청 simultaneously — exactly one wins", asyn
 });
 
 test("4. Assignee submits a click-first meeting report -> follow-up created", async ({ browser }) => {
-  const a = await loginAs(browser, U.minsu);
+  const a = await loginAs(browser, U.cA);
   await go(a, `/leads/${leadId}`);
-  await expect(a.getByTestId("assignee")).toHaveText("최민수");
+  await expect(a.getByTestId("assignee")).toHaveText("컨설턴트 A");
   await a.getByRole("link", { name: /미팅 결과 입력/ }).click();
   await a.waitForURL(`**/leads/${leadId}/report`);
   await expect(a.getByTestId("report-submit")).toBeDisabled();
@@ -177,18 +181,28 @@ test("4. Assignee submits a click-first meeting report -> follow-up created", as
   await a.getByRole("radio", { name: "관심 높음" }).click();
   await a.getByRole("radio", { name: "후속상담 필요" }).click();
   await expect(a.getByRole("radio", { name: "전화" })).toHaveAttribute("aria-checked", "true"); // smart default
+  // 상담 분야 comes preselected from the call memo's interest tags.
+  await expect(a.getByRole("button", { name: /정책자금/ }).first()).toHaveAttribute("aria-pressed", "true");
+  await a.getByRole("button", { name: "재무제표" }).click();
   await a.getByRole("button", { name: "3일 후" }).click();
+  await a.fill('[data-testid="next-note"]', "재무제표 받았는지 확인 전화");
   await a.fill('[data-testid="memo"]', "신규 생산라인 도입 검토 중. 다음 주 재방문 가능, 제품 소개자료 요청");
+  await a.click('[data-testid="detail-memo-open"]');
+  await expect(a.getByTestId("detail-memo")).toHaveValue(/대표님 핵심 고민/);
   await shot(a, "09-report-form");
   await a.click('[data-testid="report-submit"]');
   await expect(a.getByTestId("report-done")).toBeVisible();
   await expect(a.getByTestId("report-done")).toContainText("후속조치에 등록");
+  await expect(a.getByTestId("report-done")).toContainText("재무제표 받았는지 확인 전화");
+  await expect(a.getByTestId("report-done")).toContainText("다음 DB를 신청할 수 있습니다");
   await shot(a, "10-report-done");
   await a.waitForLoadState("networkidle");
   await a.getByRole("link", { name: "DB 상세 보기" }).click();
   await a.waitForURL(new RegExp(`/leads/${leadId}$`));
   await expect(a.getByText("후속 진행").first()).toBeVisible();
   await expect(a.getByTestId("report-item")).toHaveCount(1);
+  await expect(a.getByTestId("report-item")).toContainText("재무제표");
+  await expect(a.getByTestId("report-item")).toContainText("기업부설연구소");
   await expect(a.getByTestId("activity-timeline")).toContainText("미팅 결과 입력");
   await shot(a, "11-lead-after-report");
   await a.context().close();
@@ -205,16 +219,16 @@ test("5. OWNER sees the whole picture; releases & reassigns another lead; resche
   await expect(owner.getByText("하나정밀(주)")).toBeVisible();
   await shot(owner, "13-owner-needs-report");
 
-  // Release 대성산업 (assigned to 한지영, tomorrow) then reassign to 오세훈, then reschedule.
+  // Release 대성산업 (본부장 B, tomorrow) then reassign to 컨설턴트 E, then reschedule.
   const daesung = "30000000-0000-4000-8000-000000000009";
   await go(owner, `/leads/${daesung}`);
   await owner.click('[data-testid="release-button"]');
   await owner.click('[data-testid="release-button-confirm"]');
   await expect(owner.getByTestId("assignee")).toHaveText("신청 가능");
   await owner.click('[data-testid="reassign-button"]');
-  await owner.selectOption('[data-testid="reassign-select"]', U.sehun);
+  await owner.selectOption('[data-testid="reassign-select"]', U.cE);
   await owner.click('[data-testid="reassign-confirm"]');
-  await expect(owner.getByTestId("assignee")).toHaveText("오세훈");
+  await expect(owner.getByTestId("assignee")).toHaveText("컨설턴트 E");
   await owner.click('[data-testid="reschedule-button"]');
   await owner.fill("#rs-date", tomorrow());
   await owner.fill("#rs-time", "16:00");
@@ -225,13 +239,13 @@ test("5. OWNER sees the whole picture; releases & reassigns another lead; resche
 
   // Members page + invite code
   await go(owner, "/members");
-  await expect(owner.getByTestId("invite-code")).toHaveText("MIRAE2026");
+  await expect(owner.getByTestId("invite-code")).toHaveText("SMART2026");
   await shot(owner, "15-owner-members");
   await owner.context().close();
 });
 
 test("6. Assignee completes the follow-up -> lead CLOSED (re-entry)", async ({ browser }) => {
-  const a = await loginAs(browser, U.minsu);
+  const a = await loginAs(browser, U.cA);
   await go(a, "/follow-ups");
   const card = a.locator('[data-testid^="follow-up-"]', { hasText: "QA테스트기업(주)" });
   await expect(card).toBeVisible();
@@ -265,7 +279,7 @@ test("7. Cross-organization isolation and role gates", async ({ browser }) => {
 });
 
 test("8. Mobile 390: consultant journey (home -> open DB -> detail -> claim)", async ({ browser }) => {
-  const m = await loginAs(browser, U.jiyoung, { width: 390, height: 844 });
+  const m = await loginAs(browser, U.cA, { width: 390, height: 844 });
   await expect(m.getByTestId("bottom-nav")).toBeVisible();
   await shot(m, "m390-01-consultant-home", false);
   const bodyWidth = await m.evaluate(() => document.documentElement.scrollWidth);
@@ -291,9 +305,13 @@ test("8. Mobile 390: consultant journey (home -> open DB -> detail -> claim)", a
   await m.click('[data-testid="report-submit"]');
   await expect(m.getByTestId("report-done")).toBeVisible();
   await shot(m, "m390-06-report-done");
-  // Drawer opens and closes
+  // Drawer opens from the left (☰ at top-left) and closes
   await m.click('[data-testid="menu-button"]');
   await expect(m.getByTestId("drawer")).toBeVisible();
+  await m.waitForTimeout(350);
+  const panel = await m.getByRole("dialog", { name: "메뉴" }).boundingBox();
+  expect(panel!.x).toBeLessThanOrEqual(1);
+  await expect(m.getByTestId("drawer").getByTestId("made-by")).toContainText("미래AI랩");
   await shot(m, "m390-07-drawer", false);
   await m.getByRole("button", { name: "닫기" }).click();
   await expect(m.getByTestId("drawer")).toHaveCount(0);
@@ -315,7 +333,7 @@ test("9. Mobile 430: owner home / detail / new form", async ({ browser }) => {
 
 test("10. Device View: PC / Mobile / PC+Mobile with route sync, no recursion", async ({ browser }) => {
   const p = await loginAs(browser, U.owner);
-  await expect(p.getByTestId("device-switch")).toBeVisible();
+  await expect(p.getByTestId("device-switch-compact")).toBeVisible();
   await p.getByRole("tab", { name: "PC+Mobile" }).click();
   await expect(p.getByTestId("dual-view")).toBeVisible();
   const frame = p.frameLocator('[data-testid="device-frame"] iframe');
@@ -333,7 +351,7 @@ test("10. Device View: PC / Mobile / PC+Mobile with route sync, no recursion", a
   await shot(p, "17-dual-view-synced", false);
 
   // Mobile -> PC sync
-  await frame.getByTestId("bottom-nav").getByText("대시보드").click();
+  await frame.getByTestId("bottom-nav").getByText("홈", { exact: true }).click();
   await p.waitForURL("**/");
   expect(new URL(p.url()).pathname).toBe("/");
 
@@ -361,7 +379,7 @@ test("11. Demo mode: no login needed, one click switches role", async ({ browser
   await go(p, "/");
   // Fresh visitor lands directly on the 사업단장 dashboard.
   await expect(p.getByTestId("demo-bar")).toBeVisible();
-  await expect(p.getByRole("heading", { name: /김상호 단장님/ })).toBeVisible();
+  await expect(p.getByRole("heading", { name: /송하균 단장님/ })).toBeVisible();
   await expect(p.getByTestId("kpi-needs-report")).toBeVisible();
   await shot(p, "19-demo-owner", false);
 
@@ -369,9 +387,9 @@ test("11. Demo mode: no login needed, one click switches role", async ({ browser
   // requests first: a refresh used to hang in exactly this state.
   await p.waitForLoadState("networkidle");
   const t0 = Date.now();
-  await p.getByTestId(`persona-${U.minsu}`).click();
-  await expect(p.getByTestId(`persona-${U.minsu}`)).toHaveAttribute("aria-checked", "true", { timeout: 300 });
-  await expect(p.getByRole("heading", { name: /최민수 컨설턴트님/ })).toBeVisible();
+  await p.getByTestId(`persona-${U.cA}`).click();
+  await expect(p.getByTestId(`persona-${U.cA}`)).toHaveAttribute("aria-checked", "true", { timeout: 300 });
+  await expect(p.getByRole("heading", { name: /컨설턴트 A님/ })).toBeVisible();
   expect(Date.now() - t0).toBeLessThan(3000);
   await expect(p.getByTestId("sidebar").getByRole("link", { name: "신청 가능 DB" })).toBeVisible();
   await expect(p.getByTestId("sidebar").getByRole("link", { name: "전체 이력" })).toHaveCount(0);
@@ -379,14 +397,13 @@ test("11. Demo mode: no login needed, one click switches role", async ({ browser
 
   // One click → caller.
   await p.getByTestId(`persona-${U.caller}`).click();
-  await expect(p.getByRole("heading", { name: /이정숙 콜담당님/ })).toBeVisible();
+  await expect(p.getByRole("heading", { name: /이재원 콜팀장님/ })).toBeVisible();
 
   // Same DB detail seen by two roles: owner sees contact, other consultant does not.
-  const sungjin = "30000000-0000-4000-8000-000000000006"; // assigned to 최민수
-  await go(p, `/leads/${sungjin}`);
+  await go(p, `/leads/${UURIM}`);
   await p.getByTestId(`persona-${U.owner}`).click();
   await expect(p.getByTestId("contact-phone")).toBeVisible();
-  await p.getByTestId(`persona-${U.jiyoung}`).click();
+  await p.getByTestId(`persona-${U.cC}`).click();
   await expect(p.getByTestId("private-locked")).toBeVisible();
   await expect(p.getByTestId("contact-phone")).toHaveCount(0);
 
@@ -403,8 +420,8 @@ test("12. Demo mode on mobile 390: role bar fits without horizontal scroll", asy
   await go(p, "/");
   await expect(p.getByTestId("demo-bar")).toBeVisible();
   expect(await p.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  await p.getByTestId(`persona-${U.minsu}`).click();
-  await expect(p.getByRole("heading", { name: /최민수 컨설턴트님/ })).toBeVisible();
+  await p.getByTestId(`persona-${U.cA}`).click();
+  await expect(p.getByRole("heading", { name: /컨설턴트 A님/ })).toBeVisible();
   await shot(p, "m390-08-demo-bar", false);
   await ctx.close();
 });
@@ -414,19 +431,18 @@ test("13. Address: copy address, copy meeting info, open in map apps", async ({ 
   await ctx.grantPermissions(["clipboard-read", "clipboard-write"]);
   const p = await ctx.newPage();
   await go(p, "/");
-  await p.getByTestId(`persona-${U.minsu}`).click();
-  await expect(p.getByRole("heading", { name: /최민수/ })).toBeVisible();
-  const sungjin = "30000000-0000-4000-8000-000000000006";
-  await go(p, `/leads/${sungjin}`);
+  await p.getByTestId(`persona-${U.cB}`).click();
+  await expect(p.getByRole("heading", { name: /컨설턴트 B님/ })).toBeVisible();
+  await go(p, `/leads/${UURIM}`);
   const main = p.getByRole("main");
-  await expect(main.getByTestId("address-text")).toHaveText("서울 강남구 테헤란로 123");
+  await expect(main.getByTestId("address-text")).toHaveText("인천 부평구 부평대로 283");
   await main.getByTestId("copy-address").click();
-  expect(await p.evaluate(() => navigator.clipboard.readText())).toBe("서울 강남구 테헤란로 123");
+  expect(await p.evaluate(() => navigator.clipboard.readText())).toBe("인천 부평구 부평대로 283");
   await main.getByTestId("copy-meeting-info").click();
   const info = await p.evaluate(() => navigator.clipboard.readText());
-  expect(info).toContain("[미팅] 성진테크(주)");
-  expect(info).toContain("장소: 서울 강남구 테헤란로 123");
-  expect(info).toContain("010-3333-0006");
+  expect(info).toContain("[미팅] 우림식품(주)");
+  expect(info).toContain("장소: 인천 부평구 부평대로 283");
+  expect(info).toContain("010-3333-0008");
   await expect(main.getByRole("link", { name: /카카오맵/ })).toHaveAttribute("href", /map\.kakao\.com\/link\/search\//);
   await expect(main.getByRole("link", { name: /네이버지도/ })).toHaveAttribute("href", /map\.naver\.com\/p\/search\//);
   expect(await p.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
@@ -434,7 +450,7 @@ test("13. Address: copy address, copy meeting info, open in map apps", async ({ 
   await shot(p, "m390-09-address", false);
 
   // Before claiming, another consultant sees neither the address nor the copy buttons.
-  await p.getByTestId(`persona-${U.jiyoung}`).click();
+  await p.getByTestId(`persona-${U.cA}`).click();
   await expect(main.getByTestId("private-locked")).toBeVisible();
   await expect(main.getByTestId("meeting-address")).toHaveCount(0);
   await ctx.close();
@@ -465,36 +481,47 @@ test("14. Map view: pins for 수도권, others listed, tab kept when switching",
   await p.context().close();
 });
 
-test("15. Theme: pick a color theme, it applies, persists, and reaches the mobile preview", async ({ browser }) => {
+test("15. Theme: 9 themes from the design guide, applies, persists, reaches the mobile preview", async ({ browser }) => {
   const p = await loginAs(browser, U.owner);
+  const primary = () => p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--theme-primary").trim());
+  expect(await primary()).toBe("#087a83"); // default: 딥 틸
   await p.getByTestId("theme-button").click();
   await expect(p.getByTestId("theme-dialog")).toBeVisible();
   // Dialog must be fully on screen (not trapped in the header).
   const box = await p.getByRole("dialog").boundingBox();
   expect(box!.y).toBeGreaterThanOrEqual(0);
+  for (const key of ["navy", "navy-gold", "emerald-gold", "forest-sage", "deep-teal", "onyx-gold", "burgundy-slate", "plum-indigo", "steel-platinum"]) {
+    await expect(p.getByTestId(`theme-${key}`)).toBeVisible();
+  }
   await shot(p, "22-theme-dialog", false);
-  await p.getByTestId("theme-deep-teal").click();
+  await p.getByTestId("theme-burgundy-slate").click();
+  expect(await primary()).toBe("#7a2b47");
+  await expect(p.getByTestId("theme-burgundy-slate")).toHaveAttribute("aria-pressed", "true");
+  // 화면 움직임 줄이기
+  await p.getByTestId("motion-toggle").check();
+  await expect(p.locator("html")).toHaveAttribute("data-motion", "reduce");
+  await p.keyboard.press("Escape");
   await expect(p.getByTestId("theme-dialog")).toHaveCount(0);
-  const primary = () => p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--theme-primary").trim());
-  expect(await primary()).toBe("#087a83");
   await p.reload();
   await settle(p);
-  expect(await primary()).toBe("#087a83");
+  expect(await primary()).toBe("#7a2b47");
+  await expect(p.locator("html")).toHaveAttribute("data-motion", "reduce");
   await p.getByRole("tab", { name: "PC+Mobile" }).click();
-  const frameTheme = p.frameLocator('[data-testid="device-frame"] iframe').locator("html");
-  await expect(frameTheme).toHaveAttribute("data-theme", "deep-teal");
-  await shot(p, "23-theme-deep-teal-dual", false);
+  const frameHtml = p.frameLocator('[data-testid="device-frame"] iframe').locator("html");
+  await expect(frameHtml).toHaveAttribute("data-theme", "burgundy-slate");
+  await shot(p, "23-theme-burgundy-dual", false);
   await p.getByRole("tab", { name: "PC", exact: true }).click();
   // Back to default.
   await p.getByTestId("theme-button").click();
-  await p.getByTestId("theme-navy").click();
-  expect(await primary()).toBe("#2563eb");
+  await p.getByTestId("theme-deep-teal").click();
+  await p.getByTestId("motion-toggle").uncheck();
+  expect(await primary()).toBe("#087a83");
   await p.context().close();
 });
 
 test("16. Mobile nav: tapped tab highlights immediately", async ({ browser }) => {
-  const p = await loginAs(browser, U.minsu, { width: 390, height: 844 });
-  for (const label of ["신청 가능", "후속조치", "홈"]) {
+  const p = await loginAs(browser, U.cA, { width: 390, height: 844 });
+  for (const label of ["신청 가능", "교육", "홈"]) {
     const t = Date.now();
     await p.getByTestId("bottom-nav").getByText(label, { exact: true }).click();
     await expect(p.getByTestId("bottom-nav").locator('a[aria-current="page"]')).toContainText(label, { timeout: 1000 });
@@ -531,7 +558,9 @@ test("17. Device View never bricks the app: Mobile → reload → back to PC; ba
 test("18. Sidebar: grouped sections, one active item, live badges", async ({ browser }) => {
   const p = await loginAs(browser, U.owner);
   const side = p.getByTestId("sidebar");
-  for (const title of ["오늘 업무", "DB", "관리"]) await expect(side.getByText(title, { exact: true })).toBeVisible();
+  for (const title of ["오늘 업무", "DB", "교육", "관리"]) await expect(side.getByText(title, { exact: true })).toBeVisible();
+  await expect(side.getByTestId("org-name")).toHaveText("스마트 사업단");
+  await expect(side.getByTestId("made-by")).toContainText("미래AI랩");
   await go(p, "/leads?tab=needs_report");
   await expect(side.locator('a[aria-current="page"]')).toHaveCount(1);
   await expect(side.locator('a[aria-current="page"]')).toContainText("결과 미입력");
@@ -540,8 +569,107 @@ test("18. Sidebar: grouped sections, one active item, live badges", async ({ bro
   await shot(p, "24-sidebar-owner", false);
   await p.context().close();
 
-  const c = await loginAs(browser, U.minsu, { width: 390, height: 844 });
+  const c = await loginAs(browser, U.cA, { width: 390, height: 844 });
   await expect(c.getByTestId("bottom-nav")).toBeVisible();
   await shot(c, "m390-10-bottom-nav-badges", false);
   await c.context().close();
+});
+
+test("19. One active meeting per person: blocked until the result is in; 단장 can change the limit", async ({ browser }) => {
+  const c = await loginAs(browser, U.cC);
+  await expect(c.getByTestId("first-todo")).toContainText("그린바이오");
+  await expect(c.getByTestId("claim-limit-note")).toBeVisible();
+  const cleancare = "30000000-0000-4000-8000-000000000004";
+  await go(c, `/leads/${cleancare}`);
+  await expect(c.getByTestId("claim-limit")).toContainText("그린바이오");
+  await expect(c.getByTestId("claim-button")).toHaveCount(0);
+  await shot(c, "25-claim-limit", false);
+  await c.getByRole("link", { name: /그 미팅 결과 입력하기/ }).click();
+  await c.waitForURL(`**/leads/${GREENBIO}/report`);
+
+  const owner = await loginAs(browser, U.owner);
+  await go(owner, "/members");
+  await owner.getByTestId("claim-limit-2").click();
+  await expect(owner.getByText("한 사람당 2건으로 바꿨습니다.")).toBeVisible();
+  await go(c, `/leads/${cleancare}`);
+  await expect(c.getByTestId("claim-button")).toBeVisible();
+  await owner.getByTestId("claim-limit-1").click();
+  await expect(owner.getByText("한 사람당 1건으로 바꿨습니다.")).toBeVisible();
+  await go(c, `/leads/${cleancare}`);
+  await expect(c.getByTestId("claim-limit")).toBeVisible();
+  await owner.context().close();
+  await c.context().close();
+});
+
+test("20. 교육 자료실: 단장 uploads material, summary is built, files download, consultants confirm reading", async ({ browser }) => {
+  const owner = await loginAs(browser, U.owner);
+  await go(owner, "/trainings");
+  await expect(owner.getByTestId("training-card").first()).toBeVisible();
+  await shot(owner, "26-trainings-list", false);
+  await owner.getByRole("link", { name: /교육 자료 올리기/ }).click();
+  await owner.waitForURL("**/trainings/new");
+  await owner.fill('[data-testid="training-title"]', "QA 교육: 고용지원금 명부 진단 실습");
+  await owner.fill('[data-testid="training-content"]', [
+    "오늘은 4대보험 가입자 명부로 고용지원금 가능성을 진단하는 실습을 했습니다.",
+    "명부에서 최근 입사자와 나이, 고용 형태를 반드시 확인하세요.",
+    "최근 인원 감축이 있으면 지원이 제한될 수 있으니 꼭 질문해야 합니다.",
+    "채용 계획이 있는 회사는 채용 전에 상담해야 놓치지 않습니다.",
+    "대표님께는 \"받으실 수 있는 지원금을 놓치고 계신지 확인해 드리는 겁니다\"라고 말씀드리세요.",
+    "미팅이 끝나면 결과 입력에서 4대보험 가입자 명부를 받을 자료로 체크하세요.",
+  ].join("\n"));
+  const big = Buffer.alloc(5 * 1024 * 1024 + 123, 7); // 3 pieces of 2MB
+  await owner.setInputFiles('[data-testid="training-file-input"]', [
+    { name: "실습_체크리스트.txt", mimeType: "text/plain", buffer: Buffer.from("□ 최근 입사자 표시\n□ 청년 여부 확인\n□ 인원 감축 여부 질문\n") },
+    { name: "교육_녹화.mp4", mimeType: "video/mp4", buffer: big },
+  ]);
+  await expect(owner.getByText("실습_체크리스트.txt")).toBeVisible();
+  await shot(owner, "27-training-new", false);
+  await owner.click('[data-testid="training-submit"]');
+  await owner.waitForURL(/\/trainings\/[0-9a-f-]{36}$/, { timeout: 60000 });
+  const trainingUrl = owner.url();
+  await expect(owner.getByTestId("summary-one-line")).toBeVisible();
+  await expect(owner.getByTestId("training-summary")).toContainText("기본 요약");
+  await expect(owner.getByTestId("training-summary")).toContainText("명부");
+  await expect(owner.getByTestId("training-file")).toHaveCount(2);
+  await shot(owner, "28-training-detail-owner");
+  // Multi-piece file comes back byte-for-byte.
+  const [dl] = await Promise.all([owner.waitForEvent("download"), owner.getByTestId("training-file").filter({ hasText: "교육_녹화.mp4" }).getByTestId("file-download").click()]);
+  expect(dl.suggestedFilename()).toBe("교육_녹화.mp4");
+  const fs = await import("node:fs");
+  expect(fs.statSync((await dl.path())!).size).toBe(big.length);
+
+  // Consultant: sees it as new, reads, confirms.
+  const c = await loginAs(browser, U.cA, { width: 390, height: 844 });
+  await go(c, "/trainings");
+  const card = c.getByTestId("training-card").filter({ hasText: "QA 교육" });
+  await expect(card.getByTestId("training-new")).toBeVisible();
+  await expect(c.getByRole("link", { name: /교육 자료 올리기/ })).toHaveCount(0);
+  await card.click();
+  await c.waitForURL(/\/trainings\/[0-9a-f-]{36}$/);
+  await c.getByTestId("summary-copy").click();
+  await c.getByTestId("training-read").click();
+  await expect(c.getByTestId("training-read-done")).toBeVisible();
+  await shot(c, "m390-11-training-read", false);
+  await go(c, "/trainings/new");
+  await c.waitForURL("**/trainings");
+  // Search finds past trainings by what was said.
+  await go(c, "/trainings?q=" + encodeURIComponent("인원 감축"));
+  await expect(c.getByTestId("training-card").filter({ hasText: "QA 교육" })).toBeVisible();
+  await c.context().close();
+
+  // 단장 sees who confirmed.
+  await go(owner, trainingUrl);
+  await expect(owner.getByTestId("read-status")).toContainText("1명 확인");
+  await expect(owner.getByTestId("read-status")).toContainText("아직 안 본 사람");
+  await owner.context().close();
+});
+
+test("21. Header shows today's date and a live clock (Korea time)", async ({ browser }) => {
+  const p = await loginAs(browser, U.owner);
+  const clock = p.getByRole("banner").getByTestId("live-clock").first();
+  await expect(clock).toContainText(/\d{4}년 \d{1,2}월 \d{1,2}일 \([일월화수목금토]\)/);
+  const first = await clock.innerText();
+  await p.waitForTimeout(1300);
+  expect(await clock.innerText()).not.toBe(first);
+  await p.context().close();
 });

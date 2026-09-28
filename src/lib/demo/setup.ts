@@ -3,6 +3,7 @@ import { ORG_ID, seedDemo } from "./seed";
 import shimSql from "../../../supabase/local/0000_supabase_shim.sql";
 import initSql from "../../../supabase/migrations/0001_init.sql";
 import addressSql from "../../../supabase/migrations/0002_lead_address.sql";
+import trainingSql from "../../../supabase/migrations/0003_training_and_limits.sql";
 
 // Bundled as strings (webpack asset/source) so they exist on Vercel.
 // Names match scripts/migrate.mjs so both record into the same _migrations table.
@@ -11,6 +12,7 @@ const SHIM = { name: "supabase/local/0000_supabase_shim.sql", sql: shimSql };
 const MIGRATIONS = [
   { name: "supabase/migrations/0001_init.sql", sql: initSql },
   { name: "supabase/migrations/0002_lead_address.sql", sql: addressSql },
+  { name: "supabase/migrations/0003_training_and_limits.sql", sql: trainingSql },
 ];
 
 // Same check as the shim, re-run on every start so a DB set up by an older

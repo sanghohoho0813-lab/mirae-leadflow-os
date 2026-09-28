@@ -50,11 +50,29 @@ function normalize(u: URL): string {
 export function useSafeNavigate() {
   const router = useRouter();
   return useCallback((url: string, mode: "push" | "replace" = "push") => {
+    const here = () => normalize(new URL(window.location.href));
     const target = normalize(new URL(url, window.location.href));
+    const from = here();
     if (mode === "replace") router.replace(url); else router.push(url);
-    window.setTimeout(() => {
-      if (normalize(new URL(window.location.href)) !== target) window.location.assign(url);
-    }, REFRESH_WATCHDOG_MS);
+    if (target === from) {
+      // Same page with fresh data (e.g. after 신청): wait for the new server render.
+      let rendered = false;
+      const onRender = () => { rendered = true; };
+      window.addEventListener("lf:render", onRender, { once: true });
+      window.setTimeout(() => {
+        window.removeEventListener("lf:render", onRender);
+        if (!rendered && here() === from) window.location.assign(url);
+      }, REFRESH_WATCHDOG_MS);
+      return;
+    }
+    // Only a navigation that never left the starting page counts as stuck. Once the
+    // target was reached (or the person moved on elsewhere) the watchdog stands down.
+    const started = Date.now();
+    const id = window.setInterval(() => {
+      const now = here();
+      if (now !== from) { window.clearInterval(id); return; }
+      if (Date.now() - started >= REFRESH_WATCHDOG_MS) { window.clearInterval(id); window.location.assign(url); }
+    }, 200);
   }, [router]);
 }
 

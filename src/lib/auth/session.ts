@@ -38,7 +38,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   const result = await withUser(session.userId, async (tx) => {
     const [profile] = await tx<Profile[]>`select * from profiles where id = ${session.userId}`;
     if (!profile) return null;
-    const [organization] = await tx<Organization[]>`select id, name, invite_code from organizations where id = ${profile.organization_id}`;
+    const [organization] = await tx<Organization[]>`select id, name, invite_code, claim_limit from organizations where id = ${profile.organization_id}`;
     return { profile, organization };
   });
   if (!result) return null;
@@ -62,4 +62,7 @@ export function canCreateLead(v: Viewer) {
 }
 export function canClaim(v: Viewer) {
   return v.profile.role === "CONSULTANT" || v.profile.role === "LEADER";
+}
+export function canTeach(v: Viewer) {
+  return isManager(v) || v.profile.role === "LEADER";
 }

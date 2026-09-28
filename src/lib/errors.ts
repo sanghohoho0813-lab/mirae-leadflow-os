@@ -6,6 +6,8 @@ export const ERROR_MESSAGE: Record<string, string> = {
   NOT_FOUND: "해당 DB를 찾을 수 없습니다.",
   ALREADY_MINE: "이미 내가 담당하고 있는 DB입니다.",
   ALREADY_ASSIGNED: "아쉽지만 다른 컨설턴트가 먼저 신청했습니다.",
+  LIMIT_REACHED: "진행 중인 미팅이 있습니다. 그 미팅의 결과를 입력하면 바로 다음 DB를 신청할 수 있습니다.",
+  INVALID_LIMIT: "0~20 사이로 정해 주세요.",
   NOT_OPEN: "지금은 신청할 수 없는 상태입니다.",
   FORBIDDEN: "권한이 없습니다.",
   INVALID_STATE: "현재 상태에서는 할 수 없는 작업입니다.",

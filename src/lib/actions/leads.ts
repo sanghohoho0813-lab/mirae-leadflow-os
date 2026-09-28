@@ -132,9 +132,10 @@ export async function unpublishLead(id: string): Promise<ActionResult> {
 export async function claimLead(id: string): Promise<ActionResult> {
   const viewer = await requireViewer();
   try {
-    const r = await withUser(viewer.session.userId, async (tx) => (await tx<{ r: { ok: boolean; code: string } }[]>`select claim_lead(${id}) as r`)[0].r);
+    const r = await withUser(viewer.session.userId, async (tx) => (await tx<{ r: { ok: boolean; code: string; active_lead_id?: string } }[]>`select claim_lead(${id}) as r`)[0].r);
     revalidateLead(id);
-    return r.ok ? { ok: true, code: r.code } : { ok: false, code: r.code, message: messageFor(r.code) };
+    // LIMIT_REACHED: `id` carries the meeting whose result is still missing.
+    return r.ok ? { ok: true, code: r.code } : { ok: false, code: r.code, message: messageFor(r.code), id: r.active_lead_id };
   } catch (e) {
     const code = toActionError(e).code;
     return { ok: false, code, message: messageFor(code) };
@@ -171,7 +172,12 @@ export interface ReportInput {
   detail_memo?: string;
   new_meeting_date?: string;
   new_meeting_time?: string;
+  topics?: string[];
+  materials?: string[];
+  next_note?: string;
 }
+
+const clean = (a?: string[]) => (a ?? []).map((s) => String(s).trim()).filter(Boolean).slice(0, 20);
 
 export async function submitReport(id: string, input: ReportInput): Promise<ActionResult> {
   const viewer = await requireViewer();
@@ -180,7 +186,8 @@ export async function submitReport(id: string, input: ReportInput): Promise<Acti
   try {
     await withUser(viewer.session.userId, (tx) => tx`
       select submit_meeting_report(${id}, ${input.outcome}, ${input.reaction ?? null}, ${input.result ?? null}, ${input.next_action},
-        ${input.next_action_date || null}, ${input.memo ?? null}, ${input.detail_memo ?? null}, ${newMeetingAt})`);
+        ${input.next_action_date || null}, ${input.memo ?? null}, ${input.detail_memo ?? null}, ${newMeetingAt},
+        ${clean(input.topics)}::text[], ${clean(input.materials)}::text[], ${input.next_note ?? null})`);
   } catch (e) {
     const code = toActionError(e).code;
     return { ok: false, code, message: messageFor(code) };
@@ -224,5 +231,19 @@ export async function setMemberActive(profileId: string, active: boolean): Promi
     return { ok: false, code, message: messageFor(code) };
   }
   revalidatePath("/members");
+  return { ok: true };
+}
+
+export async function setClaimLimit(limit: number): Promise<ActionResult> {
+  const viewer = await requireViewer();
+  if (!isManager(viewer)) return { ok: false, code: "FORBIDDEN", message: messageFor("FORBIDDEN") };
+  try {
+    await withUser(viewer.session.userId, (tx) => tx`select set_claim_limit(${Math.round(limit)})`);
+  } catch (e) {
+    const code = toActionError(e).code;
+    return { ok: false, code, message: messageFor(code) };
+  }
+  revalidatePath("/members");
+  revalidatePath("/leads");
   return { ok: true };
 }
