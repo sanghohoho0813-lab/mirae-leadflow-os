@@ -898,19 +898,15 @@ test("28. 사이드바 이름 누르기 → 본부장·지점장·팀장 화면�
   await go(mp, "/");
   await expect(mp.getByTestId("demo-bar")).toContainText("사용자 변경");
   await expect(mp.getByTestId("demo-bar")).toContainText("샘플 DB");
+  // ☰ 메뉴에는 체험 도구 칸이 없다 (위쪽 막대에 다 있으므로)
   await mp.getByTestId("menu-button").click();
-  const tools = mp.getByTestId("drawer-demo-tools");
-  await expect(tools).toContainText("사용자 변경하기");
-  await expect(tools).toContainText("5개 추가");
-  await expect(tools).toContainText("전체 삭제");
-  await shot(mp, "m390-28-drawer-tools", false);
-  await mp.getByTestId("drawer-switch-user").click();
-  await mp.getByTestId("persona-menu").getByTestId("persona-menu-10000000-0000-4000-8000-000000000014").click(); // 2본부 팀장 B
+  await expect(mp.getByTestId("drawer")).toBeVisible();
+  await expect(mp.getByTestId("drawer").getByText("체험 도구")).toHaveCount(0);
+  await mp.keyboard.press("Escape");
+  await switchUser(mp, "10000000-0000-4000-8000-000000000014"); // 2본부 팀장 B
   await expect(mp.getByRole("heading", { name: /팀장 B님/ })).toBeVisible();
-  await expect(mp.getByTestId("drawer")).toHaveCount(0);
-  // ☰ 안에서 바로 샘플 5개 추가
-  await mp.getByTestId("menu-button").click();
-  await mp.getByTestId("drawer-demo-tools").getByTestId("demo-add-5").click();
+  await mp.getByTestId("demo-reset").click();
+  await mp.getByTestId("demo-add-5").click();
   await expect(mp.getByText("샘플 DB 5건을 추가했습니다")).toBeVisible();
   expect(await mp.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await m.close();
@@ -948,4 +944,64 @@ test("29. 샘플 DB: 전체 삭제 · 5개 · 10개 · 20개 추가 · 처음 �
   await expect(p.getByText("처음 상태로 되돌렸습니다")).toBeVisible();
   await count(20);
   await ctx.close();
+});
+
+test("30. 소개 영상: 들어오면 가운데에 뜨고, 닫으면 새로고침 때 다시, 하루 안 보기·다시 보지 않기, ☰에서 다시 보기", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  // 사람이 쓰는 브라우저처럼 (자동화 브라우저에는 저절로 뜨지 않게 해 두었다)
+  await ctx.addInitScript(() => Object.defineProperty(navigator, "webdriver", { get: () => false }));
+  const p = await ctx.newPage();
+  await go(p, "/");
+  const intro = p.getByTestId("intro-video");
+  await expect(intro).toBeVisible();
+  const box = (await intro.locator("> div").boundingBox())!;
+  expect(Math.abs(box.x + box.width / 2 - 195)).toBeLessThan(4); // 가운데
+  for (const [path, type] of [["/intro/leadflow-intro.mp4", "video/mp4"], ["/intro/leadflow-intro.webm", "video/webm"]]) {
+    const res = await p.request.get(path);
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toContain(type);
+    expect((await res.body()).length).toBeGreaterThan(1_000_000);
+  }
+  // 실제로 재생된다 (자동 재생, 소리 없음)
+  await expect.poll(() => intro.getByTestId("intro-video-player").evaluate((v: HTMLVideoElement) => v.currentTime), { timeout: 10_000 }).toBeGreaterThan(0.5);
+  expect((await p.request.get("/intro/poster.jpg")).status()).toBe(200);
+  await shot(p, "m390-30-intro", false);
+
+  // 그냥 닫기 → 새로고침하면 다시 뜬다
+  await intro.getByTestId("intro-close").click();
+  await expect(intro).toHaveCount(0);
+  await p.reload(); await settle(p);
+  await expect(p.getByTestId("intro-video")).toBeVisible();
+
+  // 하루 동안 안 보기 → 새로고침해도 안 뜬다
+  await p.getByTestId("intro-hide-day").click();
+  await p.reload(); await settle(p);
+  await expect(p.getByTestId("intro-video")).toHaveCount(0);
+  const until = await p.evaluate(() => Number(localStorage.getItem("lf:intro-hide-until")));
+  expect(until - Date.now()).toBeGreaterThan(23 * 3600_000);
+
+  // ☰ 맨 아래 [서비스 소개 영상 보기]로는 언제든 다시 본다
+  await p.getByTestId("menu-button").click();
+  await p.getByTestId("drawer-intro").click();
+  await expect(p.getByTestId("drawer")).toHaveCount(0);
+  await expect(p.getByTestId("intro-video")).toBeVisible();
+
+  // 다시 보지 않기 → 하루가 지나도 안 뜬다
+  await p.getByTestId("intro-hide-forever").click();
+  await p.evaluate(() => localStorage.removeItem("lf:intro-hide-until"));
+  await p.reload(); await settle(p);
+  await expect(p.getByTestId("intro-video")).toHaveCount(0);
+  await ctx.close();
+
+  // PC: 사이드바 아래에서도 열린다 (자동화 브라우저라 저절로는 안 뜸)
+  const pc = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const d = await pc.newPage();
+  await go(d, "/");
+  await expect(d.getByTestId("intro-video")).toHaveCount(0);
+  await d.getByTestId("sidebar-intro").click();
+  await expect(d.getByTestId("intro-video")).toBeVisible();
+  await shot(d, "30-intro-pc", false);
+  await d.keyboard.press("Escape");
+  await expect(d.getByTestId("intro-video")).toHaveCount(0);
+  await pc.close();
 });

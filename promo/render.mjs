@@ -7,7 +7,7 @@ import { resolve } from "node:path";
 
 const FPS = 30;
 const FRAMES = "promo/.frames";
-const OUT = process.env.OUT ?? "promo/leadflow-intro.mp4";
+const OUT = process.env.OUT ?? "public/intro/leadflow-intro.mp4";
 const FFMPEG = process.env.FFMPEG ?? "ffmpeg";
 const only = process.env.ONLY ? process.env.ONLY.split(",").map(Number) : null; // 확인용: ONLY=5,9.5 → 그 순간만 PNG
 
@@ -38,6 +38,10 @@ if (only) {
   execFileSync(FFMPEG, ["-y", "-loglevel", "error", "-framerate", String(FPS), "-i", `${FRAMES}/%05d.jpg`,
     "-c:v", "libx264", "-preset", "slow", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart", OUT], { stdio: "inherit" });
   rmSync(FRAMES, { recursive: true, force: true });
-  console.log(`wrote ${OUT} (${n} frames)`);
+  // 앱 팝업용: H.264를 못 트는 브라우저를 위한 WebM, 그리고 첫 화면(포스터)
+  const base = OUT.replace(/\.mp4$/, "");
+  execFileSync(FFMPEG, ["-y", "-loglevel", "error", "-i", OUT, "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "36", "-row-mt", "1", "-cpu-used", "4", "-an", `${base}.webm`], { stdio: "inherit" });
+  execFileSync(FFMPEG, ["-y", "-loglevel", "error", "-ss", "2.2", "-i", OUT, "-frames:v", "1", "-vf", "scale=1280:-1", "-q:v", "4", OUT.replace(/[^/]+$/, "poster.jpg")], { stdio: "inherit" });
+  console.log(`wrote ${OUT}, ${base}.webm, poster.jpg (${n} frames)`);
 }
 await browser.close().catch(() => {});

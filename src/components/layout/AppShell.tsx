@@ -2,11 +2,12 @@
 
 import { MiniCalendar, type TrainingDays } from "./MiniCalendar";
 import { PersonaMenu } from "./PersonaMenu";
-import { PersonaDialog, SampleDbPanel, personaLabel, type DemoTools } from "./DemoTools";
+import type { DemoTools } from "./DemoTools";
+import { IntroVideo, shouldAutoOpenIntro } from "./IntroVideo";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
-import { UserRound, ChevronRight, Home, Database, CalendarCheck, RefreshCw, History, Users, PlusCircle, MoreHorizontal, LogOut, X, Menu, Inbox, Megaphone, GraduationCap, Settings, CalendarDays, Building } from "lucide-react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { PlayCircle, Home, Database, CalendarCheck, RefreshCw, History, Users, PlusCircle, MoreHorizontal, LogOut, X, Menu, Inbox, Megaphone, GraduationCap, Settings, CalendarDays, Building } from "lucide-react";
 import { NavProgress } from "./NavProgress";
 import { LiveClock } from "./LiveClock";
 import { personLabel, ROLE_LABEL } from "@/lib/labels";
@@ -128,7 +129,10 @@ function MadeBy({ dark }: { dark?: boolean }) {
 export function AppShell({ user, children, demo = false, topBar, counts, trainingDays, tools }: { user: ShellUser; children: ReactNode; demo?: boolean; topBar?: ReactNode; counts: NavCounts; trainingDays?: TrainingDays;
   /** 체험 모드: 사용자 변경하기 · 샘플 DB 추가·삭제. */
   tools?: DemoTools }) {
-  const [whoOpen, setWhoOpen] = useState(false);
+  // 서비스 소개 영상: 링크로 들어오면 가운데에 뜬다 (하루 동안 안 보기 / 다시 보지 않기 전까지).
+  const [intro, setIntro] = useState(false);
+  const closeIntro = useCallback(() => setIntro(false), []);
+  useEffect(() => { if (shouldAutoOpenIntro()) setIntro(true); }, []);
   const pathname = usePathname();
   const search = useSearchParams();
   const [drawer, setDrawer] = useState(false);
@@ -225,6 +229,10 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
               </button>
             </form>
           )}
+          <button type="button" onClick={() => setIntro(true)} data-testid="sidebar-intro"
+            className="mb-2 flex h-10 w-full items-center justify-center gap-2 rounded-lg text-[0.9062rem] font-semibold text-white/75 transition-base hover:bg-white/10 hover:text-white">
+            <PlayCircle size={17} /> 서비스 소개 영상 보기
+          </button>
           <MadeBy dark />
         </div>
       </aside>
@@ -284,7 +292,7 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
         </button>
       </nav>
 
-      {tools && <PersonaDialog people={tools.people} currentId={tools.currentId} open={whoOpen} onClose={() => setWhoOpen(false)} onSwitched={() => setDrawer(false)} />}
+      <IntroVideo open={intro} onClose={closeIntro} />
       {/* Mobile menu: slides in from the left, under the ☰ button */}
       {drawer && (
         <div className="drawer-backdrop fixed inset-0 z-40 bg-ink/45 lg:hidden" onClick={() => setDrawer(false)} data-testid="drawer">
@@ -305,21 +313,6 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
               <button type="button" onClick={() => setDrawer(false)} aria-label="닫기" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/80 hover:bg-white/10"><X size={22} /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-3 pb-3 pt-3">
-              {tools && (
-                <section className="mb-3 grid gap-3 rounded-2xl border-2 border-warning/30 bg-warning-bg/40 p-3" data-testid="drawer-demo-tools">
-                  <div className="text-[0.875rem] font-bold text-warning">체험 도구</div>
-                  <button type="button" onClick={() => setWhoOpen(true)} data-testid="drawer-switch-user"
-                    className="press flex min-h-[3.5rem] items-center gap-3 rounded-xl bg-primary px-4 text-left text-white">
-                    <UserRound size={22} className="shrink-0" />
-                    <span className="min-w-0 flex-1 leading-tight">
-                      <span className="block text-[1.0625rem] font-bold">사용자 변경하기</span>
-                      <span className="block truncate text-[0.875rem] text-white/80">지금: {personaLabel(tools.people.find((p) => p.id === tools.currentId))}</span>
-                    </span>
-                    <ChevronRight size={20} className="shrink-0" />
-                  </button>
-                  <div className="rounded-xl bg-white p-3"><SampleDbPanel leadCount={tools.leadCount} ephemeral={tools.ephemeral} /></div>
-                </section>
-              )}
               {nav.cta && (
                 <Link prefetch={false} href={nav.cta.href} className="mb-1 flex items-center gap-3 rounded-xl bg-primary px-3 text-[1rem] font-bold text-white" style={{ height: 52 }}>
                   <PlusCircle size={20} /> {nav.cta.label}
@@ -346,7 +339,13 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
                 </form>
               )}
             </div>
-            <div className="border-t border-line py-3 pb-[calc(12px+env(safe-area-inset-bottom))]"><MadeBy /></div>
+            <div className="border-t border-line px-3 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+              <button type="button" onClick={() => { setDrawer(false); setIntro(true); }} data-testid="drawer-intro"
+                className="press mb-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-primary/30 bg-soft text-[1.0312rem] font-bold text-primary" style={{ height: 52 }}>
+                <PlayCircle size={21} /> 서비스 소개 영상 보기
+              </button>
+              <MadeBy />
+            </div>
           </div>
         </div>
       )}
