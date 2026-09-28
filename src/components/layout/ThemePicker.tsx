@@ -45,8 +45,8 @@ export function ThemePicker({ variant = "icon", onPicked }: { variant?: "icon" |
         </button>
       ) : (
         <button type="button" onClick={() => setOpen(true)} data-testid="theme-button-mobile"
-          className="flex w-full items-center gap-3 rounded-xl px-3 text-[16px] font-semibold text-ink hover:bg-neutral-bg" style={{ height: 52 }}>
-          <span className="icon-tile" style={{ background: "var(--neutral-canvas)", color: "var(--theme-primary)" }}><Palette size={20} /></span> 화면 색상 바꾸기
+          className="press flex w-full items-center gap-3 rounded-xl px-3 text-[16px] font-semibold text-ink hover:bg-neutral-bg" style={{ height: 52 }}>
+          <span className="nav-icon-light"><Palette size={20} /></span> 화면 색상 바꾸기
         </button>
       )}
       <Dialog open={open} onClose={() => setOpen(false)} title="화면 색상" testId="theme-dialog">

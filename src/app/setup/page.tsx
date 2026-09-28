@@ -30,12 +30,12 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
           <section className="rounded-2xl border border-danger/30 bg-white p-5 shadow-card" data-testid="setup-error">
             <div className="mb-3 flex items-center gap-2 text-[19px] font-bold text-danger"><AlertTriangle size={22} /> 데이터베이스 준비 중 문제가 생겼습니다</div>
             <p className="mb-4 text-[16px] text-ink-2">DB 주소(<code className="rounded bg-neutral-bg px-1">DATABASE_URL</code>)가 올바른지, DB가 켜져 있는지 확인해 주세요. Vercel의 <b>Logs</b>에 자세한 원인이 남아 있습니다.</p>
-            <Link href="/" className="inline-flex h-12 items-center rounded-xl bg-primary px-5 text-[17px] font-semibold text-white">다시 시도</Link>
+            <Link prefetch={false} href="/" className="inline-flex h-12 items-center rounded-xl bg-primary px-5 text-[17px] font-semibold text-white">다시 시도</Link>
           </section>
         ) : (
           <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
             <p className="mb-4 text-[16px] text-ink-2">데이터베이스가 연결되어 있습니다.</p>
-            <Link href="/" className="inline-flex h-12 items-center rounded-xl bg-primary px-5 text-[17px] font-semibold text-white">시작하기</Link>
+            <Link prefetch={false} href="/" className="inline-flex h-12 items-center rounded-xl bg-primary px-5 text-[17px] font-semibold text-white">시작하기</Link>
           </section>
         )}
       </div>

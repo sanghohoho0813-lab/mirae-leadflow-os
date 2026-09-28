@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSafeNavigate } from "@/components/providers/SafeActions";
 import { Save } from "lucide-react";
 import { Field, Input, Textarea } from "@/components/ui/Field";
 import { ChoiceGroup, TagPicker } from "@/components/ui/Choice";
@@ -23,8 +23,8 @@ interface Props {
 
 export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submitLabel }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
-  const router = useRouter();
-  useEffect(() => { if (state.redirectTo) router.push(state.redirectTo); }, [state, router]);
+  const navigate = useSafeNavigate();
+  useEffect(() => { if (state.redirectTo) navigate(state.redirectTo); }, [state, navigate]);
   const busy = pending || Boolean(state.redirectTo);
   const [method, setMethod] = useState<MeetingMethod>(lead?.meeting_method ?? "VISIT");
   const [interest, setInterest] = useState<string[]>(priv?.interest_tags ?? []);

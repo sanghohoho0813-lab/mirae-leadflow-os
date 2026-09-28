@@ -59,7 +59,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:px-0" role="tablist">
           {tabs.map((t) => (
-            <Link
+            <Link prefetch={false}
               key={t.key}
               href={qs({ tab: t.key })}
               role="tab"
@@ -83,7 +83,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         <p className="text-[15px] font-semibold text-ink-3">{leads.length}건</p>
         <div className="inline-flex rounded-xl border border-line bg-white p-1" role="tablist" aria-label="보기 방식">
           {([["list", "목록", <List key="l" size={17} />], ["map", "지도", <MapIcon key="m" size={17} />]] as const).map(([v, label, icon]) => (
-            <Link key={v} href={qs({ view: v })} role="tab" aria-selected={view === v} data-testid={`view-${v}`}
+            <Link prefetch={false} key={v} href={qs({ view: v })} role="tab" aria-selected={view === v} data-testid={`view-${v}`}
               className={`press flex h-10 items-center gap-1.5 rounded-lg px-3.5 text-[15px] font-semibold ${view === v ? "bg-primary text-white" : "text-ink-2 hover:bg-neutral-bg"}`}>
               {icon}{label}
             </Link>

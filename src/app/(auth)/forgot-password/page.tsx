@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
         <ForgotPasswordForm />
       )}
       <p className="mt-6 text-center text-[15px] text-ink-3">
-        <Link href="/login" className="font-semibold text-primary hover:underline">로그인으로 돌아가기</Link>
+        <Link prefetch={false} href="/login" className="font-semibold text-primary hover:underline">로그인으로 돌아가기</Link>
       </p>
     </div>
   );

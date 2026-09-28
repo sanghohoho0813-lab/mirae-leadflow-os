@@ -17,7 +17,7 @@ export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now 
   const overdueDays = lead.needs_report ? daysSince(lead.meeting_at, now) : 0;
   const isCancelled = lead.status === "CANCELLED";
   return (
-    <Link
+    <Link prefetch={false}
       href={`/leads/${lead.id}`}
       className={`lift press group flex items-center gap-3 rounded-2xl border bg-white px-4 py-3.5 ${lead.needs_report ? "border-danger/30" : "border-line"} ${isCancelled ? "opacity-60" : ""}`}
       data-testid={`lead-row-${lead.id}`}

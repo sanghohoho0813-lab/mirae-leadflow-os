@@ -18,7 +18,7 @@ export function LoginForm() {
       </Field>
       {state.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[15px] font-medium text-danger">{state.error}</p>}
       <Button type="submit" size="lg" disabled={pending}>{pending ? "로그인 중…" : "로그인"}</Button>
-      <Link href="/forgot-password" className="min-h-[44px] text-center text-[15px] font-semibold leading-[44px] text-primary hover:underline">비밀번호를 잊으셨나요?</Link>
+      <Link prefetch={false} href="/forgot-password" className="min-h-[44px] text-center text-[15px] font-semibold leading-[44px] text-primary hover:underline">비밀번호를 잊으셨나요?</Link>
     </form>
   );
 }

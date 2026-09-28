@@ -22,8 +22,16 @@ export function NavProgress() {
       if (url.pathname === window.location.pathname && url.search === window.location.search) return;
       setState("running");
     };
+    const onBusy = () => setState("running");
+    const onRender = () => setState((s) => (s === "running" ? "done" : s));
     document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    window.addEventListener("lf:busy", onBusy);
+    window.addEventListener("lf:render", onRender);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      window.removeEventListener("lf:busy", onBusy);
+      window.removeEventListener("lf:render", onRender);
+    };
   }, []);
 
   // New page committed → finish the bar.

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useSafeTransition } from "@/components/providers/SafeActions";
+import { useState} from "react";
 import { CheckCircle2, Home, FileText } from "lucide-react";
 import { ChoiceGroup } from "@/components/ui/Choice";
 import { Field, Input, Textarea } from "@/components/ui/Field";
@@ -26,7 +27,7 @@ export function ReportForm({ leadId, companyName, isFollowUp }: { leadId: string
   const [showDetail, setShowDetail] = useState(false);
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("10:00");
-  const [pending, start] = useTransition();
+  const [pending, start] = useSafeTransition();
   const [done, setDone] = useState<{ status: string } | null>(null);
   const toast = useToast();
 

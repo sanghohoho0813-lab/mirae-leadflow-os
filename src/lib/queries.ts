@@ -164,7 +164,8 @@ export async function getConsultantDashboard(tx: Tx, userId: string): Promise<Co
   const todayStr = (await tx<{ d: string }[]>`select (now() at time zone 'Asia/Seoul')::date::text as d`)[0].d;
   const now = Date.now();
   const today = mine.filter((l) => l.status === "ASSIGNED" && kstDate(l.meeting_at) === todayStr);
-  const needsReport = mine.filter((l) => l.needs_report && kstDate(l.meeting_at) !== todayStr);
+  // Same rule as the KPI count: every past meeting without a report, today's included.
+  const needsReport = mine.filter((l) => l.needs_report);
   const upcoming = mine.filter((l) => l.status === "ASSIGNED" && l.meeting_at.getTime() >= now && kstDate(l.meeting_at) !== todayStr).slice(0, 10);
   const [followUpsDue, open] = await Promise.all([
     tx<FollowUp[]>`
@@ -206,3 +207,14 @@ function kstDate(d: Date): string {
 }
 
 export type { Lead };
+
+/** Badge counts for the menu. Consultants: their own items; managers: whole org. */
+export async function getNavCounts(tx: Tx, userId: string, manager: boolean) {
+  const [c] = await tx<{ needs_report: number; follow_ups: number; open: number; drafts: number }[]>`
+    select
+      (select count(*)::int from leads where status = 'ASSIGNED' and meeting_at < now() and (${manager} or assigned_to = ${userId})) as needs_report,
+      (select count(*)::int from follow_ups where status = 'PENDING' and due_date <= (now() at time zone 'Asia/Seoul')::date and (${manager} or assignee_id = ${userId})) as follow_ups,
+      (select count(*)::int from leads where status = 'OPEN') as open,
+      (select count(*)::int from leads where status = 'DRAFT') as drafts`;
+  return c;
+}

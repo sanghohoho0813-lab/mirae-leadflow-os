@@ -42,7 +42,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           ))}
         </div>
         <p className="mt-6 text-center text-[15px] text-ink-3">
-          처음이신가요? <Link href="/signup" className="font-semibold text-primary hover:underline">초대코드로 가입</Link>
+          처음이신가요? <Link prefetch={false} href="/signup" className="font-semibold text-primary hover:underline">초대코드로 가입</Link>
         </p>
       </div>
     );
@@ -53,7 +53,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       {error === "link" && <p className="mb-4 rounded-2xl border border-danger/30 bg-danger-bg px-4 py-3 text-[15px] font-medium text-danger">링크가 만료되었거나 올바르지 않습니다. 다시 시도해 주세요.</p>}
       <LoginForm />
       <p className="mt-6 text-center text-[15px] text-ink-3">
-        처음이신가요? <Link href="/signup" className="font-semibold text-primary hover:underline">초대코드로 가입</Link>
+        처음이신가요? <Link prefetch={false} href="/signup" className="font-semibold text-primary hover:underline">초대코드로 가입</Link>
       </p>
     </div>
   );

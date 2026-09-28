@@ -4,6 +4,7 @@ import { ensureDemoReady } from "@/lib/demo/setup";
 import { DEMO_DEFAULT_USER_ID } from "@/lib/demo/seed";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** First visit in demo mode: prepare the DB if needed, then enter as the 사업단장. */
 export async function GET(request: NextRequest) {

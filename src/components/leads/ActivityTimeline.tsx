@@ -29,7 +29,7 @@ export function ActivityTimeline({ logs, showCompany }: { logs: ActivityLog[]; s
           <span className={`absolute -left-[23px] top-1.5 h-3 w-3 rounded-full ring-4 ring-white ${DOT[log.action] ?? "bg-neutral"}`} />
           <div className="flex flex-wrap items-baseline gap-x-2 text-[15.5px]">
             <b className="text-ink">{ACTION_LABEL[log.action] ?? log.action}</b>
-            {showCompany && log.company_name && <Link href={`/leads/${log.lead_id}`} className="font-semibold text-primary hover:underline">{log.company_name}</Link>}
+            {showCompany && log.company_name && <Link prefetch={false} href={`/leads/${log.lead_id}`} className="font-semibold text-primary hover:underline">{log.company_name}</Link>}
             {log.to_status && log.from_status !== log.to_status && <span className="text-ink-2">{log.from_status ? `${STATUS_LABEL[log.from_status as LeadStatus]} → ` : ""}{STATUS_LABEL[log.to_status as LeadStatus]}</span>}
           </div>
           {describe(log) && <div className="text-[14.5px] text-ink-2">{describe(log)}</div>}

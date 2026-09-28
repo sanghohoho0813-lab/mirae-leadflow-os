@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useSafeTransition, useSafeRefresh, useSafeNavigate } from "@/components/providers/SafeActions";
+import { useState, type ReactNode } from "react";
 import { Hand, Megaphone, Undo2, UserCog, CalendarClock, Ban, XCircle, Pencil, ClipboardEdit, Phone, EyeOff } from "lucide-react";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
@@ -15,13 +15,13 @@ type Size = "sm" | "md" | "lg";
 
 // ----------------------------------------------------------------- publish
 export function PublishButton({ id, size = "md" }: { id: string; size?: Size }) {
-  const [pending, start] = useTransition();
+  const [pending, start] = useSafeTransition();
   const toast = useToast();
-  const router = useRouter();
+  const refresh = useSafeRefresh();
   return (
     <Button size={size} disabled={pending} data-testid="publish-button" onClick={() => start(async () => {
       const r = await publishLead(id);
-      if (r.ok) { toast("success", "공개했습니다. 이제 컨설턴트가 신청할 수 있습니다."); router.refresh(); }
+      if (r.ok) { toast("success", "공개했습니다. 이제 컨설턴트가 신청할 수 있습니다."); refresh(); }
       else toast("error", r.message ?? "실패했습니다.");
     })}>
       <Megaphone size={18} /> {pending ? "공개 중…" : "공개하기"}
@@ -31,10 +31,11 @@ export function PublishButton({ id, size = "md" }: { id: string; size?: Size }) 
 
 // ----------------------------------------------------------------- claim
 export function ClaimButton({ id }: { id: string }) {
-  const [pending, start] = useTransition();
+  const [pending, start] = useSafeTransition();
   const [lost, setLost] = useState<string | null>(null);
   const toast = useToast();
-  const router = useRouter();
+  const refresh = useSafeRefresh();
+  const navigate = useSafeNavigate();
   if (lost) {
     return (
       <div className="rounded-2xl border border-warning/40 bg-warning-bg px-4 py-4 text-[16px] font-semibold text-warning" data-testid="claim-lost">
@@ -48,8 +49,8 @@ export function ClaimButton({ id }: { id: string }) {
       const r = await claimLead(id);
       // replace() alone refetches (the action revalidated this path); adding refresh()
       // races with it under the loading boundary and can leave the page stuck.
-      if (r.ok) { router.replace(`/leads/${id}?claimed=1`); }
-      else if (r.code === "ALREADY_ASSIGNED" || r.code === "NOT_OPEN") { setLost(r.message ?? "이미 배정되었습니다."); router.replace(`/leads/${id}?lost=1`); }
+      if (r.ok) { navigate(`/leads/${id}?claimed=1`, "replace"); }
+      else if (r.code === "ALREADY_ASSIGNED" || r.code === "NOT_OPEN") { setLost(r.message ?? "이미 배정되었습니다."); navigate(`/leads/${id}?lost=1`, "replace"); }
       else toast("error", r.message ?? "실패했습니다.");
     })}>
       <Hand size={22} /> {pending ? "신청 중…" : "이 미팅 신청하기"}
@@ -64,9 +65,9 @@ function ConfirmAction({ label, icon, title, desc, confirmLabel, variant = "seco
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const [pending, start] = useTransition();
+  const [pending, start] = useSafeTransition();
   const toast = useToast();
-  const router = useRouter();
+  const refresh = useSafeRefresh();
   return (
     <>
       <Button variant={variant} size={size} onClick={() => setOpen(true)} data-testid={testId}>{icon} {label}</Button>
@@ -81,7 +82,7 @@ function ConfirmAction({ label, icon, title, desc, confirmLabel, variant = "seco
           <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>돌아가기</Button>
           <Button variant={danger ? "danger" : "primary"} className="flex-1" disabled={pending || (reasonRequired && !reason.trim())} data-testid={testId ? `${testId}-confirm` : undefined} onClick={() => start(async () => {
             const r = await run(reason.trim());
-            if (r.ok) { toast("success", `${title} 완료`); setOpen(false); router.refresh(); }
+            if (r.ok) { toast("success", `${title} 완료`); setOpen(false); refresh(); }
             else toast("error", r.message ?? "실패했습니다.");
           })}>{pending ? "처리 중…" : confirmLabel}</Button>
         </div>
@@ -95,9 +96,9 @@ function ReassignButton({ lead, consultants }: { lead: LeadListItem; consultants
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState("");
   const [reason, setReason] = useState("");
-  const [pending, start] = useTransition();
+  const [pending, start] = useSafeTransition();
   const toast = useToast();
-  const router = useRouter();
+  const refresh = useSafeRefresh();
   const label = lead.assigned_to ? "재배정" : "담당자 직접 배정";
   return (
     <>
@@ -118,7 +119,7 @@ function ReassignButton({ lead, consultants }: { lead: LeadListItem; consultants
             <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>돌아가기</Button>
             <Button className="flex-1" disabled={pending || !target} data-testid="reassign-confirm" onClick={() => start(async () => {
               const r = await reassignLead(lead.id, target, reason);
-              if (r.ok) { toast("success", "담당자를 변경했습니다."); setOpen(false); router.refresh(); }
+              if (r.ok) { toast("success", "담당자를 변경했습니다."); setOpen(false); refresh(); }
               else toast("error", r.message ?? "실패했습니다.");
             })}>{pending ? "처리 중…" : "배정하기"}</Button>
           </div>
@@ -134,9 +135,9 @@ function RescheduleButton({ lead }: { lead: LeadListItem }) {
   const [date, setDate] = useState(kstDateString(lead.meeting_at));
   const [time, setTime] = useState(kstTimeString(lead.meeting_at));
   const [reason, setReason] = useState("");
-  const [pending, start] = useTransition();
+  const [pending, start] = useSafeTransition();
   const toast = useToast();
-  const router = useRouter();
+  const refresh = useSafeRefresh();
   return (
     <>
       <Button variant="secondary" onClick={() => setOpen(true)} data-testid="reschedule-button"><CalendarClock size={18} /> 일정 변경</Button>
@@ -152,7 +153,7 @@ function RescheduleButton({ lead }: { lead: LeadListItem }) {
             <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>돌아가기</Button>
             <Button className="flex-1" disabled={pending || !date || !time} data-testid="reschedule-confirm" onClick={() => start(async () => {
               const r = await rescheduleLead(lead.id, date, time, reason);
-              if (r.ok) { toast("success", "일정을 변경했습니다."); setOpen(false); router.refresh(); }
+              if (r.ok) { toast("success", "일정을 변경했습니다."); setOpen(false); refresh(); }
               else toast("error", r.message ?? "실패했습니다.");
             })}>{pending ? "처리 중…" : "변경하기"}</Button>
           </div>

@@ -365,9 +365,14 @@ test("11. Demo mode: no login needed, one click switches role", async ({ browser
   await expect(p.getByTestId("kpi-needs-report")).toBeVisible();
   await shot(p, "19-demo-owner", false);
 
-  // One click → consultant view on the same page.
+  // One click → consultant view on the same page. Wait for all background
+  // requests first: a refresh used to hang in exactly this state.
+  await p.waitForLoadState("networkidle");
+  const t0 = Date.now();
   await p.getByTestId(`persona-${U.minsu}`).click();
+  await expect(p.getByTestId(`persona-${U.minsu}`)).toHaveAttribute("aria-checked", "true", { timeout: 300 });
   await expect(p.getByRole("heading", { name: /최민수 컨설턴트님/ })).toBeVisible();
+  expect(Date.now() - t0).toBeLessThan(3000);
   await expect(p.getByTestId("sidebar").getByRole("link", { name: "신청 가능 DB" })).toBeVisible();
   await expect(p.getByTestId("sidebar").getByRole("link", { name: "전체 이력" })).toHaveCount(0);
   await shot(p, "20-demo-consultant", false);
@@ -496,4 +501,47 @@ test("16. Mobile nav: tapped tab highlights immediately", async ({ browser }) =>
     expect(Date.now() - t).toBeLessThan(700);
   }
   await p.context().close();
+});
+
+test("17. Device View never bricks the app: Mobile → reload → back to PC; bad saved state ignored", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 } });
+  const p = await ctx.newPage();
+  const errors: string[] = [];
+  p.on("pageerror", (e) => errors.push(e.message));
+  await go(p, "/");
+  for (const path of ["/", "/leads?tab=all&view=map", "/leads/30000000-0000-4000-8000-000000000006"]) {
+    await go(p, path);
+    await p.getByRole("tab", { name: "Mobile", exact: true }).click();
+    await expect(p.getByTestId("device-frame")).toBeVisible();
+    await p.reload();
+    await expect(p.getByTestId("device-frame")).toBeVisible({ timeout: 15000 });
+    await p.getByRole("tab", { name: "PC", exact: true }).click();
+    await expect(p.getByTestId("sidebar")).toBeVisible();
+  }
+  await expect(p.getByText("Application error")).toHaveCount(0);
+  // Garbage in localStorage must not break loading.
+  await p.evaluate(() => { localStorage.setItem("lf_device_mode", "banana"); localStorage.setItem("lf_theme", "no-such-theme"); });
+  await p.reload();
+  await expect(p.getByTestId("sidebar")).toBeVisible();
+  await p.evaluate(() => { localStorage.removeItem("lf_device_mode"); localStorage.removeItem("lf_theme"); });
+  expect(errors.filter((e) => !/Minified React error #418/.test(e))).toEqual([]);
+  await ctx.close();
+});
+
+test("18. Sidebar: grouped sections, one active item, live badges", async ({ browser }) => {
+  const p = await loginAs(browser, U.owner);
+  const side = p.getByTestId("sidebar");
+  for (const title of ["오늘 업무", "DB", "관리"]) await expect(side.getByText(title, { exact: true })).toBeVisible();
+  await go(p, "/leads?tab=needs_report");
+  await expect(side.locator('a[aria-current="page"]')).toHaveCount(1);
+  await expect(side.locator('a[aria-current="page"]')).toContainText("결과 미입력");
+  const needsLink = side.getByRole("link", { name: /결과 미입력/ });
+  await expect(needsLink).toContainText(/\d+/);
+  await shot(p, "24-sidebar-owner", false);
+  await p.context().close();
+
+  const c = await loginAs(browser, U.minsu, { width: 390, height: 844 });
+  await expect(c.getByTestId("bottom-nav")).toBeVisible();
+  await shot(c, "m390-10-bottom-nav-badges", false);
+  await c.context().close();
 });

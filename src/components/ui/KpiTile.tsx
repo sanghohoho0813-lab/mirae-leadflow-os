@@ -52,5 +52,5 @@ export function KpiTile({ label, value, tone = "info", icon, href, sub, emphasis
       {sub && <span className="text-[14px] text-ink-3">{sub}</span>}
     </div>
   );
-  return href ? <Link href={href} className="block h-full">{inner}</Link> : inner;
+  return href ? <Link prefetch={false} href={href} className="block h-full">{inner}</Link> : inner;
 }

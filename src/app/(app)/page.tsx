@@ -80,7 +80,7 @@ export default async function HomePage() {
                 <div className="grid gap-2">
                   {d.drafts.map((l) => (
                     <div key={l.id} className="flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3">
-                      <Link href={`/leads/${l.id}`} className="min-w-0 flex-1">
+                      <Link prefetch={false} href={`/leads/${l.id}`} className="min-w-0 flex-1">
                         <div className="truncate text-[17px] font-bold text-ink hover:text-primary">{l.company_name}</div>
                         <div className="text-[14.5px] text-ink-2">{l.region} · {fmtDate(l.meeting_at)} · 등록 {l.creator_name}</div>
                       </Link>
@@ -153,7 +153,7 @@ export default async function HomePage() {
       </div>
 
       {firstTodo && (
-        <Link href={firstTodo.needs_report ? `/leads/${firstTodo.id}/report` : `/leads/${firstTodo.id}`} className="fade-up-2 mb-4 flex items-center gap-3 rounded-2xl bg-primary px-5 py-4 text-white shadow-card transition-base hover:bg-primary-strong" data-testid="first-todo">
+        <Link prefetch={false} href={firstTodo.needs_report ? `/leads/${firstTodo.id}/report` : `/leads/${firstTodo.id}`} className="fade-up-2 mb-4 flex items-center gap-3 rounded-2xl bg-primary px-5 py-4 text-white shadow-card transition-base hover:bg-primary-strong" data-testid="first-todo">
           <div className="min-w-0 flex-1">
             <div className="text-[14px] font-semibold opacity-85">{firstTodo.needs_report ? "지금 바로 결과를 입력해 주세요" : "다음 미팅"}</div>
             <div className="truncate text-[20px] font-extrabold">{firstTodo.company_name} · {firstTodo.region}</div>
@@ -197,7 +197,7 @@ export default async function HomePage() {
 
 function MapLink({ href }: { href: string }) {
   return (
-    <Link href={href} className="press ml-auto mr-2 inline-flex h-9 items-center gap-1 rounded-lg border border-line px-2.5 text-[14px] font-semibold text-ink-2 hover:border-primary/40 hover:text-primary">
+    <Link prefetch={false} href={href} className="press ml-auto mr-2 inline-flex h-9 items-center gap-1 rounded-lg border border-line px-2.5 text-[14px] font-semibold text-ink-2 hover:border-primary/40 hover:text-primary">
       <MapIcon size={15} /> 지도
     </Link>
   );

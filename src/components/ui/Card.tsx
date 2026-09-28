@@ -17,7 +17,7 @@ export function CardHeader({ icon, title, count, href, hrefLabel = "전체보기
       </h2>
       {right}
       {href && (
-        <Link href={href} className="flex items-center gap-0.5 text-[15px] font-medium text-primary hover:underline">
+        <Link prefetch={false} href={href} className="flex items-center gap-0.5 text-[15px] font-medium text-primary hover:underline">
           {hrefLabel} <ChevronRight size={16} />
         </Link>
       )}

@@ -45,7 +45,7 @@ interface LinkButtonProps {
   prefetch?: boolean;
 }
 
-export function LinkButton({ href, variant = "primary", size = "md", className = "", children, prefetch }: LinkButtonProps) {
+export function LinkButton({ href, variant = "primary", size = "md", className = "", children, prefetch = false }: LinkButtonProps) {
   return (
     <Link href={href} prefetch={prefetch} className={buttonClass(variant, size, className)}>
       {children}

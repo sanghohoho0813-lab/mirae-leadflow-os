@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useSafeTransition, useSafeRefresh } from "@/components/providers/SafeActions";
+import { useEffect, useRef, useState} from "react";
 import { RotateCcw } from "lucide-react";
 import { switchPersona, resetDemo } from "@/lib/actions/demo";
 import { useToast } from "@/components/ui/Toast";
@@ -21,32 +21,36 @@ function refreshFrames() {
 
 export function DemoBar({ personas, currentId, ephemeral = false, instanceId }: { personas: Persona[]; currentId: string; ephemeral?: boolean; instanceId?: string }) {
   const { inFrame } = useDeviceView();
-  const [pending, start] = useTransition();
+  const [pending, start] = useSafeTransition();
   const [target, setTarget] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
-  const router = useRouter();
+  const refresh = useSafeRefresh();
   const toast = useToast();
   const rowRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     rowRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.scrollIntoView({ block: "nearest", inline: "center" });
   }, [currentId]);
+  // The chosen chip turns active at once and stays so until the new screen arrives.
+  useEffect(() => setTarget(null), [currentId]);
+  // Hooks above; nothing to show inside the mobile preview frame.
   if (inFrame) return null;
 
   const pick = (id: string) => {
-    if (id === currentId || pending) return;
+    if (id === currentId || id === target) return;
     setTarget(id);
+    window.dispatchEvent(new Event("lf:busy"));
     start(async () => {
-      const r = await switchPersona(id);
-      if (r.ok) { router.refresh(); refreshFrames(); toast("success", r.message); }
-      else toast("error", r.message);
-      setTarget(null);
+      const r = await switchPersona(id).catch(() => null);
+      if (r?.ok) { refresh(); refreshFrames(); toast("success", r.message); }
+      else { setTarget(null); window.dispatchEvent(new Event("lf:render")); toast("error", r?.message ?? "연결이 잠시 불안정합니다. 다시 눌러 주세요."); }
     });
   };
 
   const reset = () => start(async () => {
-    const r = await resetDemo();
+    const r = await resetDemo().catch(() => null);
     setConfirmReset(false);
-    if (r.ok) { router.refresh(); refreshFrames(); toast("success", r.message); }
+    if (!r) toast("error", "연결이 잠시 불안정합니다. 다시 눌러 주세요.");
+    else if (r.ok) { refresh(); refreshFrames(); toast("success", r.message); }
     else toast("error", r.message);
   });
 
@@ -54,21 +58,20 @@ export function DemoBar({ personas, currentId, ephemeral = false, instanceId }: 
     <div className="@container/demobar border-b border-warning/25 bg-warning-bg/50" data-testid="demo-bar" data-instance={instanceId} data-ephemeral={ephemeral ? "1" : undefined}>
       <div className="flex items-center gap-2 px-4 py-2 lg:px-8">
         <span className="shrink-0 rounded-lg bg-warning px-2 py-1 text-[13px] font-bold text-white" title={ephemeral ? "임시 데이터: 한동안 접속이 없으면 처음 상태로 돌아갑니다" : undefined}>{ephemeral ? "임시 체험" : "체험"}</span>
-        <span className="hidden shrink-0 text-[14.5px] font-semibold text-ink-2 @3xl/demobar:inline">누구 화면으로 볼까요?</span>
-        <div ref={rowRef} className="no-scrollbar flex min-w-0 flex-1 gap-1.5 overflow-x-auto @5xl/demobar:flex-wrap @5xl/demobar:overflow-visible" role="radiogroup" aria-label="체험할 역할">
+        <span className="hidden shrink-0 text-[14.5px] font-semibold text-ink-2 @7xl/demobar:inline">누구 화면으로 볼까요?</span>
+        <div ref={rowRef} className="no-scrollbar flex min-w-0 flex-1 gap-1.5 overflow-x-auto" role="radiogroup" aria-label="체험할 역할">
           {personas.map((p) => {
-            const active = p.id === currentId;
+            const active = p.id === (target ?? currentId);
             return (
               <button
                 key={p.id}
                 type="button"
                 role="radio"
                 aria-checked={active}
-                disabled={pending}
                 onClick={() => pick(p.id)}
                 className={`flex h-10 shrink-0 items-center gap-1 rounded-xl border px-3 text-[14.5px] transition-base ${
                   active ? "border-primary bg-primary text-white" : "border-line bg-white text-ink hover:border-primary/50"
-                } ${pending && target === p.id ? "opacity-60" : ""}`}
+                } ${pending && target === p.id ? "cursor-wait" : ""}`}
                 data-testid={`persona-${p.id}`}
               >
                 <b>{ROLE_SHORT[p.role]}</b>

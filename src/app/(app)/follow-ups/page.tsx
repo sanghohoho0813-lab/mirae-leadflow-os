@@ -18,7 +18,7 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
   const overdue = items.filter((f) => status === "PENDING" && new Date(f.due_date + "T23:59:59+09:00") < today).length;
 
   const tab = (key: string, label: string, active: boolean) => (
-    <Link key={key} href={`/follow-ups?${key}`} role="tab" aria-selected={active} className={`flex h-11 items-center rounded-xl border px-4 text-[15.5px] font-semibold transition-base ${active ? "border-primary bg-primary text-white" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}>{label}</Link>
+    <Link prefetch={false} key={key} href={`/follow-ups?${key}`} role="tab" aria-selected={active} className={`flex h-11 items-center rounded-xl border px-4 text-[15.5px] font-semibold transition-base ${active ? "border-primary bg-primary text-white" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}>{label}</Link>
   );
 
   return (

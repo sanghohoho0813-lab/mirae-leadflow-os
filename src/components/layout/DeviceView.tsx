@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSafeRefresh } from "@/components/providers/SafeActions";
 import { Monitor, Smartphone, Columns2 } from "lucide-react";
 
 export type DeviceMode = "pc" | "mobile" | "dual";
@@ -134,6 +135,7 @@ function FrameChildSync() {
   const pathname = usePathname();
   const search = useSearchParams();
   const router = useRouter();
+  const refresh = useSafeRefresh();
   const lastSent = useRef<string>("");
 
   useEffect(() => {
@@ -148,7 +150,7 @@ function FrameChildSync() {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin || e.source !== window.parent) return;
       const data = e.data as { type?: string; path?: string };
-      if (data?.type === "lf:refresh") { router.refresh(); return; }
+      if (data?.type === "lf:refresh") { refresh(); return; }
       if (data?.type !== "lf:navigate" || typeof data.path !== "string") return;
       const current = stripFrame(pathname + (search.toString() ? `?${search.toString()}` : ""));
       const target = stripFrame(data.path);

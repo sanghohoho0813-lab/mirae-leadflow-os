@@ -78,7 +78,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
               {lost === "1" && !mine && lead.status === "ASSIGNED" && (
                 <div className="mb-4 rounded-2xl border border-warning/40 bg-warning-bg px-4 py-4 text-[16px] font-semibold text-warning" data-testid="claim-lost">
                   아쉽지만 다른 컨설턴트가 먼저 신청했습니다. 다음 DB를 확인해 보세요.
-                  <div className="mt-2"><Link href="/leads?tab=open" className="inline-flex h-10 items-center rounded-xl border border-warning/40 bg-white px-4 text-[15px] font-semibold text-warning">신청 가능한 DB 보기</Link></div>
+                  <div className="mt-2"><Link prefetch={false} href="/leads?tab=open" className="inline-flex h-10 items-center rounded-xl border border-warning/40 bg-white px-4 text-[15px] font-semibold text-warning">신청 가능한 DB 보기</Link></div>
                 </div>
               )}
               <LeadActionBar lead={lead} role={viewer.profile.role} userId={uid} consultants={consultants.map((c) => ({ id: c.id, full_name: c.full_name }))} phone={priv?.contact_phone ?? null} />

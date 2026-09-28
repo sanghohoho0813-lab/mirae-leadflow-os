@@ -3,7 +3,7 @@
 import "leaflet/dist/leaflet.css";
 import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useSafeNavigate } from "@/components/providers/SafeActions";
 import type { Map as LeafletMap, LayerGroup } from "leaflet";
 import { MapPinOff } from "lucide-react";
 import { locateRegion, spreadPins } from "@/lib/geo";
@@ -47,7 +47,7 @@ export function LeadMap({ leads }: { leads: MapLead[] }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
   const layer = useRef<LayerGroup | null>(null);
-  const router = useRouter();
+  const navigate = useSafeNavigate();
 
   const { located, outside } = useMemo(() => {
     const raw: { id: string; lead: MapLead; lat: number; lng: number; kind: PinKind }[] = [];
@@ -114,7 +114,7 @@ export function LeadMap({ leads }: { leads: MapLead[] }) {
         popupAnchor: [0, -30],
       });
       const marker = L.marker([p.lat, p.lng], { icon, title: p.lead.company_name, riseOnHover: true });
-      marker.bindPopup(() => popupContent(p.lead, PIN[p.kind].label, (href) => router.push(href)), { closeButton: true, minWidth: 200 });
+      marker.bindPopup(() => popupContent(p.lead, PIN[p.kind].label, (href) => navigate(href)), { closeButton: true, minWidth: 200 });
       g.addLayer(marker);
     });
     if (located.length) {
@@ -143,7 +143,7 @@ export function LeadMap({ leads }: { leads: MapLead[] }) {
           <div className="mb-1.5 flex items-center gap-1.5 text-[15px] font-semibold text-ink-2"><MapPinOff size={16} /> 수도권 밖 {outside.length}건</div>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {outside.map((l) => (
-              <Link key={l.id} href={`/leads/${l.id}`} className="text-[15px] font-medium text-primary hover:underline">
+              <Link prefetch={false} key={l.id} href={`/leads/${l.id}`} className="text-[15px] font-medium text-primary hover:underline">
                 {l.company_name} <span className="text-ink-3">({l.region})</span>
               </Link>
             ))}

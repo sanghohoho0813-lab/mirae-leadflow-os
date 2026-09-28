@@ -1,7 +1,8 @@
 "use client";
 
+import { useSafeTransition, useSafeRefresh } from "@/components/providers/SafeActions";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState} from "react";
 import { CheckCircle2, Phone, FileText, Building2, ShieldAlert, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -13,7 +14,6 @@ import { completeFollowUp } from "@/lib/actions/leads";
 import { NEXT_ACTION_LABEL } from "@/lib/labels";
 import { fmtDate, relativeDay } from "@/lib/time";
 import type { FollowUp, NextAction } from "@/lib/types";
-import { useRouter } from "next/navigation";
 
 const ACTION_ICON: Record<NextAction, React.ReactNode> = {
   CALL: <Phone size={18} />, SEND_MATERIAL: <FileText size={18} />, REVISIT: <Building2 size={18} />, OWNER_CHECK: <ShieldAlert size={18} />, NONE: null,
@@ -36,7 +36,7 @@ export function FollowUpCard({ item, canComplete, showAssignee }: { item: Follow
       <div className="min-w-[200px] flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {item.company_name ? (
-            <Link href={`/leads/${item.lead_id}`} className="truncate text-[17px] font-bold text-ink hover:text-primary">{item.company_name}</Link>
+            <Link prefetch={false} href={`/leads/${item.lead_id}`} className="truncate text-[17px] font-bold text-ink hover:text-primary">{item.company_name}</Link>
           ) : null}
           <Badge tone={done ? "success" : "purple"}>{NEXT_ACTION_LABEL[item.action]}</Badge>
           {!done && <Badge tone={overdue ? "danger" : rel.diff === 0 ? "warning" : "neutral"}>{rel.label}</Badge>}
@@ -49,7 +49,7 @@ export function FollowUpCard({ item, canComplete, showAssignee }: { item: Follow
         </div>
       </div>
       {!done && canComplete ? <CompleteFollowUpButton item={item} /> : (
-        <Link href={`/leads/${item.lead_id}`} aria-label="상세" className="text-ink-3"><ChevronRight size={20} /></Link>
+        <Link prefetch={false} href={`/leads/${item.lead_id}`} aria-label="상세" className="text-ink-3"><ChevronRight size={20} /></Link>
       )}
     </div>
   );
@@ -60,16 +60,16 @@ export function CompleteFollowUpButton({ item, size = "sm" }: { item: FollowUp; 
   const [note, setNote] = useState("");
   const [next, setNext] = useState<NextAction>("NONE");
   const [date, setDate] = useState("");
-  const [pending, start] = useTransition();
+  const [pending, start] = useSafeTransition();
   const toast = useToast();
-  const router = useRouter();
+  const refresh = useSafeRefresh();
 
   const submit = () => start(async () => {
     const r = await completeFollowUp(item.id, item.lead_id, note, next, next === "NONE" ? null : date);
     if (r.ok) {
       toast("success", next === "NONE" ? "후속조치를 완료했습니다. 이 DB는 종료됩니다." : "완료했습니다. 다음 후속조치를 등록했습니다.");
       setOpen(false);
-      router.refresh();
+      refresh();
     } else toast("error", r.message ?? "실패했습니다.");
   });
 

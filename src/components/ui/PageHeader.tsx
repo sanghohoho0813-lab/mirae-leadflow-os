@@ -7,7 +7,7 @@ export function PageHeader({ title, sub, back, backLabel = "뒤로", action, eye
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {back && (
-          <Link href={back} className="mb-1 inline-flex min-h-[40px] items-center gap-0.5 text-[15px] font-medium text-ink-2 hover:text-primary">
+          <Link prefetch={false} href={back} className="mb-1 inline-flex min-h-[40px] items-center gap-0.5 text-[15px] font-medium text-ink-2 hover:text-primary">
             <ChevronLeft size={18} /> {backLabel}
           </Link>
         )}
