@@ -16,9 +16,9 @@ export function LoginForm() {
       <Field label="비밀번호" htmlFor="password" required>
         <Input id="password" name="password" type="password" autoComplete="current-password" required />
       </Field>
-      {state.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[15px] font-medium text-danger">{state.error}</p>}
+      {state.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[0.9375rem] font-medium text-danger">{state.error}</p>}
       <Button type="submit" size="lg" disabled={pending}>{pending ? "로그인 중…" : "로그인"}</Button>
-      <Link prefetch={false} href="/forgot-password" className="min-h-[44px] text-center text-[15px] font-semibold leading-[44px] text-primary hover:underline">비밀번호를 잊으셨나요?</Link>
+      <Link prefetch={false} href="/forgot-password" className="min-h-[44px] text-center text-[0.9375rem] font-semibold leading-[44px] text-primary hover:underline">비밀번호를 잊으셨나요?</Link>
     </form>
   );
 }

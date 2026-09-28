@@ -30,15 +30,15 @@ export function LiveClock({ variant = "full" }: { variant?: "full" | "stacked" }
   if (variant === "stacked") {
     return (
       <div className="clock flex min-w-[76px] flex-col items-end leading-tight" data-testid="live-clock" aria-label="현재 시각">
-        <span className="text-[13px] font-semibold text-ink-3">{t ? `${t.m}.${t.d} (${t.w})` : " "}</span>
-        <span className="text-[16px] font-bold text-ink">{t ? t.time : " "}</span>
+        <span className="text-[0.8125rem] font-semibold text-ink-3">{t ? `${t.m}.${t.d} (${t.w})` : " "}</span>
+        <span className="text-[1rem] font-bold text-ink">{t ? t.time : " "}</span>
       </div>
     );
   }
   return (
     <div className="clock flex items-baseline gap-2.5 whitespace-nowrap" data-testid="live-clock" aria-label="현재 시각">
-      <span className="text-[16px] font-semibold text-ink-2">{t ? `${t.y}년 ${Number(t.m)}월 ${Number(t.d)}일 (${t.w})` : " "}</span>
-      <span className="min-w-[82px] text-[20px] font-extrabold text-ink">{t ? t.time : ""}</span>
+      <span className="text-[1rem] font-semibold text-ink-2">{t ? `${t.y}년 ${Number(t.m)}월 ${Number(t.d)}일 (${t.w})` : " "}</span>
+      <span className="min-w-[82px] text-[1.25rem] font-extrabold text-ink">{t ? t.time : ""}</span>
     </div>
   );
 }

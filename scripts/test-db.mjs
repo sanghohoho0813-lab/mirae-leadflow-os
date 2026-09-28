@@ -185,7 +185,7 @@ console.log("\n[5] Meeting report -> follow-up -> close loop");
   check("history recorded (>=6 entries)", logCount[0].n >= 6, String(logCount[0].n));
 
   // Postpone path
-  const c2Lead = "30000000-0000-4000-8000-000000000009"; // 대성산업 tomorrow, 본부장 B
+  const c2Lead = "30000000-0000-4000-8000-000000000009"; // 대성산업 tomorrow, 정행래 본부장
   check("POSTPONED requires new meeting time", await expectError(() => asUser(U.leaderB, (tx) => tx`select submit_meeting_report(${c2Lead}, 'POSTPONED')`), "NEW_MEETING_REQUIRED"));
   const p = await asUser(U.leaderB, async (tx) => (await tx`select submit_meeting_report(${c2Lead}, 'POSTPONED', null, null, 'NONE', null, '대표 출장', null, now() + interval '7 days') as r`)[0].r);
   check("postponed stays ASSIGNED with new date", p.status === "ASSIGNED");

@@ -17,13 +17,13 @@ export function ReadButton({ id, read }: { id: string; read: boolean }) {
   const toast = useToast();
   if (done) {
     return (
-      <div className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-success/30 bg-success-bg text-[17px] font-bold text-success" data-testid="training-read-done">
+      <div className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-success/30 bg-success-bg text-[1.0625rem] font-bold text-success" data-testid="training-read-done">
         <CheckCircle2 size={21} /> 확인 완료
       </div>
     );
   }
   return (
-    <Button size="lg" className="h-14 w-full text-[18px]" disabled={pending} data-testid="training-read"
+    <Button size="lg" className="h-14 w-full text-[1.125rem]" disabled={pending} data-testid="training-read"
       onClick={() => start(async () => {
         setDone(true);
         const r = await markTrainingRead(id);
@@ -56,7 +56,7 @@ export function SummarizeButton({ id, hasSummary }: { id: string; hasSummary: bo
         {pending ? "핵심을 정리하는 중… (최대 1분)" : hasSummary ? "다시 정리" : "AI로 핵심 정리하기"}
       </Button>
       {notes.length > 0 && (
-        <ul className="mt-2 grid gap-1 text-[14.5px] text-warning">
+        <ul className="mt-2 grid gap-1 text-[0.9062rem] text-warning">
           {notes.map((n, i) => <li key={i}>· {n}</li>)}
         </ul>
       )}
@@ -73,7 +73,7 @@ export function DeleteTrainingButton({ id }: { id: string }) {
     <>
       <Button variant="ghost" size="md" onClick={() => setOpen(true)} className="text-danger" data-testid="training-delete"><Trash2 size={18} /> 삭제</Button>
       <Dialog open={open} onClose={() => setOpen(false)} title="이 교육을 삭제할까요?">
-        <p className="mb-4 text-[16px] text-ink-2">올린 자료와 요약, 확인 기록이 모두 지워집니다. 되돌릴 수 없습니다.</p>
+        <p className="mb-4 text-[1rem] text-ink-2">올린 자료와 요약, 확인 기록이 모두 지워집니다. 되돌릴 수 없습니다.</p>
         <div className="flex gap-2">
           <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>돌아가기</Button>
           <Button variant="danger" className="flex-1" disabled={pending} data-testid="training-delete-confirm"
@@ -159,15 +159,15 @@ export function FileRow({ f, trainingId, canDelete }: { f: TrainingFile; trainin
       <div className="flex items-center gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-soft text-primary">{iconFor(f)}</span>
         <div className="min-w-0 flex-1 leading-tight">
-          <div className="truncate text-[16px] font-semibold text-ink">{f.name}</div>
-          <div className="text-[14px] text-ink-3">{fmtSize(f.size)}{progress !== null ? ` · 받는 중 ${Math.round(progress * 100)}%` : ""}</div>
+          <div className="truncate text-[1rem] font-semibold text-ink">{f.name}</div>
+          <div className="text-[0.875rem] text-ink-3">{fmtSize(f.size)}{progress !== null ? ` · 받는 중 ${Math.round(progress * 100)}%` : ""}</div>
         </div>
         {isAudio && !audioUrl && (
-          <button type="button" onClick={play} disabled={progress !== null} className="press flex h-11 items-center gap-1 rounded-xl border border-line px-3 text-[15px] font-semibold text-ink hover:border-primary/50" data-testid="file-play">
+          <button type="button" onClick={play} disabled={progress !== null} className="press flex h-11 items-center gap-1 rounded-xl border border-line px-3 text-[0.9375rem] font-semibold text-ink hover:border-primary/50" data-testid="file-play">
             <Play size={17} /> 듣기
           </button>
         )}
-        <button type="button" onClick={download} disabled={progress !== null} className="press flex h-11 items-center gap-1 rounded-xl bg-ink px-3.5 text-[15px] font-semibold text-white disabled:opacity-60" data-testid="file-download">
+        <button type="button" onClick={download} disabled={progress !== null} className="press flex h-11 items-center gap-1 rounded-xl bg-ink px-3.5 text-[0.9375rem] font-semibold text-white disabled:opacity-60" data-testid="file-download">
           {progress !== null ? <Loader2 size={17} className="animate-spin" /> : <Download size={17} />} 받기
         </button>
         {canDelete && (

@@ -20,7 +20,8 @@ function nextWeekday(target: 1 | 3): string {
   return kstDateString(new Date(today.getTime() + diff * 86400000));
 }
 
-interface Person { id: string; full_name: string; role: string }
+interface Person { id: string; full_name: string; role: string; division?: string | null }
+const ROLE_NAME: Record<string, string> = { OWNER: "단장", MANAGER: "운영", LEADER: "본부장" };
 
 export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
   mode: "create" | "edit";
@@ -116,7 +117,7 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
           <Field label="교육 날짜" required>
             <div className="mb-2 flex flex-wrap gap-2">
               {quick.map((q) => (
-                <button key={q.label} type="button" onClick={() => setDate(q.v)} className={`press min-h-[44px] rounded-xl border-2 px-3.5 text-[15px] font-semibold ${date === q.v ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2"}`}>{q.label}</button>
+                <button key={q.label} type="button" onClick={() => setDate(q.v)} className={`press min-h-[44px] rounded-xl border-2 px-3.5 text-[0.9375rem] font-semibold ${date === q.v ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2"}`}>{q.label}</button>
               ))}
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -126,27 +127,27 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
           </Field>
           <Field label="강사" htmlFor="t-inst">
             <Select id="t-inst" value={instructor} onChange={(e) => setInstructor(e.target.value)}>
-              {instructors.map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+              {instructors.map((p) => <option key={p.id} value={p.id}>{p.full_name} ({[p.division, ROLE_NAME[p.role] ?? ""].filter(Boolean).join(" ")})</option>)}
             </Select>
           </Field>
         </div>
       </section>
 
       <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-1 text-[18px] font-bold text-ink">교육 자료</h2>
-        <p className="mb-3 text-[15px] text-ink-2">PPT · PDF · 한글/워드 · 사진 · 녹음 파일 (파일당 30MB, 최대 10개)</p>
+        <h2 className="mb-1 text-[1.125rem] font-bold text-ink">교육 자료</h2>
+        <p className="mb-3 text-[0.9375rem] text-ink-2">PPT · PDF · 한글/워드 · 사진 · 녹음 파일 (파일당 30MB, 최대 10개)</p>
         <button type="button" onClick={() => inputRef.current?.click()} disabled={busy}
           onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
-          className="press flex min-h-[96px] w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-line-strong bg-canvas text-[16px] font-semibold text-ink-2 hover:border-primary hover:text-primary" data-testid="training-file-pick">
-          <Upload size={24} /> 눌러서 파일 고르기 <span className="text-[14px] font-normal text-ink-3">PC에서는 끌어다 놓아도 됩니다</span>
+          className="press flex min-h-[96px] w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-line-strong bg-canvas text-[1rem] font-semibold text-ink-2 hover:border-primary hover:text-primary" data-testid="training-file-pick">
+          <Upload size={24} /> 눌러서 파일 고르기 <span className="text-[0.875rem] font-normal text-ink-3">PC에서는 끌어다 놓아도 됩니다</span>
         </button>
         <input ref={inputRef} type="file" multiple accept={ACCEPT} className="hidden" onChange={(e) => addFiles(e.target.files)} data-testid="training-file-input" />
         {files.length > 0 && (
           <ul className="mt-3 grid gap-1.5">
             {files.map((f, i) => (
               <li key={i} className="flex items-center gap-2 rounded-xl border border-line px-3 py-2">
-                <span className="min-w-0 flex-1 truncate text-[15.5px] font-semibold text-ink">{f.name}</span>
-                <span className="text-[14px] text-ink-3">{fmtSize(f.size)}</span>
+                <span className="min-w-0 flex-1 truncate text-[0.9688rem] font-semibold text-ink">{f.name}</span>
+                <span className="text-[0.875rem] text-ink-3">{fmtSize(f.size)}</span>
                 <button type="button" aria-label={`${f.name} 빼기`} disabled={busy} onClick={() => setFiles(files.filter((_, j) => j !== i))} className="flex h-10 w-10 items-center justify-center rounded-lg text-ink-3 hover:bg-neutral-bg"><X size={18} /></button>
               </li>
             ))}
@@ -154,7 +155,7 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
         )}
 
         <div className="mt-4">
-          <div className="mb-1.5 text-[15.5px] font-semibold text-ink">링크 (선택) — 유튜브, 구글드라이브, 클로바노트 공유 링크 등</div>
+          <div className="mb-1.5 text-[0.9688rem] font-semibold text-ink">링크 (선택) — 유튜브, 구글드라이브, 클로바노트 공유 링크 등</div>
           <div className="grid gap-2">
             {links.map((l, i) => (
               <div key={i} className="flex gap-2">
@@ -164,31 +165,31 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
               </div>
             ))}
             {links.length < 10 && (
-              <button type="button" onClick={() => setLinks([...links, { label: "", url: "" }])} className="flex min-h-[44px] items-center gap-1 self-start text-[15px] font-semibold text-primary"><Plus size={17} /> 링크 추가</button>
+              <button type="button" onClick={() => setLinks([...links, { label: "", url: "" }])} className="flex min-h-[44px] items-center gap-1 self-start text-[0.9375rem] font-semibold text-primary"><Plus size={17} /> 링크 추가</button>
             )}
           </div>
         </div>
       </section>
 
       <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-1 text-[18px] font-bold text-ink">강의 내용 (AI 정리 재료)</h2>
-        <p className="mb-2 flex gap-1.5 rounded-xl bg-soft px-3 py-2.5 text-[15px] text-ink-2">
+        <h2 className="mb-1 text-[1.125rem] font-bold text-ink">강의 내용 (AI 정리 재료)</h2>
+        <p className="mb-2 flex gap-1.5 rounded-xl bg-soft px-3 py-2.5 text-[0.9375rem] text-ink-2">
           <Lightbulb size={18} className="mt-0.5 shrink-0 text-primary" />
           녹음은 <b className="mx-0.5">클로바노트</b> 같은 앱으로 글로 바꾼 뒤 그대로 붙여넣으면 가장 정확합니다. 강의 메모나 PPT 내용도 좋습니다.
         </p>
         <Textarea value={content} onChange={(e) => setContent(e.target.value)} className="min-h-[200px]" placeholder="녹취 글, 강의 메모, 중요한 말씀을 붙여넣어 주세요." data-testid="training-content" />
-        <p className="mt-1 text-right text-[13.5px] text-ink-3">{content.length.toLocaleString()}자</p>
+        <p className="mt-1 text-right text-[0.8438rem] text-ink-3">{content.length.toLocaleString()}자</p>
         <label className="mt-2 flex min-h-[52px] cursor-pointer items-center gap-3 rounded-xl border border-line px-4">
           <input type="checkbox" checked={autoSummary} onChange={(e) => setAutoSummary(e.target.checked)} className="h-5 w-5 accent-[var(--theme-primary)]" data-testid="training-auto-summary" />
-          <span className="flex items-center gap-1.5 text-[16px] font-semibold text-ink"><Sparkles size={18} className="text-gold" /> 저장하면서 AI로 핵심 정리하기</span>
+          <span className="flex items-center gap-1.5 text-[1rem] font-semibold text-ink"><Sparkles size={18} className="text-gold" /> 저장하면서 AI로 핵심 정리하기</span>
         </label>
       </section>
 
-      {error && <p className="rounded-xl border border-danger/30 bg-danger-bg px-4 py-3 text-[16px] font-semibold text-danger" role="alert">{error}</p>}
+      {error && <p className="rounded-xl border border-danger/30 bg-danger-bg px-4 py-3 text-[1rem] font-semibold text-danger" role="alert">{error}</p>}
 
       {phase && (
         <div className="rounded-xl border border-line bg-white px-4 py-3" role="status" data-testid="training-progress">
-          <div className="flex items-center gap-2 text-[16px] font-semibold text-ink"><Loader2 size={18} className="animate-spin text-primary" /> {phase.label}</div>
+          <div className="flex items-center gap-2 text-[1rem] font-semibold text-ink"><Loader2 size={18} className="animate-spin text-primary" /> {phase.label}</div>
           {phase.progress !== undefined && <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-bg"><div className="h-full bg-primary transition-all" style={{ width: `${Math.round(phase.progress * 100)}%` }} /></div>}
         </div>
       )}

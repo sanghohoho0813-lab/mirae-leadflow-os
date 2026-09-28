@@ -128,22 +128,22 @@ export function LeadMap({ leads }: { leads: MapLead[] }) {
     <div className="grid gap-3" data-testid="lead-map">
       <div className="flex flex-wrap gap-1.5" aria-label="지도 범례">
         {(Object.keys(PIN) as PinKind[]).filter((k) => counts[k]).map((k) => (
-          <span key={k} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[14px] font-semibold text-ink-2">
+          <span key={k} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1 text-[0.875rem] font-semibold text-ink-2">
             <span className="h-3 w-3 rounded-full" style={{ background: PIN[k].color }} />
             {PIN[k].label} {counts[k]}
           </span>
         ))}
-        <span className="inline-flex items-center px-1 text-[13.5px] text-ink-3">위치는 시·군·구 기준의 대략적인 위치입니다</span>
+        <span className="inline-flex items-center px-1 text-[0.8438rem] text-ink-3">위치는 시·군·구 기준의 대략적인 위치입니다</span>
       </div>
       <div className="isolate overflow-hidden rounded-2xl border border-line bg-white shadow-card">
         <div ref={el} className="h-[58vh] min-h-[360px] w-full lg:h-[600px]" data-testid="lead-map-canvas" role="region" aria-label="미팅 위치 지도" />
       </div>
       {outside.length > 0 && (
         <div className="rounded-2xl border border-dashed border-line bg-white px-4 py-3" data-testid="map-outside">
-          <div className="mb-1.5 flex items-center gap-1.5 text-[15px] font-semibold text-ink-2"><MapPinOff size={16} /> 수도권 밖 {outside.length}건</div>
+          <div className="mb-1.5 flex items-center gap-1.5 text-[0.9375rem] font-semibold text-ink-2"><MapPinOff size={16} /> 수도권 밖 {outside.length}건</div>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {outside.map((l) => (
-              <Link prefetch={false} key={l.id} href={`/leads/${l.id}`} className="text-[15px] font-medium text-primary hover:underline">
+              <Link prefetch={false} key={l.id} href={`/leads/${l.id}`} className="text-[0.9375rem] font-medium text-primary hover:underline">
                 {l.company_name} <span className="text-ink-3">({l.region})</span>
               </Link>
             ))}

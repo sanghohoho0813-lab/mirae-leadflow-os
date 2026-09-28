@@ -19,8 +19,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" suppressHydrationWarning>
+    <html lang="ko" translate="no" suppressHydrationWarning>
       <head>
+        {/* Korean-only app: stop auto-translate from rewriting the page under React. */}
+        <meta name="google" content="notranslate" />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>

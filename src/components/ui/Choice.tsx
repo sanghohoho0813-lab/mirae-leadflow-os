@@ -20,7 +20,7 @@ export function ChoiceGroup<T extends string>({ name, options, value, onChange, 
             role="radio"
             aria-checked={active}
             onClick={() => onChange(o.value)}
-            className={`press flex min-h-[52px] items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-2 text-[16px] font-semibold ${
+            className={`press flex min-h-[52px] items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-2 text-[1rem] font-semibold ${
               active ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink hover:border-primary/40"
             }`}
           >
@@ -46,7 +46,7 @@ export function TagPicker({ options, value, onChange, name }: { options: string[
             type="button"
             aria-pressed={active}
             onClick={() => toggle(t)}
-            className={`min-h-[44px] rounded-xl border-2 px-3.5 text-[15px] font-medium transition-base ${active ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}
+            className={`min-h-[44px] rounded-xl border-2 px-3.5 text-[0.9375rem] font-medium transition-base ${active ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}
           >
             {active ? "✓ " : ""}{t}
           </button>

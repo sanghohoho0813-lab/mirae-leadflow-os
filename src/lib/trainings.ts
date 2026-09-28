@@ -8,7 +8,7 @@ export const FILE_MAX = 30 * 1024 * 1024;
 export const FILE_MAX_COUNT = 10;
 
 const LIST = (uid: string) => `
-  select t.id, t.title, t.held_at, t.instructor_id, coalesce(p.full_name, t.instructor_name) as instructor_name, p.role as instructor_role,
+  select t.id, t.title, t.held_at, t.instructor_id, coalesce(p.full_name, t.instructor_name) as instructor_name, p.role as instructor_role, p.division as instructor_division,
     t.summary, t.summary_source,
     (select count(*)::int from training_files f where f.training_id = t.id and f.complete) as file_count,
     (select count(*)::int from training_reads r where r.training_id = t.id) as read_count,
@@ -61,8 +61,8 @@ export async function getReadStatus(tx: Tx, id: string): Promise<ReadStatus[]> {
     order by r.read_at is null desc, p.full_name`;
 }
 
-export async function listInstructors(tx: Tx): Promise<{ id: string; full_name: string; role: MemberRole }[]> {
-  return tx`select id, full_name, role from profiles where is_active and role in ('OWNER', 'MANAGER', 'LEADER')
+export async function listInstructors(tx: Tx): Promise<{ id: string; full_name: string; role: MemberRole; division: string | null }[]> {
+  return tx`select id, full_name, role, division from profiles where is_active and role in ('OWNER', 'MANAGER', 'LEADER')
     order by case role when 'OWNER' then 0 when 'MANAGER' then 1 else 2 end, full_name`;
 }
 

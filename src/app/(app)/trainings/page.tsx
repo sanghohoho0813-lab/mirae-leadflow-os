@@ -27,16 +27,16 @@ export default async function TrainingsPage({ searchParams }: { searchParams: Pr
       <form className="mb-5 flex gap-2" role="search">
         <label className="relative flex-1">
           <Search size={19} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-3" />
-          <input name="q" defaultValue={q} placeholder="지난 교육 찾기 (예: 연구소, 고용지원금, 화법)" className="h-12 w-full rounded-xl border border-line bg-white pl-11 pr-3 text-[16px] outline-none focus:border-primary" data-testid="training-search" />
+          <input name="q" defaultValue={q} placeholder="지난 교육 찾기 (예: 연구소, 고용지원금, 화법)" className="h-12 w-full rounded-xl border border-line bg-white pl-11 pr-3 text-[1rem] outline-none focus:border-primary" data-testid="training-search" />
         </label>
-        <button type="submit" className="press h-12 shrink-0 rounded-xl bg-ink px-5 text-[16px] font-semibold text-white">찾기</button>
+        <button type="submit" className="press h-12 shrink-0 rounded-xl bg-ink px-5 text-[1rem] font-semibold text-white">찾기</button>
       </form>
 
-      {q && <p className="mb-3 text-[15px] text-ink-2">‘{q}’ 검색 결과 {upcoming.length + past.length}건</p>}
+      {q && <p className="mb-3 text-[0.9375rem] text-ink-2">‘{q}’ 검색 결과 {upcoming.length + past.length}건</p>}
 
       {upcoming.length > 0 && (
         <section className="mb-6">
-          <h2 className="mb-2.5 flex items-center gap-2 text-[19px] font-bold text-ink"><CalendarClock size={20} className="text-primary" /> 다가오는 교육</h2>
+          <h2 className="mb-2.5 flex items-center gap-2 text-[1.1875rem] font-bold text-ink"><CalendarClock size={20} className="text-primary" /> 다가오는 교육</h2>
           <div className="stagger grid gap-2.5 @4xl:grid-cols-2">
             {upcoming.map((t) => <TrainingCard key={t.id} t={t} upcoming />)}
           </div>
@@ -44,9 +44,9 @@ export default async function TrainingsPage({ searchParams }: { searchParams: Pr
       )}
 
       <section>
-        <h2 className="mb-2.5 flex items-center gap-2 text-[19px] font-bold text-ink">
+        <h2 className="mb-2.5 flex items-center gap-2 text-[1.1875rem] font-bold text-ink">
           <BookOpen size={20} className="text-primary" /> 지난 교육
-          {unread > 0 && <span className="rounded-full bg-danger px-2 py-0.5 text-[13px] font-bold text-white">안 본 요약 {unread}</span>}
+          {unread > 0 && <span className="rounded-full bg-danger px-2 py-0.5 text-[0.8125rem] font-bold text-white">안 본 요약 {unread}</span>}
         </h2>
         {past.length ? (
           <div className="stagger grid gap-2.5 @4xl:grid-cols-2">

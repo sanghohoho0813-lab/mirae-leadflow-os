@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 export function SignupForm({ needsPassword }: { needsPassword: boolean }) {
   const [state, action, pending] = useActionState(signUp, {});
   if (state.ok && state.message) {
-    return <div className="rounded-2xl border border-success/30 bg-success-bg px-4 py-4 text-[16px] font-medium text-success">{state.message}</div>;
+    return <div className="rounded-2xl border border-success/30 bg-success-bg px-4 py-4 text-[1rem] font-medium text-success">{state.message}</div>;
   }
   return (
     <form action={action} className="grid gap-4 rounded-2xl border border-line bg-white p-5 shadow-card">
@@ -23,7 +23,7 @@ export function SignupForm({ needsPassword }: { needsPassword: boolean }) {
           <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
         </Field>
       )}
-      {state.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[15px] font-medium text-danger">{state.error}</p>}
+      {state.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[0.9375rem] font-medium text-danger">{state.error}</p>}
       <Button type="submit" size="lg" disabled={pending}>{pending ? "처리 중…" : "다음"}</Button>
     </form>
   );

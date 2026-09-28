@@ -92,8 +92,15 @@
   --radius-card: 16px;
 }
 
+/* 글자 크기 (설정): every size is in rem, so the whole screen scales together. */
 html { font-size: 16px; }
-@media (min-width: 1024px) { html { font-size: 17px; } }
+:root[data-font="large"] { font-size: 18px; }
+:root[data-font="xlarge"] { font-size: 20px; }
+@media (min-width: 1024px) {
+  html { font-size: 17px; }
+  :root[data-font="large"] { font-size: 19px; }
+  :root[data-font="xlarge"] { font-size: 21px; }
+}
 
 body {
   background: var(--neutral-canvas);

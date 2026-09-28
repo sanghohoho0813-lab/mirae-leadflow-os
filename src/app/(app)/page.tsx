@@ -21,10 +21,10 @@ export const dynamic = "force-dynamic";
 function Greeting({ text, sub }: { text: string; sub?: string }) {
   return (
     <div className="mb-5">
-      <h1 className="text-[26px] font-extrabold tracking-tight text-ink sm:text-[30px]">
+      <h1 className="text-[1.625rem] font-extrabold tracking-tight text-ink sm:text-[1.875rem]">
         {text}, <span className="text-primary">오늘 할 일</span>입니다.
       </h1>
-      {sub && <p className="mt-1 text-[16px] text-ink-2">{sub}</p>}
+      {sub && <p className="mt-1 text-[1rem] text-ink-2">{sub}</p>}
     </div>
   );
 }
@@ -57,7 +57,7 @@ export default async function HomePage() {
             <CardBody>
               {d.needsReport.length ? (
                 <>
-                  <p className="mb-3 text-[15px] text-ink-2">담당자는 결과를 입력해야 다음 DB를 신청할 수 있습니다. 상세에서 대신 입력할 수도 있습니다.</p>
+                  <p className="mb-3 text-[0.9375rem] text-ink-2">담당자는 결과를 입력해야 다음 DB를 신청할 수 있습니다. 상세에서 대신 입력할 수도 있습니다.</p>
                   <LeadList leads={d.needsReport} emptyText="" />
                 </>
               ) : (
@@ -81,8 +81,8 @@ export default async function HomePage() {
                   {d.drafts.map((l) => (
                     <div key={l.id} className="flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3">
                       <Link prefetch={false} href={`/leads/${l.id}`} className="min-w-0 flex-1">
-                        <div className="truncate text-[17px] font-bold text-ink hover:text-primary">{l.company_name}</div>
-                        <div className="text-[14.5px] text-ink-2">{l.region} · {fmtDate(l.meeting_at)} · 등록 {l.creator_name}</div>
+                        <div className="truncate text-[1.0625rem] font-bold text-ink hover:text-primary">{l.company_name}</div>
+                        <div className="text-[0.9062rem] text-ink-2">{l.region} · {fmtDate(l.meeting_at)} · 등록 {l.creator_name}</div>
                       </Link>
                       <PublishButton id={l.id} size="sm" />
                     </div>
@@ -154,10 +154,10 @@ export default async function HomePage() {
         <Link prefetch={false} href={`/leads/${d.needsReport[0].id}/report`} className="fade-up-2 mb-4 flex items-center gap-3 rounded-2xl border border-danger/40 bg-danger-bg px-5 py-4 transition-base hover:border-danger" data-testid="first-todo">
           <AlertCircle size={26} className="shrink-0 text-danger" />
           <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-semibold text-danger">결과 입력이 필요한 미팅 {d.needsReport.length}건 · 입력해야 다음 DB를 신청할 수 있어요</div>
-            <div className="truncate text-[20px] font-extrabold text-ink">{d.needsReport[0].company_name} · {d.needsReport[0].region}</div>
+            <div className="text-[0.9375rem] font-semibold text-danger">결과 입력이 필요한 미팅 {d.needsReport.length}건 · 입력해야 다음 DB를 신청할 수 있어요</div>
+            <div className="truncate text-[1.25rem] font-extrabold text-ink">{d.needsReport[0].company_name} · {d.needsReport[0].region}</div>
           </div>
-          <span className="hidden shrink-0 rounded-xl bg-danger px-4 py-2.5 text-[16px] font-bold text-white sm:inline">결과 입력</span>
+          <span className="hidden shrink-0 rounded-xl bg-danger px-4 py-2.5 text-[1rem] font-bold text-white sm:inline">결과 입력</span>
           <ChevronRight size={24} className="shrink-0 text-danger sm:hidden" />
         </Link>
       )}
@@ -166,12 +166,12 @@ export default async function HomePage() {
         <CardHeader icon={<Sparkles size={20} />} title="신청 가능한 DB" count={c.open} right={<MapLink href="/leads?tab=open&view=map" />} href="/leads?tab=open" hrefLabel="모두 보기" />
         <CardBody>
           {blocked && c.open > 0 && blocker && (
-            <div className="mb-3 flex gap-2.5 rounded-xl border border-line bg-canvas px-4 py-3 text-[15.5px] text-ink-2" data-testid="claim-limit-note">
+            <div className="mb-3 flex gap-2.5 rounded-xl border border-line bg-canvas px-4 py-3 text-[0.9688rem] text-ink-2" data-testid="claim-limit-note">
               <Lock size={19} className="mt-0.5 shrink-0 text-ink-3" />
               <span>진행 중인 미팅 <b className="text-ink">{blocker.company_name}</b>이(가) 있어 지금은 새로 신청할 수 없습니다. {limit === 1 ? "한 사람당 한 건씩" : `한 사람당 ${limit}건까지`} 진행하며, 결과를 입력하면 바로 신청할 수 있습니다.</span>
             </div>
           )}
-          <LeadList leads={d.open} emptyText="지금은 신청 가능한 DB가 없습니다. 단장님이 공개하면 여기에 나타납니다." showAssignee={false} />
+          <LeadList leads={d.open} emptyText="지금은 신청 가능한 DB가 없습니다. 단장님이 공개하면 여기에 나타납니다." showAssignee={false} claimable={!blocked} />
         </CardBody>
       </Card>
 
@@ -192,7 +192,7 @@ export default async function HomePage() {
 
 function MapLink({ href }: { href: string }) {
   return (
-    <Link prefetch={false} href={href} className="press inline-flex h-9 items-center gap-1 rounded-lg border border-line px-2.5 text-[14px] font-semibold text-ink-2 hover:border-primary/40 hover:text-primary">
+    <Link prefetch={false} href={href} className="press inline-flex h-9 items-center gap-1 rounded-lg border border-line px-2.5 text-[0.875rem] font-semibold text-ink-2 hover:border-primary/40 hover:text-primary">
       <MapIcon size={15} /> 지도
     </Link>
   );

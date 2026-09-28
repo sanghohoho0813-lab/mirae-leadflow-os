@@ -7,8 +7,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <Logo size={56} />
           <div>
-            <h1 className="text-[28px] font-extrabold tracking-tight text-ink">리드플로우</h1>
-            <p className="text-[16px] text-ink-2">DB부터 만남까지, 성과로</p>
+            <h1 className="text-[1.75rem] font-extrabold tracking-tight text-ink">리드플로우</h1>
+            <p className="text-[1rem] text-ink-2">DB부터 만남까지, 성과로</p>
           </div>
         </div>
         {children}

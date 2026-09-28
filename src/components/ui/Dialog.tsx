@@ -25,7 +25,7 @@ export function Dialog({ open, onClose, title, children, testId, wide }: { open:
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
-          <h3 className="text-[21px] font-bold text-ink">{title}</h3>
+          <h3 className="text-[1.3125rem] font-bold text-ink">{title}</h3>
           <button type="button" onClick={onClose} aria-label="닫기" className="-mr-2 -mt-2 flex h-11 w-11 items-center justify-center rounded-xl text-ink-3 hover:bg-neutral-bg">
             <X size={22} />
           </button>

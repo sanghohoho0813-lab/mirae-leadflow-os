@@ -13,7 +13,7 @@ const toneClass: Record<Tone, string> = {
 
 export function Badge({ tone = "neutral", children, className = "", size = "md" }: { tone?: Tone; children: ReactNode; className?: string; size?: "md" | "lg" }) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-lg font-semibold whitespace-nowrap ${size === "lg" ? "px-3 py-1.5 text-[15px]" : "px-2.5 py-1 text-[14px]"} ${toneClass[tone]} ${className}`}>
+    <span className={`inline-flex items-center gap-1 rounded-lg font-semibold whitespace-nowrap ${size === "lg" ? "px-3 py-1.5 text-[0.9375rem]" : "px-2.5 py-1 text-[0.875rem]"} ${toneClass[tone]} ${className}`}>
       {children}
     </span>
   );
@@ -25,5 +25,5 @@ export function StatusBadge({ status, needsReport, size = "md" }: { status: Lead
 }
 
 export function Tag({ children, tone = "neutral" }: { children: ReactNode; tone?: Tone }) {
-  return <span className={`inline-block rounded-md px-2 py-0.5 text-[14px] font-medium ${toneClass[tone]}`}>{children}</span>;
+  return <span className={`inline-block rounded-md px-2 py-0.5 text-[0.875rem] font-medium ${toneClass[tone]}`}>{children}</span>;
 }

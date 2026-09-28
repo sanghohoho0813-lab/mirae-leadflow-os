@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { Home, Database, CalendarCheck, RefreshCw, History, Users, PlusCircle, MoreHorizontal, LogOut, X, Menu, Inbox, Megaphone, GraduationCap } from "lucide-react";
-import { ThemePicker } from "./ThemePicker";
+import { Home, Database, CalendarCheck, RefreshCw, History, Users, PlusCircle, MoreHorizontal, LogOut, X, Menu, Inbox, Megaphone, GraduationCap, Settings } from "lucide-react";
 import { NavProgress } from "./NavProgress";
 import { LiveClock } from "./LiveClock";
 import { personLabel, ROLE_LABEL } from "@/lib/labels";
@@ -12,7 +11,7 @@ import type { MemberRole } from "@/lib/types";
 import { logout } from "@/lib/actions/auth";
 import { Logo } from "./Logo";
 
-export interface ShellUser { name: string; role: MemberRole; title: string | null; orgName: string }
+export interface ShellUser { name: string; role: MemberRole; title: string | null; division: string | null; orgName: string }
 
 /** Live counts shown as badges on the menu (what needs attention now). */
 export interface NavCounts { needs_report: number; follow_ups: number; open: number; drafts: number; trainings: number }
@@ -37,6 +36,7 @@ function navFor(role: MemberRole): NavConfig {
   const home: NavItem = { href: "/", label: "홈", icon: <Home size={I} />, match: (p) => p === "/" };
   const training: NavItem = { href: "/trainings", label: "교육 자료실", short: "교육", icon: <GraduationCap size={I} />, match: (p) => p.startsWith("/trainings"), badge: { key: "trainings" } };
   const follow: NavItem = { href: "/follow-ups", label: "후속조치", icon: <RefreshCw size={I} />, match: (p) => p.startsWith("/follow-ups"), badge: { key: "follow_ups" } };
+  const settings: NavSection = { title: "설정", items: [{ href: "/settings", label: "설정 · 글자 크기", icon: <Settings size={I} />, match: (p) => p.startsWith("/settings") }] };
   if (role === "OWNER" || role === "MANAGER") {
     const needs: NavItem = { href: "/leads?tab=needs_report", label: "결과 미입력", short: "미입력", icon: <Inbox size={I} />, match: (p, q) => isLeadsTab(p, q, "needs_report"), badge: { key: "needs_report", urgent: true } };
     const leads: NavItem = { href: "/leads", label: "DB 관리", short: "DB", icon: <Database size={I} />, match: (p, q) => p.startsWith("/leads") && !isLeadsTab(p, q, "needs_report") && !isLeadsTab(p, q, "draft") && p !== "/leads/new" };
@@ -49,6 +49,7 @@ function navFor(role: MemberRole): NavConfig {
         { title: "DB", items: [leads, drafts] },
         { title: "교육", items: [training] },
         { title: "관리", items: role === "OWNER" ? [history, members] : [history] },
+        settings,
       ],
       bottom: [home, leads, needs, training],
       cta: { href: "/leads/new", label: "신규 DB 등록" },
@@ -61,6 +62,7 @@ function navFor(role: MemberRole): NavConfig {
       sections: [
         { title: "오늘 업무", items: [home, create, leads] },
         { title: "교육", items: [training] },
+        settings,
       ],
       bottom: [home, create, leads, training],
       cta: { href: "/leads/new", label: "신규 DB 등록" },
@@ -72,6 +74,7 @@ function navFor(role: MemberRole): NavConfig {
     sections: [
       { title: "내 업무", items: [home, open, mine, follow] },
       { title: "교육", items: [training] },
+      settings,
     ],
     bottom: [home, open, mine, training],
   };
@@ -81,22 +84,22 @@ function Count({ n, urgent, variant }: { n: number; urgent?: boolean; variant: "
   if (!n) return null;
   const text = n > 99 ? "99+" : String(n);
   if (variant === "dot") {
-    return <span className={`absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[11px] font-bold text-white ring-2 ring-white ${urgent ? "bg-danger" : "bg-primary"}`}>{text}</span>;
+    return <span className={`absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[0.6875rem] font-bold text-white ring-2 ring-white ${urgent ? "bg-danger" : "bg-primary"}`}>{text}</span>;
   }
   const tone = urgent ? "bg-danger text-white" : variant === "dark" ? "bg-white/15 text-white" : "bg-neutral-bg text-ink-2";
-  return <span className={`ml-auto flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-[13px] font-bold tabular-nums ${tone}`}>{text}</span>;
+  return <span className={`ml-auto flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-[0.8125rem] font-bold tabular-nums ${tone}`}>{text}</span>;
 }
 
 function OrgPill({ name, dark }: { name: string; dark?: boolean }) {
   return (
-    <span className={`truncate rounded-md px-1.5 py-0.5 text-[12.5px] font-bold ${dark ? "bg-highlight/20 text-highlight" : "bg-soft text-primary"}`} data-testid="org-name">
+    <span className={`truncate rounded-md px-1.5 py-0.5 text-[0.7812rem] font-bold ${dark ? "bg-highlight/20 text-highlight" : "bg-soft text-primary"}`} data-testid="org-name">
       {name}
     </span>
   );
 }
 
 function MadeBy({ dark }: { dark?: boolean }) {
-  return <div className={`text-center text-[12px] tracking-wide ${dark ? "text-white/40" : "text-ink-3/80"}`} data-testid="made-by">Powered by 미래AI랩</div>;
+  return <div className={`text-center text-[0.75rem] tracking-wide ${dark ? "text-white/40" : "text-ink-3/80"}`} data-testid="made-by">Powered by 미래AI랩</div>;
 }
 
 export function AppShell({ user, children, demo = false, topBar, counts }: { user: ShellUser; children: ReactNode; demo?: boolean; topBar?: ReactNode; counts: NavCounts }) {
@@ -132,14 +135,14 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
           <Link prefetch={false} href="/" className="flex items-center gap-2.5">
             <Logo size={34} />
             <div className="min-w-0 leading-tight">
-              <div className="text-[19px] font-extrabold tracking-tight">리드플로우</div>
+              <div className="text-[1.1875rem] font-extrabold tracking-tight">리드플로우</div>
               <div className="mt-0.5 flex"><OrgPill name={user.orgName} dark /></div>
             </div>
           </Link>
         </div>
         {nav.cta && (
           <div className="px-4 pb-3">
-            <Link prefetch={false} href={nav.cta.href} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-[16px] font-bold text-white transition-base hover:bg-primary-strong">
+            <Link prefetch={false} href={nav.cta.href} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-[1rem] font-bold text-white transition-base hover:bg-primary-strong">
               <PlusCircle size={19} /> {nav.cta.label}
             </Link>
           </div>
@@ -147,7 +150,7 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
         <nav className="flex flex-1 flex-col overflow-y-auto px-3 pb-3" aria-label="메뉴">
           {nav.sections.map((sec) => (
             <div key={sec.title} className="mt-3 first:mt-1">
-              <div className="px-3 pb-1.5 text-[12.5px] font-semibold tracking-wide text-white/50">{sec.title}</div>
+              <div className="px-3 pb-1.5 text-[0.7812rem] font-semibold tracking-wide text-white/50">{sec.title}</div>
               <div className="flex flex-col gap-0.5">
                 {sec.items.map((item) => {
                   const active = isActive(item);
@@ -157,7 +160,7 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
                       href={item.href}
                       onClick={tap(item.href)}
                       aria-current={active ? "page" : undefined}
-                      className={`press group relative flex h-12 items-center gap-3 rounded-xl px-2.5 text-[16px] font-semibold ${active ? "bg-white/[0.12] text-white" : "text-white/85 hover:bg-white/[0.06] hover:text-white"}`}
+                      className={`press group relative flex h-12 items-center gap-3 rounded-xl px-2.5 text-[1rem] font-semibold ${active ? "bg-white/[0.12] text-white" : "text-white/85 hover:bg-white/[0.06] hover:text-white"}`}
                     >
                       <span className={`nav-icon ${active ? "nav-icon-active" : ""}`}>{item.icon}</span>
                       <span className="truncate">{item.label}</span>
@@ -171,15 +174,15 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
         </nav>
         <div className="border-t border-white/10 px-4 pb-3 pt-4">
           <div className="mb-3 flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-[16px] font-bold">{user.name.slice(0, 1)}</span>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-[1rem] font-bold">{user.name.slice(0, 1)}</span>
             <div className="min-w-0 leading-tight">
-              <div className="truncate text-[16px] font-bold text-white">{user.name}</div>
-              <div className="truncate text-[13.5px] text-white/60">{user.title ?? ROLE_LABEL[user.role]}</div>
+              <div className="truncate text-[1rem] font-bold text-white">{user.name}</div>
+              <div className="truncate text-[0.8438rem] text-white/60">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")}</div>
             </div>
           </div>
           {!demo && (
             <form action={logout} className="mb-3">
-              <button type="submit" className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/15 text-[14.5px] font-semibold text-white/85 transition-base hover:bg-white/10">
+              <button type="submit" className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/15 text-[0.9062rem] font-semibold text-white/85 transition-base hover:bg-white/10">
                 <LogOut size={16} /> 로그아웃
               </button>
             </form>
@@ -199,7 +202,7 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
             <Link prefetch={false} href="/" className="flex min-w-0 items-center gap-2">
               <Logo size={30} />
               <span className="flex min-w-0 flex-col leading-tight">
-                <span className="text-[17px] font-extrabold tracking-tight text-ink">리드플로우</span>
+                <span className="text-[1.0625rem] font-extrabold tracking-tight text-ink">리드플로우</span>
                 <span className="flex"><OrgPill name={user.orgName} /></span>
               </span>
             </Link>
@@ -209,10 +212,12 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
           </div>
           <div className="flex items-center gap-2">
             <div className="lg:hidden"><LiveClock variant="stacked" /></div>
-            <ThemePicker />
+            <Link prefetch={false} href="/settings" className="press hidden h-11 items-center gap-1.5 rounded-xl border border-line bg-white px-3.5 text-[0.9375rem] font-semibold text-ink-2 hover:border-primary/40 hover:text-primary lg:inline-flex" data-testid="settings-link">
+              <Settings size={18} /> 설정
+            </Link>
             <div className="hidden items-center gap-2 whitespace-nowrap rounded-xl border border-line bg-white py-1.5 pl-1.5 pr-3 @3xl/header:flex">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-soft text-[14px] font-bold text-primary">{user.name.slice(0, 1)}</span>
-              <span className="text-[15px] font-semibold text-ink">{who}</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-soft text-[0.875rem] font-bold text-primary">{user.name.slice(0, 1)}</span>
+              <span className="text-[0.9375rem] font-semibold text-ink">{who}</span>
             </div>
           </div>
         </header>
@@ -225,7 +230,7 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
         {nav.bottom.map((item) => {
           const active = isActive(item);
           return (
-            <Link prefetch={false} key={item.href} href={item.href} onClick={tap(item.href)} aria-current={active ? "page" : undefined} className={`press relative flex h-[64px] flex-col items-center justify-center gap-0.5 text-[12.5px] font-semibold ${active ? "text-primary" : "text-ink-2"}`}>
+            <Link prefetch={false} key={item.href} href={item.href} onClick={tap(item.href)} aria-current={active ? "page" : undefined} className={`press relative flex h-[64px] flex-col items-center justify-center gap-0.5 text-[0.7812rem] font-semibold ${active ? "text-primary" : "text-ink-2"}`}>
               <span className={`absolute top-0 h-[3px] w-10 rounded-b-full bg-primary transition-all duration-200 ${active ? "opacity-100" : "scale-x-0 opacity-0"}`} />
               <span className={`relative transition-transform duration-200 ${active ? "-translate-y-0.5" : ""}`}>
                 {item.icon}
@@ -235,7 +240,7 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
             </Link>
           );
         })}
-        <button type="button" onClick={() => setDrawer(true)} className="press flex h-[64px] flex-col items-center justify-center gap-0.5 text-[12.5px] font-semibold text-ink-2" aria-label="더보기 메뉴">
+        <button type="button" onClick={() => setDrawer(true)} className="press flex h-[64px] flex-col items-center justify-center gap-0.5 text-[0.7812rem] font-semibold text-ink-2" aria-label="더보기 메뉴">
           <MoreHorizontal size={20} />
           <span>더보기</span>
         </button>
@@ -247,25 +252,25 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
           <div className="drawer-panel absolute inset-y-0 left-0 flex w-[86%] max-w-[340px] flex-col bg-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="메뉴">
             <div className="flex items-center justify-between bg-shell px-4 pb-4 pt-[calc(16px+env(safe-area-inset-top))] text-white">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-[17px] font-bold">{user.name.slice(0, 1)}</span>
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-[1.0625rem] font-bold">{user.name.slice(0, 1)}</span>
                 <div className="min-w-0 leading-tight">
-                  <div className="truncate text-[17px] font-bold">{user.name}</div>
-                  <div className="truncate text-[14px] text-white/65">{user.title ?? ROLE_LABEL[user.role]} · {user.orgName}</div>
+                  <div className="truncate text-[1.0625rem] font-bold">{user.name}</div>
+                  <div className="truncate text-[0.875rem] text-white/65">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")} · {user.orgName}</div>
                 </div>
               </div>
               <button type="button" onClick={() => setDrawer(false)} aria-label="닫기" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/80 hover:bg-white/10"><X size={22} /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-3 pb-3 pt-3">
               {nav.cta && (
-                <Link prefetch={false} href={nav.cta.href} className="mb-1 flex items-center gap-3 rounded-xl bg-primary px-3 text-[16px] font-bold text-white" style={{ height: 52 }}>
+                <Link prefetch={false} href={nav.cta.href} className="mb-1 flex items-center gap-3 rounded-xl bg-primary px-3 text-[1rem] font-bold text-white" style={{ height: 52 }}>
                   <PlusCircle size={20} /> {nav.cta.label}
                 </Link>
               )}
               {nav.sections.map((sec) => (
                 <div key={sec.title}>
-                  <div className="px-3 pb-1 pt-3 text-[13px] font-semibold text-ink-3">{sec.title}</div>
+                  <div className="px-3 pb-1 pt-3 text-[0.8125rem] font-semibold text-ink-3">{sec.title}</div>
                   {sec.items.map((item) => (
-                    <Link prefetch={false} key={item.href} href={item.href} className={`press flex items-center gap-3 rounded-xl px-3 text-[16.5px] font-semibold ${isActive(item) ? "bg-soft text-primary" : "text-ink hover:bg-neutral-bg"}`} style={{ height: 52 }}>
+                    <Link prefetch={false} key={item.href} href={item.href} className={`press flex items-center gap-3 rounded-xl px-3 text-[1.0312rem] font-semibold ${isActive(item) ? "bg-soft text-primary" : "text-ink hover:bg-neutral-bg"}`} style={{ height: 52 }}>
                       <span className={`nav-icon-light ${isActive(item) ? "nav-icon-light-active" : ""}`}>{item.icon}</span>
                       {item.label}
                       {item.badge && <Count n={counts[item.badge.key]} urgent={item.badge.urgent} variant="light" />}
@@ -273,11 +278,9 @@ export function AppShell({ user, children, demo = false, topBar, counts }: { use
                   ))}
                 </div>
               ))}
-              <div className="px-3 pb-1 pt-3 text-[13px] font-semibold text-ink-3">설정</div>
-              <ThemePicker variant="row" onPicked={() => setDrawer(false)} />
               {!demo && (
                 <form action={logout}>
-                  <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 text-[16px] font-semibold text-ink-2 hover:bg-neutral-bg" style={{ height: 52 }}>
+                  <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 text-[1rem] font-semibold text-ink-2 hover:bg-neutral-bg" style={{ height: 52 }}>
                     <span className="nav-icon-light"><LogOut size={20} /></span> 로그아웃
                   </button>
                 </form>

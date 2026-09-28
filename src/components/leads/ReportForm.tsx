@@ -74,16 +74,16 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
     return (
       <div className="fade-up rounded-2xl border border-success/30 bg-white p-6 text-center shadow-card" data-testid="report-done">
         <span className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-success-bg text-success"><CheckCircle2 size={36} /></span>
-        <h2 className="text-[24px] font-extrabold text-ink">결과가 저장되었습니다</h2>
-        <p className="mt-1 text-[16px] text-ink-2">{companyName} · {OUTCOME_LABEL[outcome!]}{reaction ? ` · ${REACTION_LABEL[reaction]}` : ""}{result ? ` · ${RESULT_LABEL[result]}` : ""}</p>
-        <div className="mx-auto mt-4 max-w-sm rounded-xl bg-neutral-bg px-4 py-3 text-left text-[16px]">
+        <h2 className="text-[1.5rem] font-extrabold text-ink">결과가 저장되었습니다</h2>
+        <p className="mt-1 text-[1rem] text-ink-2">{companyName} · {OUTCOME_LABEL[outcome!]}{reaction ? ` · ${REACTION_LABEL[reaction]}` : ""}{result ? ` · ${RESULT_LABEL[result]}` : ""}</p>
+        <div className="mx-auto mt-4 max-w-sm rounded-xl bg-neutral-bg px-4 py-3 text-left text-[1rem]">
           <div className="font-semibold text-ink-2">다음 단계</div>
           <div className="mt-0.5 font-bold text-ink">
             {done.status === "ASSIGNED" && `미팅이 ${fmtDate(newDate)} ${newTime}로 변경되었습니다.`}
             {done.status === "FOLLOW_UP" && next && `${NEXT_ACTION_LABEL[next]} · ${fmtDate(nextDate)}${nextNote.trim() ? ` · ${nextNote.trim()}` : ""} — 후속조치에 등록되었습니다.`}
             {done.status === "CLOSED" && "이 DB는 종료 처리되었습니다. 단장님 화면에도 반영되었습니다."}
           </div>
-          {done.status !== "ASSIGNED" && <div className="mt-2 text-[15px] text-ink-2">이제 다음 DB를 신청할 수 있습니다.</div>}
+          {done.status !== "ASSIGNED" && <div className="mt-2 text-[0.9375rem] text-ink-2">이제 다음 DB를 신청할 수 있습니다.</div>}
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
           <LinkButton href="/" size="lg" variant="secondary"><Home size={19} /> 홈으로</LinkButton>
@@ -137,7 +137,7 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
               <Field label="후속 예정일" required htmlFor="next-date">
                 <div className="mb-2 flex flex-wrap gap-2">
                   {[{ l: "내일", d: 1 }, { l: "3일 후", d: 3 }, { l: "1주 후", d: 7 }, { l: "2주 후", d: 14 }].map((q) => (
-                    <button key={q.d} type="button" onClick={() => setNextDate(addDays(q.d))} className={`min-h-[44px] rounded-xl border-2 px-3.5 text-[15px] font-semibold transition-base ${nextDate === addDays(q.d) ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}>{q.l}</button>
+                    <button key={q.d} type="button" onClick={() => setNextDate(addDays(q.d))} className={`min-h-[44px] rounded-xl border-2 px-3.5 text-[0.9375rem] font-semibold transition-base ${nextDate === addDays(q.d) ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}>{q.l}</button>
                   ))}
                 </div>
                 <Input id="next-date" type="date" value={nextDate} onChange={(e) => setNextDate(e.target.value)} min={kstDateString()} data-testid="next-date" />
@@ -154,7 +154,7 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
         <Step n={n()} title="미팅 요약 한 줄 (선택)">
           <Textarea value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="예: 신규 생산라인 도입 검토 중. 시설자금 관심 높음" data-testid="memo" />
           {!showDetail ? (
-            <button type="button" onClick={() => { setShowDetail(true); if (!detail) setDetail(MEMO_TEMPLATE); }} className="mt-2 min-h-[44px] text-[15px] font-semibold text-primary hover:underline" data-testid="detail-memo-open">+ 상세 메모 (양식 넣기)</button>
+            <button type="button" onClick={() => { setShowDetail(true); if (!detail) setDetail(MEMO_TEMPLATE); }} className="mt-2 min-h-[44px] text-[0.9375rem] font-semibold text-primary hover:underline" data-testid="detail-memo-open">+ 상세 메모 (양식 넣기)</button>
           ) : (
             <div className="mt-3"><Field label="상세 메모" htmlFor="detail" hint="양식의 빈칸만 채우면 됩니다"><Textarea id="detail" value={detail} onChange={(e) => setDetail(e.target.value)} className="min-h-[160px]" data-testid="detail-memo" /></Field></div>
           )}
@@ -163,7 +163,7 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
 
       <div className="sticky bottom-[72px] z-10 flex gap-2 rounded-2xl border border-line bg-white/95 p-3 shadow-card backdrop-blur lg:bottom-4">
         <LinkButton href={`/leads/${leadId}`} variant="secondary" size="lg" className="flex-1">취소</LinkButton>
-        <Button size="lg" className="flex-[2] text-[18px]" disabled={!canSubmit || pending} onClick={submit} data-testid="report-submit">
+        <Button size="lg" className="flex-[2] text-[1.125rem]" disabled={!canSubmit || pending} onClick={submit} data-testid="report-submit">
           <CheckCircle2 size={20} /> {pending ? "저장 중…" : "결과 저장"}
         </Button>
       </div>
@@ -174,10 +174,10 @@ export function ReportForm({ leadId, companyName, isFollowUp, interest = [] }: {
 function Step({ n, title, required, hint, children }: { n: number; title: string; required?: boolean; hint?: string; children: React.ReactNode }) {
   return (
     <section className="fade-up rounded-2xl border border-line bg-white p-5 shadow-card">
-      <h2 className="mb-3 flex items-center gap-2 text-[18px] font-bold text-ink">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-[15px] font-bold text-white">{n}</span>
+      <h2 className="mb-3 flex items-center gap-2 text-[1.125rem] font-bold text-ink">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-[0.9375rem] font-bold text-white">{n}</span>
         {title} {required && <span className="text-danger">*</span>}
-        {hint && <span className="text-[14px] font-medium text-ink-3">{hint}</span>}
+        {hint && <span className="text-[0.875rem] font-medium text-ink-3">{hint}</span>}
       </h2>
       {children}
     </section>

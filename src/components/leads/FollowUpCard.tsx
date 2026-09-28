@@ -20,7 +20,7 @@ const ACTION_ICON: Record<NextAction, React.ReactNode> = {
 };
 
 export function FollowUpList({ items, emptyText, canComplete, showAssignee }: { items: FollowUp[]; emptyText: string; canComplete?: boolean; showAssignee?: boolean }) {
-  if (items.length === 0) return <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-[16px] text-ink-3">{emptyText}</p>;
+  if (items.length === 0) return <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-[1rem] text-ink-3">{emptyText}</p>;
   return <div className="stagger grid gap-2">{items.map((f) => <FollowUpCard key={f.id} item={f} canComplete={canComplete} showAssignee={showAssignee} />)}</div>;
 }
 
@@ -36,12 +36,12 @@ export function FollowUpCard({ item, canComplete, showAssignee }: { item: Follow
       <div className="min-w-[200px] flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {item.company_name ? (
-            <Link prefetch={false} href={`/leads/${item.lead_id}`} className="truncate text-[17px] font-bold text-ink hover:text-primary">{item.company_name}</Link>
+            <Link prefetch={false} href={`/leads/${item.lead_id}`} className="truncate text-[1.0625rem] font-bold text-ink hover:text-primary">{item.company_name}</Link>
           ) : null}
           <Badge tone={done ? "success" : "purple"}>{NEXT_ACTION_LABEL[item.action]}</Badge>
           {!done && <Badge tone={overdue ? "danger" : rel.diff === 0 ? "warning" : "neutral"}>{rel.label}</Badge>}
         </div>
-        <div className="mt-0.5 text-[15px] text-ink-2">
+        <div className="mt-0.5 text-[0.9375rem] text-ink-2">
           {done ? `완료 ${item.done_at ? fmtDate(item.done_at) : ""}` : `예정 ${fmtDate(item.due_date)}`}
           {showAssignee && ` · 담당 ${item.assignee_name}`}
           {item.memo && <span className="text-ink-3"> · {item.memo}</span>}

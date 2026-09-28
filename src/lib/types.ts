@@ -146,6 +146,7 @@ export interface TrainingListItem {
   instructor_id: string | null;
   instructor_name: string | null;
   instructor_role: MemberRole | null;
+  instructor_division: string | null;
   summary: TrainingSummary | null;
   summary_source: "AI" | "BASIC" | "MANUAL" | null;
   file_count: number;

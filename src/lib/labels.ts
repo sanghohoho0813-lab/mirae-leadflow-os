@@ -96,13 +96,13 @@ export function titleOf(role: MemberRole, title?: string | null): string {
   return title?.trim() || HONORIFIC_BASE[role];
 }
 
-/** "송하균 단장님", "이재원 콜팀장님", "컨설턴트 A님" (no doubled title). */
+/** "송하균 단장님", "이제원 콜팀장님", "컨설턴트 A님" (no doubled title). */
 export function honorific(name: string, role: MemberRole, title?: string | null): string {
   const t = titleOf(role, title);
   return name.startsWith(t) || name.endsWith(t) ? `${name}님` : `${name} ${t}님`;
 }
 
-/** Chip / list label without doubling: "단장 송하균", "본부장 A". */
+/** Chip / list label without doubling: "단장 송하균", "본부장 서인수". */
 export function personLabel(name: string, role: MemberRole, title?: string | null): string {
   const t = titleOf(role, title);
   return name.startsWith(t) ? name : `${t} ${name}`;

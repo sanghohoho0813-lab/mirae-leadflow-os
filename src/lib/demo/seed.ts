@@ -6,17 +6,17 @@ import type { TransactionSql } from "postgres";
 export const ORG_ID = "00000000-0000-4000-8000-000000000001";
 export const ORG2_ID = "00000000-0000-4000-8000-000000000002";
 
-interface SeedUser { id: string; email: string; name: string; role: string; phone: string; title?: string; org?: string }
+interface SeedUser { id: string; email: string; name: string; role: string; phone: string; title?: string; division?: string; org?: string }
 
 export const USERS = {
   owner:       { id: "10000000-0000-4000-8000-000000000001", email: "owner@leadflow.local",    name: "송하균",     role: "OWNER",      phone: "010-1000-0001" },
-  leaderB:     { id: "10000000-0000-4000-8000-000000000002", email: "leader-b@leadflow.local", name: "본부장 B",   role: "LEADER",     phone: "010-1000-0002" },
-  caller:      { id: "10000000-0000-4000-8000-000000000003", email: "caller@leadflow.local",   name: "이재원",     role: "CALLER",     phone: "010-1000-0003", title: "콜팀장" },
+  leaderB:     { id: "10000000-0000-4000-8000-000000000002", email: "leader-3@leadflow.local", name: "정행래",     role: "LEADER",     phone: "010-1000-0002", division: "3본부" },
+  caller:      { id: "10000000-0000-4000-8000-000000000003", email: "caller@leadflow.local",   name: "이제원",     role: "CALLER",     phone: "010-1000-0003", title: "콜팀장" },
   consultant1: { id: "10000000-0000-4000-8000-000000000004", email: "c-a@leadflow.local",      name: "컨설턴트 A", role: "CONSULTANT", phone: "010-1000-0004" },
   consultant2: { id: "10000000-0000-4000-8000-000000000005", email: "c-b@leadflow.local",      name: "컨설턴트 B", role: "CONSULTANT", phone: "010-1000-0005" },
   consultant3: { id: "10000000-0000-4000-8000-000000000006", email: "c-c@leadflow.local",      name: "컨설턴트 C", role: "CONSULTANT", phone: "010-1000-0006" },
-  leader:      { id: "10000000-0000-4000-8000-000000000007", email: "leader-a@leadflow.local", name: "본부장 A",   role: "LEADER",     phone: "010-1000-0007" },
-  leaderC:     { id: "10000000-0000-4000-8000-000000000008", email: "leader-c@leadflow.local", name: "본부장 C",   role: "LEADER",     phone: "010-1000-0008" },
+  leader:      { id: "10000000-0000-4000-8000-000000000007", email: "leader-2@leadflow.local", name: "서인수",     role: "LEADER",     phone: "010-1000-0007", division: "2본부" },
+  consultant6: { id: "10000000-0000-4000-8000-000000000008", email: "c-f@leadflow.local",      name: "컨설턴트 F", role: "CONSULTANT", phone: "010-1000-0008" },
   consultant4: { id: "10000000-0000-4000-8000-000000000009", email: "c-d@leadflow.local",      name: "컨설턴트 D", role: "CONSULTANT", phone: "010-1000-0009" },
   consultant5: { id: "10000000-0000-4000-8000-000000000010", email: "c-e@leadflow.local",      name: "컨설턴트 E", role: "CONSULTANT", phone: "010-1000-0010" },
   otherOwner:  { id: "20000000-0000-4000-8000-000000000001", email: "other@leadflow.local",    name: "다른단장",   role: "OWNER",      phone: "010-2000-0001", org: ORG2_ID },
@@ -102,7 +102,7 @@ const leads = (): LeadSeed[] => [
   { id: L(10), company: "(주)그린바이오", region: "충북 청주시", industry: "바이오", at: kst(-2, 14), method: "VISIT", status: "ASSIGNED", assignee: U.consultant3,
     summary: "바이오 소재, 직원 18명, 정책자금 관심", contact: ["윤재석", "대표", "010-3333-0010"],
     topic: "R&D 자금", interest: ["정책자금", "정부지원사업"], concern: [], traits: "", reason: "R&D 과제 신청 준비", mustKnow: "", caution: "" },
-  { id: L(11), company: "하나정밀(주)", region: "경기 시흥시", industry: "정밀 가공", at: kst(-5, 10), method: "VISIT", status: "ASSIGNED", assignee: U.leaderC,
+  { id: L(11), company: "하나정밀(주)", region: "경기 시흥시", industry: "정밀 가공", at: kst(-5, 10), method: "VISIT", status: "ASSIGNED", assignee: U.consultant6,
     summary: "정밀가공, 직원 22명, 고용지원금 관심", contact: ["송하나", "대표", "010-3333-0011"],
     topic: "고용지원금", interest: ["고용지원금"], concern: [], traits: "", reason: "직원 채용 계획", mustKnow: "", caution: "" },
 
@@ -152,7 +152,7 @@ export async function seedDemo(tx: TransactionSql): Promise<{ users: number; lea
   await tx`insert into organizations(id, name, invite_code) values (${ORG_ID}, '스마트 사업단', 'SMART2026'), (${ORG2_ID}, '다른 사업단', 'OTHER0001')`;
   for (const u of users) {
     await tx`insert into auth.users(id, email) values (${u.id}, ${u.email})`;
-    await tx`insert into profiles(id, organization_id, role, full_name, phone, title) values (${u.id}, ${u.org ?? ORG_ID}, ${u.role}, ${u.name}, ${u.phone}, ${u.title ?? null})`;
+    await tx`insert into profiles(id, organization_id, role, full_name, phone, title, division) values (${u.id}, ${u.org ?? ORG_ID}, ${u.role}, ${u.name}, ${u.phone}, ${u.title ?? null}, ${u.division ?? null})`;
   }
 
   for (const l of all) {
@@ -299,7 +299,7 @@ function trainings(): TrainingSeed[] {
         keywords: ["기업부설연구소", "사후관리", "연구노트", "변경 신고", "세액공제"],
       },
       file: { name: "연구소_사후관리_월간점검표.txt", text: "[연구소 사후관리 월간 점검표]\n\n□ 이번 달 연구노트 작성 여부\n□ 연구원 입사 · 퇴사 변동 (있으면 변경 신고)\n□ 연구 과제 진행 상황 메모\n□ 세액공제용 인건비 · 재료비 증빙 보관\n□ 다음 달 일정 공유\n" },
-      readers: [U.consultant1, U.consultant2, U.consultant3, U.consultant4, U.leader, U.leaderB, U.leaderC] },
+      readers: [U.consultant1, U.consultant2, U.consultant3, U.consultant4, U.leader, U.leaderB, U.consultant6] },
 
     { id: T(4), title: "첫 방문 10분 화법: 대표님이 말하게 만드는 질문 7가지", day: monday - 12, hour: 10, instructor: U.leaderB,
       content: `첫 방문에서 우리가 말을 많이 하면 실패합니다. 대표님이 말하게 해야 합니다.
@@ -353,7 +353,7 @@ function trainings(): TrainingSeed[] {
       },
       readers: [U.consultant1, U.consultant2, U.consultant3, U.consultant4, U.consultant5, U.leader, U.leaderB] },
 
-    { id: T(6), title: "절세·법인 상담 입문: 가지급금 대화 시작하기", day: monday + 2, hour: 10, instructor: U.leaderC,
+    { id: T(6), title: "절세·법인 상담 입문: 가지급금 대화 시작하기", day: monday + 2, hour: 10, instructor: U.leader,
       content: null, summary: null, readers: [] },
   ];
 }

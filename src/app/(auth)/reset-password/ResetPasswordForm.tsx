@@ -15,7 +15,7 @@ export function ResetPasswordForm() {
       <Field label="새 비밀번호 확인" htmlFor="confirm" required>
         <Input id="confirm" name="confirm" type="password" autoComplete="new-password" minLength={8} required />
       </Field>
-      {state.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[15px] font-medium text-danger">{state.error}</p>}
+      {state.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[0.9375rem] font-medium text-danger">{state.error}</p>}
       <Button type="submit" size="lg" disabled={pending}>{pending ? "저장 중…" : "비밀번호 저장"}</Button>
     </form>
   );

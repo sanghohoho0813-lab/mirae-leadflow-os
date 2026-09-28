@@ -18,7 +18,7 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
   const overdue = items.filter((f) => status === "PENDING" && new Date(f.due_date + "T23:59:59+09:00") < today).length;
 
   const tab = (key: string, label: string, active: boolean) => (
-    <Link prefetch={false} key={key} href={`/follow-ups?${key}`} role="tab" aria-selected={active} className={`flex h-11 items-center rounded-xl border px-4 text-[15.5px] font-semibold transition-base ${active ? "border-primary bg-primary text-white" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}>{label}</Link>
+    <Link prefetch={false} key={key} href={`/follow-ups?${key}`} role="tab" aria-selected={active} className={`flex h-11 items-center rounded-xl border px-4 text-[0.9688rem] font-semibold transition-base ${active ? "border-primary bg-primary text-white" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}>{label}</Link>
   );
 
   return (
@@ -30,7 +30,7 @@ export default async function FollowUpsPage({ searchParams }: { searchParams: Pr
         {tab(`scope=${scope}&status=pending`, "예정", status === "PENDING")}
         {tab(`scope=${scope}&status=done`, "완료", status === "DONE")}
       </div>
-      <p className="mb-2 text-[15px] font-semibold text-ink-3">{items.length}건</p>
+      <p className="mb-2 text-[0.9375rem] font-semibold text-ink-3">{items.length}건</p>
       <FollowUpList items={items} emptyText={status === "PENDING" ? "예정된 후속조치가 없습니다." : "완료된 후속조치가 없습니다."} canComplete={status === "PENDING"} showAssignee={scope === "all"} />
     </div>
   );

@@ -4,6 +4,7 @@ import { StatusBadge, Badge } from "@/components/ui/Badge";
 import { METHOD_LABEL, NEXT_ACTION_LABEL } from "@/lib/labels";
 import { fmtShortDate, fmtTime, relativeDay, daysSince } from "@/lib/time";
 import type { LeadListItem } from "@/lib/types";
+import { QuickClaim } from "./LeadActions";
 
 export function MethodIcon({ method, size = 15 }: { method: LeadListItem["meeting_method"]; size?: number }) {
   if (method === "PHONE") return <Phone size={size} />;
@@ -23,37 +24,43 @@ export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now 
       data-testid={`lead-row-${lead.id}`}
     >
       <div className={`hidden w-[76px] shrink-0 flex-col items-center rounded-xl py-2 sm:flex ${rel.diff === 0 ? "bg-soft text-primary" : lead.needs_report ? "bg-danger-bg text-danger" : "bg-neutral-bg text-ink-2"}`}>
-        <span className="text-[13px] font-semibold">{rel.label}</span>
-        <span className="text-[19px] font-extrabold tabular-nums leading-tight">{fmtTime(lead.meeting_at)}</span>
+        <span className="text-[0.8125rem] font-semibold">{rel.label}</span>
+        <span className="text-[1.1875rem] font-extrabold tabular-nums leading-tight">{fmtTime(lead.meeting_at)}</span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="truncate text-[18px] font-bold text-ink group-hover:text-primary">{lead.company_name}</span>
+          <span className="truncate text-[1.125rem] font-bold text-ink group-hover:text-primary">{lead.company_name}</span>
           <StatusBadge status={lead.status} needsReport={lead.needs_report} />
           {lead.needs_report && overdueDays >= 3 && <Badge tone="danger">{overdueDays}일 경과</Badge>}
           {lead.status === "FOLLOW_UP" && lead.pending_follow_up_action && (
             <Badge tone="purple">{NEXT_ACTION_LABEL[lead.pending_follow_up_action]} · {lead.pending_follow_up_date ? relativeDay(lead.pending_follow_up_date, now).label : ""}</Badge>
           )}
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[15px] text-ink-2">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.9375rem] text-ink-2">
           <span className={`inline-flex items-center gap-1 sm:hidden ${emphasizeTime ? "font-semibold text-ink" : ""}`}><Clock size={14} /> {fmtShortDate(lead.meeting_at)} {fmtTime(lead.meeting_at)}</span>
           <span className="hidden items-center gap-1 sm:inline-flex"><Clock size={14} /> {fmtShortDate(lead.meeting_at)}</span>
           <span className="inline-flex items-center gap-1"><MapPin size={14} /> {lead.region}</span>
           <span className="inline-flex items-center gap-1"><MethodIcon method={lead.meeting_method} size={14} /> {METHOD_LABEL[lead.meeting_method]}</span>
           {showAssignee && lead.assignee_name && <span className="inline-flex items-center gap-1 font-medium text-ink"><User size={14} /> {lead.assignee_name}</span>}
         </div>
-        {lead.public_summary && <p className="mt-1 truncate text-[15px] text-ink-3">{lead.public_summary}</p>}
+        {lead.public_summary && <p className="mt-1 truncate text-[0.9375rem] text-ink-3">{lead.public_summary}</p>}
       </div>
       <ChevronRight size={20} className="shrink-0 text-ink-3 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />
     </Link>
   );
 }
 
-export function LeadList({ leads, emptyText, showAssignee, now }: { leads: LeadListItem[]; emptyText: string; showAssignee?: boolean; now?: Date }) {
-  if (leads.length === 0) return <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-[16px] text-ink-3">{emptyText}</p>;
+/** `claimable`: consultants get a 신청 button right on each open DB. */
+export function LeadList({ leads, emptyText, showAssignee, now, claimable = false }: { leads: LeadListItem[]; emptyText: string; showAssignee?: boolean; now?: Date; claimable?: boolean }) {
+  if (leads.length === 0) return <p className="rounded-2xl border border-dashed border-line px-4 py-6 text-center text-[1rem] text-ink-3">{emptyText}</p>;
   return (
     <div className="stagger grid gap-2">
-      {leads.map((l) => <LeadRow key={l.id} lead={l} showAssignee={showAssignee} now={now} />)}
+      {leads.map((l) => claimable && l.status === "OPEN" ? (
+        <div key={l.id} className="flex gap-2">
+          <div className="min-w-0 flex-1"><LeadRow lead={l} showAssignee={showAssignee} now={now} /></div>
+          <QuickClaim lead={{ id: l.id, company_name: l.company_name, region: l.region, meeting_at: l.meeting_at }} />
+        </div>
+      ) : <LeadRow key={l.id} lead={l} showAssignee={showAssignee} now={now} />)}
     </div>
   );
 }

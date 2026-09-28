@@ -5,7 +5,7 @@ import { execSync } from "node:child_process";
 // (one active meeting per person), B has 우림식품 today, C has 그린바이오 unreported.
 const U = {
   owner: "10000000-0000-4000-8000-000000000001", // 송하균 단장
-  caller: "10000000-0000-4000-8000-000000000003", // 이재원 콜팀장
+  caller: "10000000-0000-4000-8000-000000000003", // 이제원 콜팀장
   cA: "10000000-0000-4000-8000-000000000004",
   cB: "10000000-0000-4000-8000-000000000005",
   cC: "10000000-0000-4000-8000-000000000006",
@@ -219,7 +219,7 @@ test("5. OWNER sees the whole picture; releases & reassigns another lead; resche
   await expect(owner.getByText("하나정밀(주)")).toBeVisible();
   await shot(owner, "13-owner-needs-report");
 
-  // Release 대성산업 (본부장 B, tomorrow) then reassign to 컨설턴트 E, then reschedule.
+  // Release 대성산업 (3본부 정행래 본부장, tomorrow) then reassign to 컨설턴트 E, then reschedule.
   const daesung = "30000000-0000-4000-8000-000000000009";
   await go(owner, `/leads/${daesung}`);
   await owner.click('[data-testid="release-button"]');
@@ -397,7 +397,7 @@ test("11. Demo mode: no login needed, one click switches role", async ({ browser
 
   // One click → caller.
   await p.getByTestId(`persona-${U.caller}`).click();
-  await expect(p.getByRole("heading", { name: /이재원 콜팀장님/ })).toBeVisible();
+  await expect(p.getByRole("heading", { name: /이제원 콜팀장님/ })).toBeVisible();
 
   // Same DB detail seen by two roles: owner sees contact, other consultant does not.
   await go(p, `/leads/${UURIM}`);
@@ -481,41 +481,43 @@ test("14. Map view: pins for 수도권, others listed, tab kept when switching",
   await p.context().close();
 });
 
-test("15. Theme: 9 themes from the design guide, applies, persists, reaches the mobile preview", async ({ browser }) => {
+test("15. 설정: 글자 크기 · 9 themes · 움직임 줄이기 — apply at once, persist, reach the mobile preview", async ({ browser }) => {
   const p = await loginAs(browser, U.owner);
   const primary = () => p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--theme-primary").trim());
+  const rootPx = () => p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
   expect(await primary()).toBe("#087a83"); // default: 딥 틸
-  await p.getByTestId("theme-button").click();
-  await expect(p.getByTestId("theme-dialog")).toBeVisible();
-  // Dialog must be fully on screen (not trapped in the header).
-  const box = await p.getByRole("dialog").boundingBox();
-  expect(box!.y).toBeGreaterThanOrEqual(0);
+  expect(await rootPx()).toBe(17);
+  // 설정 lives in the left menu.
+  await p.getByTestId("sidebar").getByRole("link", { name: /설정/ }).click();
+  await p.waitForURL("**/settings");
+  await expect(p.getByTestId("my-info")).toContainText("송하균");
   for (const key of ["navy", "navy-gold", "emerald-gold", "forest-sage", "deep-teal", "onyx-gold", "burgundy-slate", "plum-indigo", "steel-platinum"]) {
     await expect(p.getByTestId(`theme-${key}`)).toBeVisible();
   }
-  await shot(p, "22-theme-dialog", false);
+  await p.getByTestId("font-xlarge").click();
+  expect(await rootPx()).toBe(21);
   await p.getByTestId("theme-burgundy-slate").click();
   expect(await primary()).toBe("#7a2b47");
-  await expect(p.getByTestId("theme-burgundy-slate")).toHaveAttribute("aria-pressed", "true");
-  // 화면 움직임 줄이기
   await p.getByTestId("motion-toggle").check();
   await expect(p.locator("html")).toHaveAttribute("data-motion", "reduce");
-  await p.keyboard.press("Escape");
-  await expect(p.getByTestId("theme-dialog")).toHaveCount(0);
+  await shot(p, "22-settings", false);
   await p.reload();
   await settle(p);
   expect(await primary()).toBe("#7a2b47");
-  await expect(p.locator("html")).toHaveAttribute("data-motion", "reduce");
-  await p.getByRole("tab", { name: "PC+Mobile" }).click();
+  expect(await rootPx()).toBe(21);
+  expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  await p.getByRole("tab", { name: "PC+Mobile" }).first().click();
   const frameHtml = p.frameLocator('[data-testid="device-frame"] iframe').locator("html");
   await expect(frameHtml).toHaveAttribute("data-theme", "burgundy-slate");
-  await shot(p, "23-theme-burgundy-dual", false);
-  await p.getByRole("tab", { name: "PC", exact: true }).click();
-  // Back to default.
-  await p.getByTestId("theme-button").click();
+  await expect(frameHtml).toHaveAttribute("data-font", "xlarge");
+  await shot(p, "23-settings-dual", false);
+  await p.getByRole("tab", { name: "PC", exact: true }).first().click();
+  // Back to defaults.
+  await p.getByTestId("font-normal").click();
   await p.getByTestId("theme-deep-teal").click();
   await p.getByTestId("motion-toggle").uncheck();
   expect(await primary()).toBe("#087a83");
+  expect(await rootPx()).toBe(17);
   await p.context().close();
 });
 
@@ -672,4 +674,41 @@ test("21. Header shows today's date and a live clock (Korea time)", async ({ bro
   await p.waitForTimeout(1300);
   expect(await clock.innerText()).not.toBe(first);
   await p.context().close();
+});
+
+test("22. Device preview never tears down the app: typed text survives switching views", async ({ browser }) => {
+  const p = await loginAs(browser, U.owner);
+  const errors: string[] = [];
+  p.on("pageerror", (e) => errors.push(e.message));
+  await go(p, "/trainings");
+  await p.fill('[data-testid="training-search"]', "아직 안 누른 검색어");
+  for (let i = 0; i < 3; i++) {
+    for (const mode of ["PC+Mobile", "Mobile", "PC"]) {
+      await p.getByRole("tab", { name: mode, exact: true }).first().click();
+      await p.waitForTimeout(250);
+    }
+  }
+  // Same app instance all along: the half-typed search is still there.
+  await expect(p.getByTestId("training-search")).toHaveValue("아직 안 누른 검색어");
+  await expect(p.getByTestId("recovery-screen")).toHaveCount(0);
+  expect(errors).toEqual([]);
+  await p.context().close();
+});
+
+test("23. Quick 신청 from the list, then the one-meeting rule kicks in", async ({ browser }) => {
+  const c = await loginAs(browser, U.cA, { width: 390, height: 844 });
+  const quick = c.locator('[data-testid^="quick-claim-"]').first();
+  await expect(quick).toBeVisible();
+  await quick.click();
+  await expect(c.getByTestId("quick-claim-dialog")).toBeVisible();
+  await shot(c, "m390-12-quick-claim", false);
+  await c.getByTestId("quick-claim-confirm").click();
+  await c.waitForURL(/\/leads\/[0-9a-f-]{36}/);
+  await expect(c.getByTestId("private-details")).toBeVisible();
+  await go(c, "/");
+  await expect(c.getByTestId("claim-limit-note")).toBeVisible();
+  await expect(c.locator('[data-testid^="quick-claim-"]')).toHaveCount(0);
+  await go(c, "/leads?tab=open");
+  await expect(c.getByTestId("claim-limit-note")).toBeVisible();
+  await c.context().close();
 });

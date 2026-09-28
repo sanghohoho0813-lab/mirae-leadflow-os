@@ -13,9 +13,9 @@ const variants: Record<Variant, string> = {
   success: "bg-success text-white hover:brightness-95",
 };
 const sizes: Record<Size, string> = {
-  sm: "h-10 px-3.5 text-[15px]",
-  md: "h-12 px-5 text-[17px]",
-  lg: "h-14 px-6 text-[18px]",
+  sm: "h-10 px-3.5 text-[0.9375rem]",
+  md: "h-12 px-5 text-[1.0625rem]",
+  lg: "h-14 px-6 text-[1.125rem]",
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", extra = "") {

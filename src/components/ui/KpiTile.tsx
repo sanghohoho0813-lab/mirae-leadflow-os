@@ -44,13 +44,13 @@ export function KpiTile({ label, value, tone = "info", icon, href, sub, emphasis
     <div className={`group flex h-full flex-col gap-2 rounded-2xl border bg-white p-4 shadow-card ${href ? "lift press" : ""} ${emphasis && value > 0 ? "border-danger/45" : "border-line"}`} data-testid={testId}>
       <div className="flex items-center gap-2.5">
         <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110 ${s.icon}`}>{icon}</span>
-        <span className={`text-[16px] font-semibold ${emphasis && value > 0 ? "text-danger" : "text-ink-2"}`}>{label}</span>
+        <span className={`text-[1rem] font-semibold ${emphasis && value > 0 ? "text-danger" : "text-ink-2"}`}>{label}</span>
       </div>
       <div className="flex items-baseline gap-1">
-        <span className={`text-[34px] font-extrabold leading-none tracking-tight tabular-nums ${emphasis && value > 0 ? "text-danger" : "text-ink"}`}>{shown}</span>
-        <span className="text-[17px] font-semibold text-ink-2">건</span>
+        <span className={`text-[2.125rem] font-extrabold leading-none tracking-tight tabular-nums ${emphasis && value > 0 ? "text-danger" : "text-ink"}`}>{shown}</span>
+        <span className="text-[1.0625rem] font-semibold text-ink-2">건</span>
       </div>
-      {sub && <span className="text-[14px] text-ink-3">{sub}</span>}
+      {sub && <span className="text-[0.875rem] text-ink-3">{sub}</span>}
     </div>
   );
   return href ? <Link prefetch={false} href={href} className="block h-full">{inner}</Link> : inner;

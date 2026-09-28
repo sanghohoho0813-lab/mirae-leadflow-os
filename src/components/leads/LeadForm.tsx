@@ -41,8 +41,8 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
   return (
     <form action={formAction} className="grid gap-5">
       <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-1 text-[19px] font-bold text-ink">1. 미팅 기본 정보</h2>
-        <p className="mb-4 text-[15px] text-ink-2">컨설턴트에게 <b>신청 전에도 공개</b>되는 정보입니다.</p>
+        <h2 className="mb-1 text-[1.1875rem] font-bold text-ink">1. 미팅 기본 정보</h2>
+        <p className="mb-4 text-[0.9375rem] text-ink-2">컨설턴트에게 <b>신청 전에도 공개</b>되는 정보입니다.</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="업체명" required htmlFor="company_name"><Input id="company_name" name="company_name" defaultValue={lead?.company_name} placeholder="예: 성진테크(주)" required autoFocus /></Field>
           <Field label="지역" required htmlFor="region" hint="아래 ‘미팅 장소 주소’를 붙여넣으면 자동으로 채워집니다.">
@@ -68,8 +68,8 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
       </section>
 
       <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-1 text-[19px] font-bold text-ink">2. 미팅 장소 · 상대방</h2>
-        <p className="mb-4 text-[15px] text-ink-2"><b>배정된 담당자와 운영진에게만</b> 공개됩니다. 담당자는 주소를 한 번에 복사하거나 지도앱으로 바로 열 수 있습니다.</p>
+        <h2 className="mb-1 text-[1.1875rem] font-bold text-ink">2. 미팅 장소 · 상대방</h2>
+        <p className="mb-4 text-[0.9375rem] text-ink-2"><b>배정된 담당자와 운영진에게만</b> 공개됩니다. 담당자는 주소를 한 번에 복사하거나 지도앱으로 바로 열 수 있습니다.</p>
         <div className="mb-4">
           <Field label="미팅 장소 주소" htmlFor="address" hint="네이버·카카오 지도에서 복사한 주소를 그대로 붙여넣어도 됩니다.">
             <Input id="address" name="address" defaultValue={priv?.address ?? ""} onChange={(e) => onAddress(e.target.value)} placeholder="예: 서울 강남구 테헤란로 123, 5층" autoComplete="street-address" />
@@ -83,8 +83,8 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
       </section>
 
       <section className="rounded-2xl border border-line bg-white p-5 shadow-card">
-        <h2 className="mb-1 text-[19px] font-bold text-ink">3. 상세 콜 메모</h2>
-        <p className="mb-4 text-[15px] text-ink-2">통화하면서 느낀 것을 태그로 고르고, 필요한 것만 짧게 적어 주세요. 담당자가 미팅을 준비하는 데 가장 큰 도움이 됩니다.</p>
+        <h2 className="mb-1 text-[1.1875rem] font-bold text-ink">3. 상세 콜 메모</h2>
+        <p className="mb-4 text-[0.9375rem] text-ink-2">통화하면서 느낀 것을 태그로 고르고, 필요한 것만 짧게 적어 주세요. 담당자가 미팅을 준비하는 데 가장 큰 도움이 됩니다.</p>
         <div className="grid gap-5">
           <Field label="어떤 주제로 통화했나요?" htmlFor="call_topic"><Input id="call_topic" name="call_topic" defaultValue={priv?.call_topic ?? ""} placeholder="예: 신규 생산라인 자금" /></Field>
           <Field label="관심을 보인 부분"><TagPicker name="interest_tags" options={INTEREST_TAG_OPTIONS} value={interest} onChange={setInterest} /></Field>
@@ -98,12 +98,12 @@ export function LeadForm({ action, lead, priv, canPublishNow, cancelHref, submit
       </section>
 
       {canPublishNow && (
-        <label className="flex items-center gap-3 rounded-2xl border border-line bg-white px-5 py-4 text-[17px] font-semibold text-ink shadow-card">
+        <label className="flex items-center gap-3 rounded-2xl border border-line bg-white px-5 py-4 text-[1.0625rem] font-semibold text-ink shadow-card">
           <input type="checkbox" name="publish_now" className="h-6 w-6 accent-[var(--theme-primary)]" /> 저장하면서 바로 공개하기 (컨설턴트 신청 가능)
         </label>
       )}
 
-      {state.error && <p className="rounded-xl bg-danger-bg px-4 py-3 text-[16px] font-medium text-danger" role="alert">{state.error}</p>}
+      {state.error && <p className="rounded-xl bg-danger-bg px-4 py-3 text-[1rem] font-medium text-danger" role="alert">{state.error}</p>}
 
       <div className="sticky bottom-[72px] z-10 flex gap-2 rounded-2xl border border-line bg-white/95 p-3 shadow-card backdrop-blur lg:bottom-4">
         <LinkButton href={cancelHref} variant="secondary" size="lg" className="flex-1">취소</LinkButton>

@@ -41,7 +41,7 @@ export function CopyButton({ text, label, done = "복사했습니다", className
           toast("error", "복사하지 못했습니다. 길게 눌러 직접 복사해 주세요.");
         }
       }}
-      className={`press inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-[15px] font-semibold transition-base ${
+      className={`press inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-[0.9375rem] font-semibold transition-base ${
         copied ? "border-success/40 bg-success-bg text-success" : "border-line-strong bg-white text-ink hover:border-primary/50 hover:bg-soft"
       } ${className}`}
     >

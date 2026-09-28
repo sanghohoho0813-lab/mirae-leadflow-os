@@ -8,7 +8,7 @@
 
 ## 지금 바로 써보기 — 체험 모드 (로그인 없음)
 
-Supabase 없이도 배포 주소에서 전체 흐름을 체험할 수 있습니다. 첫 접속은 사업단장(송하균) 화면, 화면 맨 위 막대에서 **클릭 한 번으로 단장·콜팀장·본부장·컨설턴트 화면 전환**, [초기화]로 샘플 데이터 복원.
+Supabase 없이도 배포 주소에서 전체 흐름을 체험할 수 있습니다. 첫 접속은 사업단장(송하균) 화면, 화면 맨 위 막대에서 **클릭 한 번으로 단장·콜팀장(이제원)·본부장(2본부 서인수, 3본부 정행래)·컨설턴트 화면 전환**, [초기화]로 샘플 데이터 복원.
 
 **DB를 연결하지 않아도 바로 열립니다** — 서버 안의 임시 DB로 동작하며(상단에 "임시 체험" 표시), 한동안 접속이 없으면 샘플 상태로 돌아갑니다. 데이터를 유지하고 여러 기기에서 같이 보려면 DB를 연결하세요:
 1. Vercel 프로젝트 → **Storage** → **Create Database** → **Neon (Postgres)** → 무료 플랜 생성
@@ -32,8 +32,8 @@ npm run dev                  # http://localhost:3000 → 체험 모드로 바로
 ```bash
 npm run test:db      # 동시성·1인 한도·RLS·상태전이·교육 자료실 권한 74개 검사
 npm run build && npm start
-npm run test:e2e     # Playwright 21개: Primary Journey, 1인 한도, 교육 자료실, 390/430, Device View, 테마
-node qa/crawl.mjs    # 전 화면 × 역할 × 해상도 185개: 오류·가로넘침 검사
+npm run test:e2e     # Playwright 23개: Primary Journey, 1인 한도, 교육 자료실, 390/430, Device View, 테마
+node qa/crawl.mjs    # 전 화면 × 역할 × 해상도 195개: 오류·가로넘침 검사 (FONT=xlarge 로 큰 글자 검사)
 node qa/ai-summary.mjs  # AI 요약 경로(모의 Claude API): PDF·PPTX 전달, 실패 시 기본 요약
 ```
 

@@ -23,7 +23,7 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
           <Field label="초대코드" htmlFor="invite_code" required>
             <Input id="invite_code" name="invite_code" placeholder="예: MIRAE2026" className="uppercase tracking-widest" autoCapitalize="characters" required />
           </Field>
-          {joinState.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[15px] font-medium text-danger">{joinState.error}</p>}
+          {joinState.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[0.9375rem] font-medium text-danger">{joinState.error}</p>}
           <Button type="submit" size="lg" disabled={joinPending}>{joinPending ? "확인 중…" : "참여하기"}</Button>
         </form>
       ) : (
@@ -37,11 +37,11 @@ export function OnboardingForm({ defaultName }: { defaultName: string }) {
           <Field label="휴대폰 번호" htmlFor="phone2">
             <Input id="phone2" name="phone" type="tel" inputMode="tel" placeholder="010-0000-0000" />
           </Field>
-          {createState.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[15px] font-medium text-danger">{createState.error}</p>}
+          {createState.error && <p className="rounded-xl bg-danger-bg px-3 py-2 text-[0.9375rem] font-medium text-danger">{createState.error}</p>}
           <Button type="submit" size="lg" disabled={createPending}>{createPending ? "만드는 중…" : "사업단 만들기"}</Button>
         </form>
       )}
-      <button type="button" onClick={() => setMode(mode === "join" ? "create" : "join")} className="min-h-[44px] text-center text-[15px] font-semibold text-primary hover:underline">
+      <button type="button" onClick={() => setMode(mode === "join" ? "create" : "join")} className="min-h-[44px] text-center text-[0.9375rem] font-semibold text-primary hover:underline">
         {mode === "join" ? "초대코드가 없어요 — 새 사업단을 직접 만들기" : "초대코드가 있어요 — 기존 사업단에 참여하기"}
       </button>
     </div>

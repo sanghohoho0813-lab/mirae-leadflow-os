@@ -36,7 +36,7 @@ export interface ActiveMeeting { id: string; company_name: string; passed: boole
 export function ClaimLimitPanel({ active, limit }: { active: ActiveMeeting; limit: number }) {
   return (
     <div className="rounded-2xl border border-line bg-canvas px-4 py-4" data-testid="claim-limit">
-      <div className="flex gap-2.5 text-[16px] text-ink-2">
+      <div className="flex gap-2.5 text-[1rem] text-ink-2">
         <Lock size={20} className="mt-0.5 shrink-0 text-ink-3" />
         <span>
           진행 중인 미팅 <b className="text-ink">{active.company_name}</b>이(가) 있어 지금은 신청할 수 없습니다.
@@ -63,14 +63,14 @@ export function ClaimButton({ id }: { id: string }) {
   if (limited) return <ClaimLimitPanel active={{ id: limited, company_name: "결과 입력 전 미팅", passed: true }} limit={1} />;
   if (lost) {
     return (
-      <div className="rounded-2xl border border-warning/40 bg-warning-bg px-4 py-4 text-[16px] font-semibold text-warning" data-testid="claim-lost">
+      <div className="rounded-2xl border border-warning/40 bg-warning-bg px-4 py-4 text-[1rem] font-semibold text-warning" data-testid="claim-lost">
         {lost}
         <div className="mt-2"><LinkButton href="/leads?tab=open" variant="secondary" size="sm">다른 DB 보기</LinkButton></div>
       </div>
     );
   }
   return (
-    <Button size="lg" className="w-full text-[19px]" disabled={pending} data-testid="claim-button" onClick={() => start(async () => {
+    <Button size="lg" className="w-full text-[1.1875rem]" disabled={pending} data-testid="claim-button" onClick={() => start(async () => {
       const r = await claimLead(id);
       // replace() alone refetches (the action revalidated this path); adding refresh()
       // races with it under the loading boundary and can leave the page stuck.
@@ -98,7 +98,7 @@ function ConfirmAction({ label, icon, title, desc, confirmLabel, variant = "seco
     <>
       <Button variant={variant} size={size} onClick={() => setOpen(true)} data-testid={testId}>{icon} {label}</Button>
       <Dialog open={open} onClose={() => setOpen(false)} title={title}>
-        <p className="mb-4 text-[16px] text-ink-2">{desc}</p>
+        <p className="mb-4 text-[1rem] text-ink-2">{desc}</p>
         {reasonLabel && (
           <Field label={reasonLabel} required={reasonRequired} htmlFor="reason">
             <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="간단히 적어 주세요" />
@@ -131,7 +131,7 @@ function ReassignButton({ lead, consultants }: { lead: LeadListItem; consultants
       <Button variant="secondary" onClick={() => setOpen(true)} data-testid="reassign-button"><UserCog size={18} /> {label}</Button>
       <Dialog open={open} onClose={() => setOpen(false)} title={label}>
         <div className="grid gap-4">
-          {lead.assignee_name && <p className="text-[16px] text-ink-2">현재 담당: <b className="text-ink">{lead.assignee_name}</b></p>}
+          {lead.assignee_name && <p className="text-[1rem] text-ink-2">현재 담당: <b className="text-ink">{lead.assignee_name}</b></p>}
           <Field label="새 담당 컨설턴트" required htmlFor="consultant">
             <Select id="consultant" value={target} onChange={(e) => setTarget(e.target.value)} data-testid="reassign-select">
               <option value="">선택하세요</option>
@@ -169,7 +169,7 @@ function RescheduleButton({ lead }: { lead: LeadListItem }) {
       <Button variant="secondary" onClick={() => setOpen(true)} data-testid="reschedule-button"><CalendarClock size={18} /> 일정 변경</Button>
       <Dialog open={open} onClose={() => setOpen(false)} title="미팅 일정 변경">
         <div className="grid gap-4">
-          <p className="text-[16px] text-ink-2">현재: <b className="text-ink">{fmtDateTime(lead.meeting_at)}</b></p>
+          <p className="text-[1rem] text-ink-2">현재: <b className="text-ink">{fmtDateTime(lead.meeting_at)}</b></p>
           <div className="grid grid-cols-2 gap-3">
             <Field label="새 날짜" required htmlFor="rs-date"><Input id="rs-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
             <Field label="새 시간" required htmlFor="rs-time"><Input id="rs-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} /></Field>
@@ -208,20 +208,20 @@ export function LeadActionBar({ lead, role, userId, consultants, phone, blockedB
 
   if ((mine || manager) && (lead.status === "ASSIGNED" || lead.status === "FOLLOW_UP") && lead.assigned_to) {
     primary.push(
-      <LinkButton key="report" href={`/leads/${lead.id}/report`} size="lg" variant={lead.status === "ASSIGNED" && meetingPassed ? "primary" : mine ? "primary" : "secondary"} className="w-full text-[18px]">
+      <LinkButton key="report" href={`/leads/${lead.id}/report`} size="lg" variant={lead.status === "ASSIGNED" && meetingPassed ? "primary" : mine ? "primary" : "secondary"} className="w-full text-[1.125rem]">
         <ClipboardEdit size={21} /> {lead.status === "FOLLOW_UP" ? "후속 결과 입력" : mine ? "미팅 결과 입력" : "대신 결과 입력"}
       </LinkButton>,
     );
   }
   if (phone && (mine || manager || creator)) {
     primary.push(
-      <a key="call" href={`tel:${phone.replace(/[^0-9+]/g, "")}`} className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-white text-[18px] font-semibold text-ink transition-base hover:bg-soft" data-testid="call-button">
+      <a key="call" href={`tel:${phone.replace(/[^0-9+]/g, "")}`} className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-xl border border-line-strong bg-white text-[1.125rem] font-semibold text-ink transition-base hover:bg-soft" data-testid="call-button">
         <Phone size={20} className="text-primary" /> 연락하기 <span className="text-ink-2">{phone}</span>
       </a>,
     );
   }
 
-  if (manager && lead.status === "DRAFT") primary.unshift(<div key="publish" className="w-full [&>button]:w-full [&>button]:text-[18px]"><PublishButton id={lead.id} size="lg" /></div>);
+  if (manager && lead.status === "DRAFT") primary.unshift(<div key="publish" className="w-full [&>button]:w-full [&>button]:text-[1.125rem]"><PublishButton id={lead.id} size="lg" /></div>);
 
   if (mine && lead.status === "ASSIGNED" && !meetingPassed) {
     secondary.push(<ConfirmAction key="cancel-claim" label="신청 취소" icon={<Undo2 size={18} />} title="신청 취소" desc="이 미팅의 담당을 내려놓습니다. 다른 컨설턴트가 다시 신청할 수 있게 됩니다." confirmLabel="신청 취소하기" reasonLabel="사유 (선택)" run={(r) => cancelClaim(lead.id, r)} testId="cancel-claim-button" danger />);
@@ -249,7 +249,44 @@ export function LeadActionBar({ lead, role, userId, consultants, phone, blockedB
     <div className="grid gap-3" data-testid="lead-actions">
       {primary.length > 0 && <div className="grid gap-2 sm:grid-cols-2">{primary}</div>}
       {secondary.length > 0 && <div className="flex flex-wrap gap-2">{secondary}</div>}
-      {lead.status === "CANCELLED" && <p className="flex items-center gap-1.5 text-[15px] text-danger"><XCircle size={16} /> 취소된 DB입니다{lead.cancel_reason ? ` — ${lead.cancel_reason}` : ""}</p>}
+      {lead.status === "CANCELLED" && <p className="flex items-center gap-1.5 text-[0.9375rem] text-danger"><XCircle size={16} /> 취소된 DB입니다{lead.cancel_reason ? ` — ${lead.cancel_reason}` : ""}</p>}
     </div>
+  );
+}
+
+/**
+ * 목록에서 바로 신청 (선착순은 몇 초 차이). Confirms first so a stray tap on a
+ * phone never takes a meeting by accident.
+ */
+export function QuickClaim({ lead }: { lead: { id: string; company_name: string; region: string; meeting_at: Date } }) {
+  const [open, setOpen] = useState(false);
+  const [pending, start] = useSafeTransition();
+  const toast = useToast();
+  const refresh = useSafeRefresh();
+  const navigate = useSafeNavigate();
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} data-testid={`quick-claim-${lead.id}`}
+        className="press flex w-[4.25rem] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl bg-primary text-[0.9375rem] font-bold text-white hover:bg-primary-strong">
+        <Hand size={20} /> 신청
+      </button>
+      <Dialog open={open} onClose={() => setOpen(false)} title="이 미팅을 신청할까요?" testId="quick-claim-dialog">
+        <div className="mb-4 rounded-xl bg-canvas px-4 py-3">
+          <div className="text-[1.1875rem] font-bold text-ink">{lead.company_name}</div>
+          <div className="text-[1rem] text-ink-2">{fmtDateTime(lead.meeting_at)} · {lead.region}</div>
+        </div>
+        <p className="mb-4 text-[1rem] text-ink-2">신청하면 선착순으로 바로 담당이 확정되고, 연락처와 상세 메모가 열립니다.</p>
+        <div className="flex gap-2">
+          <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>돌아가기</Button>
+          <Button className="flex-1" disabled={pending} data-testid="quick-claim-confirm" onClick={() => start(async () => {
+            const r = await claimLead(lead.id);
+            if (r.ok) { setOpen(false); toast("success", "신청되었습니다. 담당이 확정되었습니다."); navigate(`/leads/${lead.id}?claimed=1`); return; }
+            setOpen(false);
+            toast("error", r.message ?? "신청하지 못했습니다.");
+            refresh();
+          })}><Hand size={19} /> {pending ? "신청 중…" : "신청하기"}</Button>
+        </div>
+      </Dialog>
+    </>
   );
 }

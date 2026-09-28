@@ -20,7 +20,7 @@ export function ClaimLimit({ value }: { value: number }) {
   const toast = useToast();
   return (
     <div>
-      <p className="mb-3 text-[15.5px] text-ink-2">
+      <p className="mb-3 text-[0.9688rem] text-ink-2">
         한 컨설턴트가 결과를 입력하기 전까지 가질 수 있는 미팅 수입니다. 1건으로 두면 DB가 골고루 돌아가고, 결과 입력도 빨라집니다.
         단장님이 직접 배정할 때는 이 제한이 적용되지 않습니다.
       </p>
@@ -39,8 +39,8 @@ export function ClaimLimit({ value }: { value: number }) {
               });
             }}
             className={`press flex min-h-[60px] flex-col items-center justify-center rounded-xl border-2 px-2 text-center ${current === o.v ? "border-primary bg-soft text-primary" : "border-line bg-white text-ink-2 hover:border-primary/40"}`}>
-            <span className="text-[17px] font-bold">{o.label}</span>
-            {o.desc && <span className="text-[12.5px] font-medium">{o.desc}</span>}
+            <span className="text-[1.0625rem] font-bold">{o.label}</span>
+            {o.desc && <span className="text-[0.7812rem] font-medium">{o.desc}</span>}
           </button>
         ))}
       </div>

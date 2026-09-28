@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { Component, createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useSafeRefresh } from "@/components/providers/SafeActions";
 import { Monitor, Smartphone, Columns2 } from "lucide-react";
@@ -46,24 +46,51 @@ export function DeviceViewProvider({ children }: { children: ReactNode }) {
 
   const effective: DeviceMode = ready && wide && !inFrame ? mode : "pc";
 
+  // The app itself is ALWAYS rendered in the same place and never unmounted when the
+  // view changes — only its wrapper's layout changes. Tearing down and rebuilding the
+  // whole app on every switch was fragile (browser extensions that edit the page, e.g.
+  // translators, make React's DOM removal throw). The preview parts sit in their own
+  // error boundary: if anything goes wrong there, we quietly fall back to PC view.
+  const dual = effective === "dual";
+  const mobile = effective === "mobile";
+  const fallBack = useCallback(() => setMode("pc"), [setMode]);
+
   return (
     <DeviceCtx.Provider value={{ mode: effective, setMode, inFrame, ready }}>
       {inFrame && <FrameChildSync />}
-      {effective === "pc" && children}
-      {effective === "mobile" && <MobileStage />}
-      {effective === "dual" && (
-        <div className="flex min-h-dvh w-full" data-testid="dual-view">
-          <div className="min-w-0 flex-[0_0_67%] overflow-x-clip border-r border-line">{children}</div>
-          <div className="min-w-0 flex-[0_0_33%] bg-neutral-bg/60">
-            <div className="sticky top-0 flex h-dvh flex-col items-center justify-center gap-3 p-4">
-              <p className="text-[14px] font-semibold text-ink-3">모바일 미리보기 · 390px · 같은 화면·같은 데이터</p>
-              <MobileFrame />
-            </div>
-          </div>
+      <div className={dual ? "flex min-h-dvh w-full" : "contents"} data-testid={dual ? "dual-view" : undefined}>
+        <div className={dual ? "min-w-0 flex-[0_0_67%] overflow-x-clip border-r border-line" : mobile ? "hidden" : "contents"} aria-hidden={mobile || undefined}>
+          {children}
         </div>
+        {dual && (
+          <PreviewBoundary onError={fallBack}>
+            <div className="min-w-0 flex-[0_0_33%] bg-neutral-bg/60">
+              <div className="sticky top-0 flex h-dvh flex-col items-center justify-center gap-3 p-4">
+                <p className="text-[0.875rem] font-semibold text-ink-3">모바일 미리보기 · 390px · 같은 화면·같은 데이터</p>
+                <MobileFrame />
+              </div>
+            </div>
+          </PreviewBoundary>
+        )}
+      </div>
+      {mobile && (
+        <PreviewBoundary onError={fallBack}>
+          <MobileStage />
+        </PreviewBoundary>
       )}
     </DeviceCtx.Provider>
   );
+}
+
+/** Catches errors in the preview only; the app keeps running in PC view. */
+class PreviewBoundary extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(error: unknown) {
+    console.error("[device-view] preview failed, back to PC view", error);
+    this.props.onError();
+  }
+  render() { return this.state.failed ? null : this.props.children; }
 }
 
 function MobileStage() {
@@ -71,7 +98,7 @@ function MobileStage() {
     <div className="min-h-dvh bg-neutral-bg/60">
       <div className="flex min-h-dvh flex-col items-center gap-4 p-6">
         <div className="flex w-full max-w-5xl items-center justify-between">
-          <span className="text-[17px] font-bold text-ink">모바일 미리보기 · 390px</span>
+          <span className="text-[1.0625rem] font-bold text-ink">모바일 미리보기 · 390px</span>
           <DeviceSwitch />
         </div>
         <MobileFrame />
@@ -181,7 +208,7 @@ export function DeviceSwitch({ compact = false }: { compact?: boolean }) {
           onClick={() => setMode(it.m)}
           title={it.label}
           aria-label={it.label}
-          className={`flex h-9 items-center gap-1.5 rounded-lg ${compact ? "px-2.5" : "px-3"} text-[14px] font-semibold transition-base ${mode === it.m ? "bg-primary text-white" : "text-ink-2 hover:bg-neutral-bg"}`}
+          className={`flex h-9 items-center gap-1.5 rounded-lg ${compact ? "px-2.5" : "px-3"} text-[0.875rem] font-semibold transition-base ${mode === it.m ? "bg-primary text-white" : "text-ink-2 hover:bg-neutral-bg"}`}
         >
           {it.icon}{compact ? null : it.label}
         </button>

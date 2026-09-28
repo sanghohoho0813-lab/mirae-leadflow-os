@@ -10,6 +10,23 @@ export interface ThemeDef {
 export const DEFAULT_THEME = "deep-teal";
 export const THEME_STORAGE_KEY = "lf_theme";
 export const MOTION_STORAGE_KEY = "lf_motion";
+export const FONT_STORAGE_KEY = "lf_font";
+
+export const FONT_SIZES = [
+  { key: "normal", label: "보통", desc: "기본 크기" },
+  { key: "large", label: "크게", desc: "약 12% 크게" },
+  { key: "xlarge", label: "아주 크게", desc: "약 25% 크게" },
+] as const;
+export type FontSize = (typeof FONT_SIZES)[number]["key"];
+
+export function isFontSize(v: string | null | undefined): v is FontSize {
+  return v === "normal" || v === "large" || v === "xlarge";
+}
+
+export function applyFont(size: string) {
+  if (size === "large" || size === "xlarge") document.documentElement.dataset.font = size;
+  else delete document.documentElement.dataset.font;
+}
 
 export const THEMES: ThemeDef[] = [
   { key: "navy", name: "딥 네이비 블루", desc: "차분한 남색", colors: ["#0f1d3a", "#2456d6", "#1a86a6", "#17a585", "#e6c46c", "#dfe8f7"] },
@@ -42,5 +59,5 @@ export function applyMotion(reduce: boolean) {
   else delete document.documentElement.dataset.motion;
 }
 
-/** Inline script for <head>: applies saved theme + motion before first paint. */
-export const THEME_BOOT_SCRIPT = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t&&t!=="${DEFAULT_THEME}"&&${JSON.stringify(THEMES.map((t) => t.key))}.indexOf(t)>=0)document.documentElement.setAttribute("data-theme",t);if(localStorage.getItem("${MOTION_STORAGE_KEY}")==="reduce")document.documentElement.setAttribute("data-motion","reduce")}catch(e){}`;
+/** Inline script for <head>: applies saved theme, motion and font size before first paint. */
+export const THEME_BOOT_SCRIPT = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t&&t!=="${DEFAULT_THEME}"&&${JSON.stringify(THEMES.map((t) => t.key))}.indexOf(t)>=0)document.documentElement.setAttribute("data-theme",t);if(localStorage.getItem("${MOTION_STORAGE_KEY}")==="reduce")document.documentElement.setAttribute("data-motion","reduce");var f=localStorage.getItem("${FONT_STORAGE_KEY}");if(f==="large"||f==="xlarge")document.documentElement.setAttribute("data-font",f)}catch(e){}`;
