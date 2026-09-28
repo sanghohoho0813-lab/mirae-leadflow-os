@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { withService } from "@/lib/db";
 import { isDemoMode, LOCAL_COOKIE, LOCAL_COOKIE_OPTIONS, signLocalSession } from "@/lib/auth/local";
-import { clearDemoData, ensureDemoReady, resetDemoData } from "@/lib/demo/setup";
+import { addDemoLeads, clearDemoData, ensureDemoReady, resetDemoData } from "@/lib/demo/setup";
 import { personLabel } from "@/lib/labels";
 import type { MemberRole } from "@/lib/types";
 
@@ -31,4 +31,15 @@ export async function resetDemo(mode: "sample" | "empty" = "sample"): Promise<De
   await resetDemoData();
   revalidatePath("/", "layout");
   return { ok: true, message: "체험 데이터를 처음 상태로 되돌렸습니다." };
+}
+
+/** 샘플 DB 5·10·20건 더하기 (지금 있는 DB는 그대로). */
+export async function addSampleLeads(n: number): Promise<DemoResult> {
+  if (!isDemoMode()) return { ok: false, message: "체험 모드가 아닙니다." };
+  if (![5, 10, 20].includes(n)) return { ok: false, message: "5·10·20건 중에서 골라 주세요." };
+  const [{ total }] = await withService((tx) => tx<{ total: number }[]>`select count(*)::int as total from leads where status not in ('CLOSED', 'CANCELLED')`);
+  if (total + n > 200) return { ok: false, message: "샘플이 너무 많습니다(진행 중 200건까지). 먼저 전체 삭제해 주세요." };
+  await addDemoLeads(n);
+  revalidatePath("/", "layout");
+  return { ok: true, message: `샘플 DB ${n}건을 추가했습니다.` };
 }

@@ -1,6 +1,8 @@
 "use client";
 
 import { MiniCalendar, type TrainingDays } from "./MiniCalendar";
+import { PersonaMenu } from "./PersonaMenu";
+import type { Persona } from "./DemoBar";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -120,10 +122,12 @@ function OrgPill({ name, dark }: { name: string; dark?: boolean }) {
 }
 
 function MadeBy({ dark }: { dark?: boolean }) {
-  return <div className={`text-center text-[0.75rem] tracking-wide ${dark ? "text-white/40" : "text-ink-3/80"}`} data-testid="made-by">Powered by 미래AI랩</div>;
+  return <div className={`text-center text-[0.75rem] tracking-wide ${dark ? "text-white/40" : "text-ink-3/80"}`} data-testid="made-by">미래AI랩 · 김상호 기획 및 제작</div>;
 }
 
-export function AppShell({ user, children, demo = false, topBar, counts, trainingDays }: { user: ShellUser; children: ReactNode; demo?: boolean; topBar?: ReactNode; counts: NavCounts; trainingDays?: TrainingDays }) {
+export function AppShell({ user, children, demo = false, topBar, counts, trainingDays, switcher }: { user: ShellUser; children: ReactNode; demo?: boolean; topBar?: ReactNode; counts: NavCounts; trainingDays?: TrainingDays;
+  /** 체험 모드: 이름을 누르면 다른 사람(본부장·지점장·팀장…) 화면으로. */
+  switcher?: { people: Persona[]; currentId: string } }) {
   const pathname = usePathname();
   const search = useSearchParams();
   const [drawer, setDrawer] = useState(false);
@@ -196,13 +200,23 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
           ))}
         </nav>
         <div className="border-t border-white/10 px-4 pb-3 pt-4">
-          <div className="mb-3 flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-[1rem] font-bold">{user.name.slice(0, 1)}</span>
-            <div className="min-w-0 leading-tight">
-              <div className="truncate text-[1rem] font-bold text-white">{user.name}</div>
-              <div className="truncate text-[0.8438rem] text-white/60">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")}</div>
-            </div>
-          </div>
+          {(() => {
+            const me = (
+              <>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-[1rem] font-bold">{user.name.slice(0, 1)}</span>
+                <div className="min-w-0 leading-tight">
+                  <div className="truncate text-[1rem] font-bold text-white">{user.name}</div>
+                  <div className="truncate text-[0.8438rem] text-white/60">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")}</div>
+                </div>
+              </>
+            );
+            return switcher
+              ? <div className="mb-3 -mx-1.5">
+                  <PersonaMenu people={switcher.people} currentId={switcher.currentId} dark testId="sidebar-persona">{me}</PersonaMenu>
+                  <div className="mt-0.5 px-1.5 text-[0.75rem] text-white/45">이름을 누르면 다른 역할 화면으로</div>
+                </div>
+              : <div className="mb-3 flex items-center gap-3">{me}</div>;
+          })()}
           {!demo && (
             <form action={logout} className="mb-3">
               <button type="submit" className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/15 text-[0.9062rem] font-semibold text-white/85 transition-base hover:bg-white/10">
@@ -274,13 +288,20 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
         <div className="drawer-backdrop fixed inset-0 z-40 bg-ink/45 lg:hidden" onClick={() => setDrawer(false)} data-testid="drawer">
           <div className="drawer-panel absolute inset-y-0 left-0 flex w-[86%] max-w-[340px] flex-col bg-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="메뉴">
             <div className="flex items-center justify-between bg-shell px-4 pb-4 pt-[calc(16px+env(safe-area-inset-top))] text-white">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-[1.0625rem] font-bold">{user.name.slice(0, 1)}</span>
-                <div className="min-w-0 leading-tight">
-                  <div className="truncate text-[1.0625rem] font-bold">{user.name}</div>
-                  <div className="truncate text-[0.875rem] text-white/65">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")} · {user.orgName}</div>
-                </div>
-              </div>
+              {(() => {
+                const me = (
+                  <>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-[1.0625rem] font-bold">{user.name.slice(0, 1)}</span>
+                    <div className="min-w-0 leading-tight">
+                      <div className="truncate text-[1.0625rem] font-bold">{user.name}</div>
+                      <div className="truncate text-[0.875rem] text-white/65">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")} · {user.orgName}</div>
+                    </div>
+                  </>
+                );
+                return switcher
+                  ? <div className="min-w-0 flex-1"><PersonaMenu people={switcher.people} currentId={switcher.currentId} dark testId="drawer-persona">{me}</PersonaMenu></div>
+                  : <div className="flex min-w-0 items-center gap-3">{me}</div>;
+              })()}
               <button type="button" onClick={() => setDrawer(false)} aria-label="닫기" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/80 hover:bg-white/10"><X size={22} /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-3 pb-3 pt-3">

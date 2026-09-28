@@ -31,10 +31,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         order by case role when 'OWNER' then 0 when 'MANAGER' then 1 when 'CALLER' then 2 when 'LEADER' then 3 else 4 end, (select sort from divisions d where d.name = p.division) nulls last, name
         limit 12`)
     : [];
+  // 사이드바 이름 메뉴: everyone in the 사업단 (본부장·지점장·팀장·컨설턴트 …) + how many DBs exist.
+  const [people, leadCount] = demo
+    ? await withService((tx) => Promise.all([
+        tx<Persona[]>`select id, full_name as name, role, title, division from profiles
+          where organization_id = ${viewer.profile.organization_id} and is_active order by full_name`,
+        tx<{ n: number }[]>`select count(*)::int as n from leads where organization_id = ${viewer.profile.organization_id}`.then((r) => r[0].n),
+      ]))
+    : [[], 0];
   return (
     <ServerRenderProvider renderId={randomUUID()}>
     <DeviceViewProvider>
-      <AppShell user={user} counts={counts} trainingDays={trainingDays} demo={demo} topBar={demo ? <DemoBar personas={personas} currentId={viewer.session.userId} ephemeral={isEphemeralDb()} instanceId={DB_INSTANCE_ID} /> : null}>
+      <AppShell user={user} counts={counts} trainingDays={trainingDays} demo={demo} switcher={demo ? { people, currentId: viewer.session.userId } : undefined} topBar={demo ? <DemoBar personas={personas} currentId={viewer.session.userId} ephemeral={isEphemeralDb()} instanceId={DB_INSTANCE_ID} leadCount={leadCount} /> : null}>
         {children}
       </AppShell>
     </DeviceViewProvider>

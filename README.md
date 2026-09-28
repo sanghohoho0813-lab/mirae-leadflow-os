@@ -59,3 +59,13 @@ src/components/layout/DeviceView.tsx PC / Mobile / PC+Mobile 미리보기 + Rout
 scripts/                            migrate · seed · test-db
 qa/                                 Playwright E2E + 증거 스크린샷
 ```
+
+## 소개 영상
+`promo/leadflow-intro.mp4` (41초, 자막형). 화면이 바뀌면 다시 만들기:
+```bash
+npm run db:seed && npm start                 # 다른 터미널
+curl -sL -o promo/PretendardVariable.woff2 https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/woff2/PretendardVariable.woff2
+node promo/capture.mjs                        # 앱 화면 캡처 → promo/shots
+FFMPEG=/path/to/ffmpeg node promo/render.mjs  # → promo/leadflow-intro.mp4
+```
+

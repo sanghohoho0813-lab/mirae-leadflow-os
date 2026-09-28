@@ -1,5 +1,5 @@
 import { withService } from "@/lib/db";
-import { ORG_ID, clearDemoLeads, seedDemo } from "./seed";
+import { ORG_ID, clearDemoLeads, seedDemo , addRandomDemoLeads } from "./seed";
 import shimSql from "../../../supabase/local/0000_supabase_shim.sql";
 import initSql from "../../../supabase/migrations/0001_init.sql";
 import addressSql from "../../../supabase/migrations/0002_lead_address.sql";
@@ -70,6 +70,15 @@ export async function resetDemoData(): Promise<void> {
   await withService(async (tx) => {
     await tx`select pg_advisory_xact_lock(727001)`;
     await seedDemo(tx);
+  });
+}
+
+/** 샘플 DB n건 추가 (5·10·20). */
+export async function addDemoLeads(n: number): Promise<number> {
+  await ensureDemoReady();
+  return withService(async (tx) => {
+    await tx`select pg_advisory_xact_lock(727001)`;
+    return addRandomDemoLeads(tx, n);
   });
 }
 

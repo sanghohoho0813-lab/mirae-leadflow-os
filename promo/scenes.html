@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>리드플로우 소개 영상</title>
+<!--
+  40초 소개 영상 장면. render(t)가 t초의 한 장면을 그린다 (CSS 애니메이션 없음 → 프레임이 정확히 재현됨).
+  브라우저로 열면 미리보기 재생, promo/render.mjs가 30fps로 찍어 MP4로 만든다.
+-->
+<style>
+  @font-face { font-family: "Pretendard"; src: url("PretendardVariable.woff2") format("woff2"); font-weight: 45 920; }
+  :root {
+    --shell: #08323a; --primary: #087a83; --secondary: #1597a3; --accent: #d2704c; --soft: #ddedef;
+    --gold: #e7c873; --canvas: #f3f5f8; --ink: #111827; --ink2: #4b5563; --line: #e5e7eb; --danger: #d64545;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+  body { font-family: "Pretendard", sans-serif; -webkit-font-smoothing: antialiased; color: var(--ink); letter-spacing: -0.02em; word-break: keep-all; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--canvas); }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .dark { background: radial-gradient(1200px 800px at 20% 10%, #0d4450 0%, var(--shell) 60%, #062429 100%); color: #fff; }
+  .light { background: linear-gradient(160deg, #f7fafb 0%, var(--canvas) 55%, #e9f1f2 100%); }
+  .a { will-change: transform, opacity; }
+
+  .tag { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 999px; font-size: 28px; font-weight: 700; }
+  .tag.pain { background: rgba(210,112,76,.18); color: #f4a484; }
+  .tag.sol { background: var(--primary); color: #fff; }
+  .h1 { font-size: 74px; font-weight: 800; line-height: 1.22; letter-spacing: -0.035em; }
+  .h2 { font-size: 64px; font-weight: 800; line-height: 1.25; letter-spacing: -0.035em; }
+  .sub { font-size: 32px; font-weight: 500; line-height: 1.5; color: var(--ink2); }
+  .dark .sub { color: rgba(255,255,255,.7); }
+  em { font-style: normal; color: var(--primary); }
+  .dark em { color: #7fd3d9; }
+
+  .left { position: absolute; left: 140px; top: 0; bottom: 0; width: 760px; display: flex; flex-direction: column; justify-content: center; gap: 34px; }
+
+  /* 단톡방 느낌 (특정 메신저 모양은 쓰지 않음) */
+  .chat { position: absolute; right: 120px; top: 190px; width: 760px; display: flex; flex-direction: column; gap: 22px; }
+  .bubble { max-width: 680px; padding: 22px 28px; border-radius: 26px; font-size: 30px; font-weight: 600; line-height: 1.4; background: rgba(255,255,255,.96); color: var(--ink); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  .bubble .who { display: block; font-size: 22px; font-weight: 700; color: var(--ink2); margin-bottom: 4px; }
+  .bubble.me { align-self: flex-end; background: #cdeef0; }
+  .bubble.warn { background: #ffe9e0; }
+  .bubble.file { display: flex; gap: 16px; align-items: center; }
+  .fileicon { width: 54px; height: 64px; border-radius: 10px; background: var(--soft); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; flex-shrink: 0; }
+
+  .calls { position: absolute; right: 170px; top: 220px; width: 640px; display: flex; flex-direction: column; gap: 24px; }
+  .call { display: flex; align-items: center; gap: 22px; padding: 26px 30px; border-radius: 26px; background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.14); font-size: 32px; font-weight: 700; }
+  .call .ic { width: 64px; height: 64px; border-radius: 50%; background: rgba(210,112,76,.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .call small { display: block; font-size: 24px; font-weight: 500; color: rgba(255,255,255,.6); margin-top: 4px; }
+
+  .note { position: absolute; width: 330px; padding: 30px 30px 34px; background: #fff6c9; color: #3f3a1d; font-size: 32px; font-weight: 700; line-height: 1.35; box-shadow: 0 16px 40px rgba(0,0,0,.35); border-radius: 6px; }
+
+  /* 기기 틀 */
+  .phone { position: absolute; width: 404px; height: 842px; border-radius: 62px; background: #0c1417; padding: 14px; box-shadow: 0 40px 90px rgba(8,50,58,.35), 0 0 0 2px #26343a inset; }
+  .phone .screen { position: relative; width: 100%; height: 100%; border-radius: 48px; overflow: hidden; background: #fff; }
+  .phone img { position: absolute; left: 0; top: 0; width: 100%; }
+  .browser { position: absolute; border-radius: 18px; background: #fff; overflow: hidden; box-shadow: 0 40px 90px rgba(8,50,58,.28), 0 0 0 1px rgba(0,0,0,.06); }
+  .browser .bar { height: 44px; background: #eef1f3; display: flex; align-items: center; gap: 9px; padding: 0 18px; }
+  .browser .bar i { width: 13px; height: 13px; border-radius: 50%; background: #cfd6da; display: block; }
+  .browser .bar span { margin-left: 16px; height: 26px; flex: 1; max-width: 520px; border-radius: 8px; background: #fff; font-size: 15px; color: #8a949b; display: flex; align-items: center; padding-left: 14px; letter-spacing: 0; }
+  .browser .view { position: relative; overflow: hidden; }
+  .browser img { position: absolute; left: 0; top: 0; width: 100%; }
+
+  .ring { position: absolute; border: 6px solid var(--accent); border-radius: 22px; pointer-events: none; }
+  .chip { position: absolute; padding: 16px 26px; border-radius: 18px; background: #fff; box-shadow: 0 18px 40px rgba(8,50,58,.18); font-size: 28px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 12px; }
+  .chip b { color: var(--primary); }
+  .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--primary); display: inline-block; }
+
+  .progress { position: absolute; left: 140px; top: 70px; display: flex; gap: 12px; }
+  .progress i { width: 64px; height: 8px; border-radius: 8px; background: rgba(127,127,127,.25); display: block; }
+  .progress i.on { background: var(--accent); }
+
+  .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 30px; }
+  .brand { display: flex; align-items: center; gap: 28px; }
+  .brand .name { font-size: 104px; font-weight: 850; letter-spacing: -0.04em; }
+  .pill { padding: 10px 24px; border-radius: 12px; background: rgba(255,255,255,.12); font-size: 30px; font-weight: 700; color: #f6d8c8; }
+  .credit { position: absolute; left: 0; right: 0; bottom: 70px; text-align: center; font-size: 26px; font-weight: 600; color: rgba(255,255,255,.55); letter-spacing: 0; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- 0. 도입 -->
+  <section class="scene dark" data-s="0" data-e="3.3">
+    <div class="center">
+      <div class="a sub" data-d="0.15" style="font-size:36px;color:rgba(255,255,255,.75)">스마트 사업단 여러분,</div>
+      <div class="a h1" data-d="0.45" style="font-size:86px">DB 배정부터 교육까지<br><em>아직 단톡방</em>에서 하고 계신가요?</div>
+    </div>
+  </section>
+
+  <!-- 1. 불편함: 누가 먼저 잡았는지 -->
+  <section class="scene dark" data-s="3.3" data-e="6.8">
+    <div class="progress"><i class="on"></i><i></i><i></i><i></i></div>
+    <div class="left">
+      <div class="a" data-d="0.05"><span class="tag pain">불편함 1</span></div>
+      <div class="a h1" data-d="0.2">DB를 단톡방에 올리면<br><em>누가 먼저</em> 잡았는지<br>매번 헷갈리셨죠?</div>
+    </div>
+    <div class="chat">
+      <div class="a bubble" data-d="0.4"><span class="who">콜팀</span>[DB] 태양금속(주) · 9/30(수) 11시 · 인천 남동구</div>
+      <div class="a bubble me" data-d="0.9"><span class="who">컨설턴트 A</span>제가 가겠습니다!</div>
+      <div class="a bubble me" data-d="1.3"><span class="who">컨설턴트 C</span>저도 방금 손 들었는데요…</div>
+      <div class="a bubble warn" data-d="1.8"><span class="who">단장</span>누가 먼저였죠? 연락처는 누구한테 드리나요?</div>
+    </div>
+  </section>
+
+  <!-- 1. 해결: 선착순 신청 -->
+  <section class="scene light" data-s="6.8" data-e="11.8">
+    <div class="progress"><i class="on"></i><i></i><i></i><i></i></div>
+    <div class="left">
+      <div class="a" data-d="0.05"><span class="tag sol">이렇게 해결됩니다</span></div>
+      <div class="a h2" data-d="0.2"><em>[신청]</em> 한 번이면<br>선착순으로 담당이<br>바로 확정됩니다</div>
+      <div class="a sub" data-d="0.5">연락처·상세 메모는 확정된 담당자에게만 열리고,<br>한 사람당 한 건씩 진행합니다.</div>
+    </div>
+    <div class="phone a" data-d="0.25" data-from="80" style="left:1180px; top:119px">
+      <div class="screen"><img id="p1a" src="shots/m-open.png"><img id="p1b" src="shots/m-claim.png" style="opacity:0"></div>
+    </div>
+    <div class="ring" id="r1" style="left:1381px; top:876px; width:172px; height:58px; opacity:0; border-radius:16px"></div>
+    <div class="chip a" data-d="2.6" data-from="30" style="left:1606px; top:470px"><span class="dot"></span> 담당 <b>바로 확정</b></div>
+  </section>
+
+  <!-- 2. 불편함: 결과 전화 -->
+  <section class="scene dark" data-s="11.8" data-e="15.0">
+    <div class="progress"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+    <div class="left">
+      <div class="a" data-d="0.05"><span class="tag pain">불편함 2</span></div>
+      <div class="a h1" data-d="0.2">미팅 다녀온 결과,<br><em>일일이 전화로</em><br>물어보셨죠?</div>
+    </div>
+    <div class="calls">
+      <div class="a call" data-d="0.4"><span class="ic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f4a484" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span><span>컨설턴트 A<small>“하나정밀 미팅 어떻게 됐어요?” · 부재중</small></span></div>
+      <div class="a call" data-d="0.8"><span class="ic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f4a484" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span><span>컨설턴트 C<small>“그린바이오는요?” · 이따 다시 전화</small></span></div>
+      <div class="a call" data-d="1.2"><span class="ic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f4a484" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span><span>컨설턴트 D<small>“결과 좀 알려주세요” · 3일째</small></span></div>
+    </div>
+  </section>
+
+  <!-- 2. 해결: 클릭형 결과 + 단장 화면 -->
+  <section class="scene light" data-s="15.0" data-e="20.5">
+    <div class="progress"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+    <div class="left" style="width:640px">
+      <div class="a" data-d="0.05"><span class="tag sol">이렇게 해결됩니다</span></div>
+      <div class="a h2" data-d="0.2">결과는 <em>버튼 몇 번</em>.<br>입력 안 된 건은<br>단장 화면에 먼저</div>
+      <div class="a sub" data-d="0.5">미팅이 지났는데 결과가 없으면<br>따로 챙기지 않아도 자동으로 뜹니다.</div>
+    </div>
+    <div class="browser a" data-d="0.2" data-from="60" style="left:830px; top:150px; width:1000px">
+      <div class="bar"><i></i><i></i><i></i><span>리드플로우 · 단장 홈</span></div>
+      <div class="view"><img src="shots/d-owner-home.png" data-crop="378,100,1782,1250"></div>
+    </div>
+    <div class="ring" id="r2" style="left:852px; top:282px; width:240px; height:139px; opacity:0"></div>
+    <div class="phone a" data-d="0.8" data-from="90" style="left:1470px; top:300px; transform-origin: top left">
+      <div class="screen"><img src="shots/m-report.png"></div>
+    </div>
+  </section>
+
+  <!-- 3. 불편함: 2차·3차 이력 -->
+  <section class="scene dark" data-s="20.5" data-e="23.6">
+    <div class="progress"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+    <div class="left">
+      <div class="a" data-d="0.05"><span class="tag pain">불편함 3</span></div>
+      <div class="a h1" data-d="0.2">2차·3차 미팅 이야기,<br><em>어디 적어두셨는지</em><br>기억나세요?</div>
+    </div>
+    <div class="note a" data-d="0.45" data-rot="-6" style="left:1150px; top:190px">2차 미팅 때<br>세무사 동석?</div>
+    <div class="note a" data-d="0.75" data-rot="5" style="left:1480px; top:330px; background:#ffe0d4">견적은<br>언제 드리기로…</div>
+    <div class="note a" data-d="1.05" data-rot="-3" style="left:1210px; top:560px; background:#dff3f4">1차 메모는<br>단톡방 어디쯤?</div>
+  </section>
+
+  <!-- 3. 해결: 차수별 결과 -->
+  <section class="scene light" data-s="23.6" data-e="28.6">
+    <div class="progress"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+    <div class="left" style="width:660px">
+      <div class="a" data-d="0.05"><span class="tag sol">이렇게 해결됩니다</span></div>
+      <div class="a h2" data-d="0.2">같은 DB에<br><em>1차 · 2차 · 3차</em>가<br>차수별로 쌓입니다</div>
+      <div class="a sub" data-d="0.5">결과 입력에서 ‘재방문’을 고르면<br>다음 차수 미팅이 바로 잡힙니다.</div>
+    </div>
+    <div class="browser a" data-d="0.2" data-from="60" style="left:850px; top:170px; width:980px">
+      <div class="bar"><i></i><i></i><i></i><span>리드플로우 · (주)대한테크</span></div>
+      <div class="view"><img id="img3" src="shots/d-rounds.png" data-crop="430,569,1082,702"></div>
+    </div>
+    <div class="ring" id="r3a" style="left:897px; top:314px; width:122px; height:55px; opacity:0; border-radius:14px"></div>
+    <div class="ring" id="r3b" style="left:897px; top:565px; width:122px; height:55px; opacity:0; border-radius:14px"></div>
+  </section>
+
+  <!-- 4. 불편함: 교육 자료 -->
+  <section class="scene dark" data-s="28.6" data-e="31.6">
+    <div class="progress"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+    <div class="left">
+      <div class="a" data-d="0.05"><span class="tag pain">불편함 4</span></div>
+      <div class="a h1" data-d="0.2">교육 자료,<br><em>단톡방에서 찾느라</em><br>힘드셨죠?</div>
+    </div>
+    <div class="chat" style="top:230px">
+      <div class="a bubble file" data-d="0.4"><span class="fileicon">PPT</span>교육자료_최종.pptx</div>
+      <div class="a bubble file" data-d="0.7"><span class="fileicon">PPT</span>교육자료_최종_수정본.pptx</div>
+      <div class="a bubble file" data-d="1.0"><span class="fileicon">녹음</span>0921_월요교육_녹음.m4a</div>
+      <div class="a bubble warn" data-d="1.4"><span class="who">컨설턴트</span>지난주 그 자료 어디 있죠…?</div>
+    </div>
+  </section>
+
+  <!-- 4. 해결: 교육 일정 + AI 정리 -->
+  <section class="scene light" data-s="31.6" data-e="36.8">
+    <div class="progress"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
+    <div class="left" style="width:640px">
+      <div class="a" data-d="0.05"><span class="tag sol">이렇게 해결됩니다</span></div>
+      <div class="a h2" data-d="0.2">교육 일정은 <em>달력</em>으로,<br>자료와 <em>AI 핵심 정리</em>는<br>한 곳에</div>
+      <div class="a sub" data-d="0.5">월요일 단장 교육 · 수요일 본부장 교육.<br>녹취를 올리면 핵심·할 일·상담 멘트로 정리됩니다.</div>
+    </div>
+    <div class="browser a" data-d="0.2" data-from="60" style="left:830px; top:150px; width:1000px">
+      <div class="bar"><i></i><i></i><i></i><span>리드플로우 · 교육 일정</span></div>
+      <div class="view"><img src="shots/d-schedule.png" data-crop="378,95,1782,1000"></div>
+    </div>
+    <div class="phone a" data-d="0.8" data-from="90" style="left:1470px; top:300px">
+      <div class="screen"><img src="shots/m-training.png"></div>
+    </div>
+  </section>
+
+  <!-- 5. 마무리 -->
+  <section class="scene dark" data-s="36.8" data-e="41.2">
+    <div class="center">
+      <div class="brand a" data-d="0.1">
+        <svg width="120" height="120" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="11" fill="#087a83"/><path d="M9 28 L16 12 L20.5 21 L24 14 L31 28" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="28" r="3" fill="#E7C873"/></svg>
+        <span class="name">리드플로우</span>
+      </div>
+      <div class="a" data-d="0.35"><span class="pill">스마트 사업단</span></div>
+      <div class="a h2" data-d="0.6" style="font-size:54px; font-weight:700">DB 배정 · 미팅 · 결과 · 후속 · 교육<br><em>한 곳에서</em> 끝냅니다</div>
+    </div>
+    <div class="credit a" data-d="1.0">미래AI랩 · 김상호 기획 및 제작</div>
+  </section>
+
+</div>
+<script>
+  const DURATION = 41.2;
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const easeOut = (x) => 1 - Math.pow(1 - clamp(x), 3);
+  const easeInOut = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  const scenes = [...document.querySelectorAll(".scene")];
+  const FADE = 0.35;
+
+  function pulse(el, t, start, end) {
+    if (!el) return;
+    const on = t >= start && t <= end;
+    const k = on ? (Math.sin((t - start) * Math.PI * 2 * 1.1) + 1) / 2 : 0;
+    el.style.opacity = on ? String(easeOut((t - start) / 0.3) * (0.55 + 0.45 * k)) : "0";
+    el.style.transform = `scale(${1 + 0.05 * k})`;
+  }
+
+  window.render = function (t) {
+    for (const s of scenes) {
+      const a = +s.dataset.s, e = +s.dataset.e;
+      const local = t - a;
+      const visible = t >= a - 0.001 && t < e + FADE;
+      if (!visible) { s.style.opacity = "0"; s.style.display = "none"; continue; }
+      s.style.display = "block";
+      // crossfade with the next scene at the boundary
+      const fin = a === 0 ? 1 : easeInOut(local / FADE);
+      const fout = 1 - easeInOut((t - e) / FADE);
+      s.style.opacity = String(Math.min(fin, fout));
+      s.style.zIndex = String(Math.round(a * 10));
+      for (const el of s.querySelectorAll(".a")) {
+        const d = +(el.dataset.d || 0), from = +(el.dataset.from || 36), rot = +(el.dataset.rot || 0);
+        const p = easeOut((local - d) / 0.6);
+        el.style.opacity = String(p);
+        const base = el.style.transformOrigin ? "" : "";
+        el.style.transform = `translateY(${(1 - p) * from}px) rotate(${rot * p}deg) scale(${0.97 + 0.03 * p})${base}`;
+      }
+    }
+    // Scene 1 해결: 목록 → 신청 확인창, 신청하기 버튼 강조
+    const s1 = t - 6.8;
+    const p1b = document.getElementById("p1b");
+    p1b.style.opacity = String(easeInOut((s1 - 1.7) / 0.5));
+    document.getElementById("p1a").style.transform = `translateY(${-easeInOut((s1 - 0.4) / 1.2) * 60}px)`;
+    pulse(document.getElementById("r1"), t, 6.8 + 2.3, 11.6);
+    // Scene 2 해결: 결과 미입력 카드 강조
+    pulse(document.getElementById("r2"), t, 15.0 + 1.3, 20.3);
+    // Scene 3 해결: 2차 → 1차 순서로 강조
+    pulse(document.getElementById("r3a"), t, 23.6 + 1.2, 28.4);
+    pulse(document.getElementById("r3b"), t, 23.6 + 2.2, 28.4);
+  };
+
+  // 캡처 크기(2160px 폭)의 일부만 확대해서 보여준다: data-crop="x,y,w,h"
+  function applyCrops() {
+    for (const img of document.querySelectorAll("img[data-crop]")) {
+      const [x, y, w, h] = img.dataset.crop.split(",").map(Number);
+      const view = img.parentElement, k = view.clientWidth / w;
+      view.style.height = `${h * k}px`;
+      img.style.width = `${2160 * k}px`;
+      img.style.left = `${-x * k}px`;
+      img.style.top = `${-y * k}px`;
+    }
+  }
+  applyCrops();
+
+  // 브라우저에서 열면 미리보기로 재생
+  if (!navigator.webdriver) {
+    const t0 = performance.now();
+    const loop = () => { window.render(((performance.now() - t0) / 1000) % DURATION); requestAnimationFrame(loop); };
+    document.fonts.ready.then(loop);
+  } else {
+    window.render(0);
+  }
+</script>
+</body>
+</html>

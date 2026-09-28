@@ -464,3 +464,88 @@ export async function clearDemoLeads(tx: TransactionSql): Promise<void> {
   await tx`delete from lead_private_details where organization_id = ${ORG_ID}`;
   await tx`delete from leads where organization_id = ${ORG_ID}`;
 }
+
+// ------------------------------------------------------------ 샘플 DB 추가 (5·10·20건)
+// Random but plausible DBs on top of whatever is there: mostly 사업단 공통 신청 가능,
+// some 본부 전용 (2본부·3본부 본부장이 등록), some 공개 대기. Meetings on weekdays, 9–17시.
+const pick = <T,>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)];
+const pickSome = <T,>(a: readonly T[], min: number, max: number): T[] => {
+  const n = min + Math.floor(Math.random() * (max - min + 1));
+  return [...a].sort(() => Math.random() - 0.5).slice(0, n);
+};
+
+const NAME_HEAD = ["한빛", "대성", "미래", "새한", "동방", "청운", "성진", "우진", "가온", "해솔", "누리", "태림", "세움", "진성", "한울", "동일", "보람", "신화", "명성", "다올", "오성", "금강", "삼원", "은하", "푸른", "제일", "나래", "하늘", "대명", "정우"];
+const KIND: { word: string; industry: string }[] = [
+  { word: "정밀", industry: "제조 · 금속·기계" }, { word: "기계", industry: "제조 · 금속·기계" },
+  { word: "전자", industry: "제조 · 전자·전기" }, { word: "오토텍", industry: "제조 · 자동차 부품" },
+  { word: "식품", industry: "제조 · 식품" }, { word: "푸드", industry: "제조 · 식품" },
+  { word: "케미칼", industry: "제조 · 화학·플라스틱" }, { word: "바이오", industry: "제조 · 바이오·의료기기" },
+  { word: "메디칼", industry: "제조 · 바이오·의료기기" }, { word: "건설", industry: "건설·설비 · 종합건설" },
+  { word: "이엔지", industry: "건설·설비 · 인테리어·설비" }, { word: "전기통신", industry: "건설·설비 · 전기·통신공사" },
+  { word: "소프트", industry: "IT·소프트웨어 · 소프트웨어 개발" }, { word: "랩스", industry: "IT·소프트웨어 · 플랫폼·앱" },
+  { word: "유통", industry: "도소매·유통 · 도매" }, { word: "트레이딩", industry: "도소매·유통 · 무역" },
+  { word: "물류", industry: "서비스 · 물류·운송" }, { word: "디자인", industry: "서비스 · 광고·디자인" },
+];
+const PLACES: { region: string; road: string }[] = [
+  { region: "서울 강남구", road: "테헤란로" }, { region: "서울 금천구", road: "가산디지털2로" }, { region: "서울 구로구", road: "디지털로" },
+  { region: "서울 성동구", road: "성수이로" }, { region: "서울 마포구", road: "월드컵북로" }, { region: "서울 송파구", road: "문정로" },
+  { region: "서울 영등포구", road: "영등포로" }, { region: "경기 성남시", road: "판교역로" }, { region: "경기 화성시", road: "동탄대로" },
+  { region: "경기 안산시", road: "산단로" }, { region: "경기 시흥시", road: "공단1대로" }, { region: "경기 수원시", road: "광교중앙로" },
+  { region: "경기 용인시", road: "기흥로" }, { region: "경기 김포시", road: "김포한강로" }, { region: "경기 평택시", road: "평택로" },
+  { region: "경기 부천시", road: "길주로" }, { region: "경기 고양시", road: "중앙로" }, { region: "인천 남동구", road: "남동대로" },
+  { region: "인천 서구", road: "가좌로" },
+];
+const SURNAME = ["김", "이", "박", "최", "정", "강", "조", "윤", "장", "임", "한", "오", "서", "신", "권", "황"];
+const GIVEN = ["영수", "정호", "민수", "성진", "현우", "지훈", "상철", "경희", "미경", "수진", "동욱", "재형", "병철", "은정", "태호", "준영"];
+const TITLES = ["대표", "대표", "대표", "전무이사", "상무이사", "이사", "실장", "부장"];
+const INTERESTS = ["절세·법인", "가지급금", "가업승계", "M&A", "사내근로복지기금", "정책자금", "고용지원금", "기업부설연구소", "세액공제", "벤처인증", "기업인증", "정부지원사업"];
+const NOTES = [
+  "작년 매출 약 40억, 올해 설비 투자 계획 있음",
+  "대표님이 숫자로 설명하는 걸 좋아하심. 자료 준비해 가면 좋음",
+  "직원 15명, 청년 채용 예정 2명",
+  "가지급금 약 3억 추정, 세무사와 정리 방법 고민 중",
+  "기존 정책자금 이용 이력 있음(중진공)",
+  "연구 전담 인력 1명 있음. 연구소 설립 문의",
+  "자녀에게 회사 승계 고민. 지분 정리부터 궁금해하심",
+  "오전 통화 선호. 방문 전날 문자 드리기",
+  "매각 제안 받은 적 있음. 기업가치 평가 궁금",
+  "벤처인증 받으면 어떤 혜택이 있는지 문의",
+];
+
+export async function addRandomDemoLeads(tx: TransactionSql, count: number): Promise<number> {
+  const n = Math.max(1, Math.min(50, Math.floor(count)));
+  const used = new Set((await tx<{ company_name: string }[]>`select company_name from leads where organization_id = ${ORG_ID}`).map((r) => r.company_name));
+  for (let i = 0; i < n; i++) {
+    let company = "";
+    let kind = pick(KIND);
+    for (let tries = 0; tries < 30; tries++) {
+      kind = pick(KIND);
+      const head = pick(NAME_HEAD);
+      company = Math.random() < 0.5 ? `(주)${head}${kind.word}` : `${head}${kind.word}(주)`;
+      if (!used.has(company)) break;
+    }
+    used.add(company);
+    const place = pick(PLACES);
+    const interest = pickSome(INTERESTS, 1, 3);
+    const roll = Math.random();
+    // 55% 사업단 공통 신청 가능, 25% 본부 전용(바로 공개), 20% 공개 대기
+    const status = roll < 0.8 ? "OPEN" : "DRAFT";
+    const division = roll >= 0.55 && roll < 0.8 ? pick(["2본부", "3본부"]) : undefined;
+    const creator = division === "2본부" ? U.leader : division === "3본부" ? U.leaderB : U.caller;
+    const at = wd(1 + Math.floor(Math.random() * 10), 9 + Math.floor(Math.random() * 9), Math.random() < 0.3 ? 30 : 0);
+    const createdAt = new Date(Date.now() - Math.floor(Math.random() * 3) * 3600000);
+    const published = status === "OPEN" ? createdAt : null;
+    const summary = [kind.industry, `${interest.join("·")} 관심`].join(", ");
+    const [{ id }] = await tx<{ id: string }[]>`insert into leads(organization_id, company_name, region, industry, meeting_at, meeting_method, public_summary, status, created_by, caller_id, published_at, created_at, division_id)
+      values (${ORG_ID}, ${company}, ${place.region}, ${kind.industry}, ${at}, 'VISIT', ${summary}, ${status}, ${creator.id}, ${division ? null : U.caller.id}, ${published}, ${createdAt}, ${DIV(division)})
+      returning id`;
+    const phone = `010-${4000 + Math.floor(Math.random() * 5999)}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
+    await tx`insert into lead_private_details(lead_id, organization_id, contact_name, contact_title, contact_phone, address, interest_tags, extra_note)
+      values (${id}, ${ORG_ID}, ${pick(SURNAME) + pick(GIVEN)}, ${pick(TITLES)}, ${phone}, ${`${place.region} ${place.road} ${10 + Math.floor(Math.random() * 390)}`}, ${interest}, ${pickSome(NOTES, 1, 2).join("\n")})`;
+    await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, to_status, created_at) values (${ORG_ID}, ${id}, ${creator.id}, 'CREATE', 'DRAFT', ${createdAt})`;
+    if (published) {
+      await tx`insert into activity_logs(organization_id, lead_id, actor_id, action, from_status, to_status, created_at) values (${ORG_ID}, ${id}, ${division ? creator.id : U.owner.id}, 'PUBLISH', 'DRAFT', 'OPEN', ${published})`;
+    }
+  }
+  return n;
+}

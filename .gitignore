@@ -13,3 +13,8 @@ qa/screenshots/**/*.png
 !qa/screenshots/.gitkeep
 tsconfig.tsbuildinfo
 .pglite/
+
+# 소개 영상 작업 파일 (promo/capture.mjs·render.mjs가 다시 만든다)
+promo/shots/
+promo/.frames/
+promo/*.woff2

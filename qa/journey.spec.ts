@@ -861,3 +861,68 @@ test("27. 교육 일정: 달력·한 달 일정 등록·메뉴 속 작은 달력
   await shot(m, "m390-27-training-schedule");
   await m.context().close();
 });
+
+test("28. 사이드바 이름 누르기 → 본부장·지점장·팀장 화면으로 바꾸기 (위쪽 막대도 그대로)", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const p = await ctx.newPage();
+  await go(p, "/");
+  await expect(p.getByTestId("sidebar").getByTestId("made-by")).toHaveText("미래AI랩 · 김상호 기획 및 제작");
+  await p.getByTestId("sidebar-persona").click();
+  const menu = p.getByTestId("persona-menu");
+  await expect(menu).toContainText("사업단 운영");
+  await expect(menu).toContainText("2본부");
+  await expect(menu).toContainText("지점장");
+  await shot(p, "28-persona-menu", false);
+  await menu.getByTestId("persona-menu-10000000-0000-4000-8000-000000000013").click(); // 2본부 지점장 B
+  await expect(p.getByRole("heading", { name: /지점장 B님/ })).toBeVisible();
+  await expect(p.getByTestId("persona-menu")).toHaveCount(0);
+  await expect(p.getByTestId("sidebar")).toContainText("2본부 지점장");
+  // 위쪽 막대 방식도 그대로
+  await p.getByTestId(`persona-${U.leader2}`).click();
+  await expect(p.getByRole("heading", { name: /서인수 본부장님/ })).toBeVisible();
+  await ctx.close();
+
+  // 모바일: 메뉴(☰) 안 이름으로도 바꾼다
+  const m = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const mp = await m.newPage();
+  await go(mp, "/");
+  await mp.getByTestId("menu-button").click();
+  await mp.getByTestId("drawer-persona").click();
+  await mp.getByTestId("persona-menu").getByTestId("persona-menu-10000000-0000-4000-8000-000000000014").click(); // 2본부 팀장 B
+  await expect(mp.getByRole("heading", { name: /팀장 B님/ })).toBeVisible();
+  expect(await mp.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await m.close();
+});
+
+test("29. 샘플 DB: 전체 삭제 · 5개 · 10개 · 20개 추가 · 처음 샘플로", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const p = await ctx.newPage();
+  await go(p, "/");
+  await p.getByTestId(`persona-${U.owner}`).click();
+  await expect(p.getByRole("heading", { name: /송하균 단장님/ })).toBeVisible();
+  const open = async () => { await p.getByTestId("demo-reset").click(); await expect(p.getByTestId("demo-lead-count")).toBeVisible(); };
+  const count = async (n: number) => { await open(); await expect(p.getByTestId("demo-lead-count")).toHaveText(`지금 DB ${n}건`); };
+
+  await open();
+  await shot(p, "29-sample-db-dialog", false);
+  await p.getByTestId("demo-reset-empty").click();
+  await expect(p.getByText("샘플 DB를 모두 지웠습니다")).toBeVisible();
+  await count(0);
+  await p.getByTestId("demo-add-5").click();
+  await expect(p.getByText("샘플 DB 5건을 추가했습니다")).toBeVisible();
+  await count(5);
+  await p.getByTestId("demo-add-10").click();
+  await expect(p.getByText("샘플 DB 10건을 추가했습니다")).toBeVisible();
+  await count(15);
+  await p.getByTestId("demo-add-20").click();
+  await expect(p.getByText("샘플 DB 20건을 추가했습니다")).toBeVisible();
+  await go(p, "/leads?tab=all");
+  await expect(p.locator('[data-testid^="lead-row-"]').first()).toBeVisible();
+  expect(await p.locator('[data-testid^="lead-row-"]').count()).toBeGreaterThanOrEqual(20);
+  await shot(p, "29-sample-db-added");
+  await count(35);
+  await p.getByTestId("demo-reset-confirm").click();
+  await expect(p.getByText("처음 상태로 되돌렸습니다")).toBeVisible();
+  await count(20);
+  await ctx.close();
+});
