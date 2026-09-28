@@ -30,6 +30,13 @@ async function loginAs(browser: Browser, userId: string, viewport = { width: 144
   return page;
 }
 
+/** 체험 막대 [사용자 변경하기] → 사람 고르기. */
+async function switchUser(page: Page, id: string) {
+  await page.getByTestId("demo-switch-user").click();
+  await page.getByTestId("persona-menu").getByTestId(`persona-menu-${id}`).click();
+  await expect(page.getByTestId("persona-menu")).toHaveCount(0);
+}
+
 /** Evidence screenshot: settle animations first. */
 async function shot(page: Page, name: string, fullPage = true) {
   await page.waitForTimeout(350);
@@ -399,8 +406,7 @@ test("11. Demo mode: no login needed, one click switches role", async ({ browser
   // requests first: a refresh used to hang in exactly this state.
   await p.waitForLoadState("networkidle");
   const t0 = Date.now();
-  await p.getByTestId(`persona-${U.cA}`).click();
-  await expect(p.getByTestId(`persona-${U.cA}`)).toHaveAttribute("aria-checked", "true", { timeout: 300 });
+  await switchUser(p, U.cA);
   await expect(p.getByRole("heading", { name: /컨설턴트 A님/ })).toBeVisible();
   expect(Date.now() - t0).toBeLessThan(3000);
   await expect(p.getByTestId("sidebar").getByRole("link", { name: "신청 가능 DB" })).toBeVisible();
@@ -408,14 +414,14 @@ test("11. Demo mode: no login needed, one click switches role", async ({ browser
   await shot(p, "20-demo-consultant", false);
 
   // One click → caller.
-  await p.getByTestId(`persona-${U.caller}`).click();
+  await switchUser(p, U.caller);
   await expect(p.getByRole("heading", { name: /이제원 콜팀장님/ })).toBeVisible();
 
   // Same DB detail seen by two roles: owner sees contact, other consultant does not.
   await go(p, `/leads/${UURIM}`);
-  await p.getByTestId(`persona-${U.owner}`).click();
+  await switchUser(p, U.owner);
   await expect(p.getByTestId("contact-phone")).toBeVisible();
-  await p.getByTestId(`persona-${U.cC}`).click();
+  await switchUser(p, U.cC);
   await expect(p.getByTestId("private-locked")).toBeVisible();
   await expect(p.getByTestId("contact-phone")).toHaveCount(0);
 
@@ -432,7 +438,7 @@ test("12. Demo mode on mobile 390: role bar fits without horizontal scroll", asy
   await go(p, "/");
   await expect(p.getByTestId("demo-bar")).toBeVisible();
   expect(await p.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  await p.getByTestId(`persona-${U.cA}`).click();
+  await switchUser(p, U.cA);
   await expect(p.getByRole("heading", { name: /컨설턴트 A님/ })).toBeVisible();
   await shot(p, "m390-08-demo-bar", false);
   await ctx.close();
@@ -465,7 +471,7 @@ test("13. Address: copy address, copy meeting info, open in map apps", async ({ 
   await shot(p, "m390-09-address", false);
 
   // Before claiming, another consultant sees neither the address nor the copy buttons.
-  await p.getByTestId(`persona-${U.cA}`).click();
+  await switchUser(p, U.cA);
   await expect(main.getByTestId("private-locked")).toBeVisible();
   await expect(main.getByTestId("meeting-address")).toHaveCount(0);
   await ctx.close();
@@ -867,6 +873,10 @@ test("28. 사이드바 이름 누르기 → 본부장·지점장·팀장 화면�
   const p = await ctx.newPage();
   await go(p, "/");
   await expect(p.getByTestId("sidebar").getByTestId("made-by")).toHaveText("미래AI랩 · 김상호 기획 및 제작");
+  // 위쪽 명단은 없고, 글자가 보이는 버튼만
+  await expect(p.getByTestId("demo-switch-user")).toHaveText("사용자 변경하기");
+  await expect(p.getByTestId("demo-reset")).toHaveText("샘플 DB 추가·삭제");
+  await expect(p.locator('[data-testid^="persona-10000000"]')).toHaveCount(0);
   await p.getByTestId("sidebar-persona").click();
   const menu = p.getByTestId("persona-menu");
   await expect(menu).toContainText("사업단 운영");
@@ -878,7 +888,7 @@ test("28. 사이드바 이름 누르기 → 본부장·지점장·팀장 화면�
   await expect(p.getByTestId("persona-menu")).toHaveCount(0);
   await expect(p.getByTestId("sidebar")).toContainText("2본부 지점장");
   // 위쪽 막대 방식도 그대로
-  await p.getByTestId(`persona-${U.leader2}`).click();
+  await switchUser(p, U.leader2);
   await expect(p.getByRole("heading", { name: /서인수 본부장님/ })).toBeVisible();
   await ctx.close();
 
@@ -886,10 +896,22 @@ test("28. 사이드바 이름 누르기 → 본부장·지점장·팀장 화면�
   const m = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const mp = await m.newPage();
   await go(mp, "/");
+  await expect(mp.getByTestId("demo-bar")).toContainText("사용자 변경");
+  await expect(mp.getByTestId("demo-bar")).toContainText("샘플 DB");
   await mp.getByTestId("menu-button").click();
-  await mp.getByTestId("drawer-persona").click();
+  const tools = mp.getByTestId("drawer-demo-tools");
+  await expect(tools).toContainText("사용자 변경하기");
+  await expect(tools).toContainText("5개 추가");
+  await expect(tools).toContainText("전체 삭제");
+  await shot(mp, "m390-28-drawer-tools", false);
+  await mp.getByTestId("drawer-switch-user").click();
   await mp.getByTestId("persona-menu").getByTestId("persona-menu-10000000-0000-4000-8000-000000000014").click(); // 2본부 팀장 B
   await expect(mp.getByRole("heading", { name: /팀장 B님/ })).toBeVisible();
+  await expect(mp.getByTestId("drawer")).toHaveCount(0);
+  // ☰ 안에서 바로 샘플 5개 추가
+  await mp.getByTestId("menu-button").click();
+  await mp.getByTestId("drawer-demo-tools").getByTestId("demo-add-5").click();
+  await expect(mp.getByText("샘플 DB 5건을 추가했습니다")).toBeVisible();
   expect(await mp.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await m.close();
 });
@@ -898,7 +920,7 @@ test("29. 샘플 DB: 전체 삭제 · 5개 · 10개 · 20개 추가 · 처음 �
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const p = await ctx.newPage();
   await go(p, "/");
-  await p.getByTestId(`persona-${U.owner}`).click();
+  await switchUser(p, U.owner);
   await expect(p.getByRole("heading", { name: /송하균 단장님/ })).toBeVisible();
   const open = async () => { await p.getByTestId("demo-reset").click(); await expect(p.getByTestId("demo-lead-count")).toBeVisible(); };
   const count = async (n: number) => { await open(); await expect(p.getByTestId("demo-lead-count")).toHaveText(`지금 DB ${n}건`); };
@@ -906,6 +928,7 @@ test("29. 샘플 DB: 전체 삭제 · 5개 · 10개 · 20개 추가 · 처음 �
   await open();
   await shot(p, "29-sample-db-dialog", false);
   await p.getByTestId("demo-reset-empty").click();
+  await p.getByTestId("demo-clear-confirm").click();
   await expect(p.getByText("샘플 DB를 모두 지웠습니다")).toBeVisible();
   await count(0);
   await p.getByTestId("demo-add-5").click();

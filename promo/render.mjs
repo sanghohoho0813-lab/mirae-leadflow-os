@@ -5,7 +5,7 @@ import { mkdirSync, rmSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
-const FPS = 30, DURATION = 41.2;
+const FPS = 30;
 const FRAMES = "promo/.frames";
 const OUT = process.env.OUT ?? "promo/leadflow-intro.mp4";
 const FFMPEG = process.env.FFMPEG ?? "ffmpeg";
@@ -20,7 +20,7 @@ await page.evaluate(async () => {
   await document.fonts.ready;
   await Promise.all([...document.images].map((i) => i.decode()));
 });
-await page.evaluate(() => window.dispatchEvent(new Event("resize")));
+const DURATION = await page.evaluate(() => window.DURATION);
 
 if (only) {
   for (const t of only) {

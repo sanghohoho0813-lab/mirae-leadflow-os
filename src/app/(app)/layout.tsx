@@ -18,20 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = { name: viewer.profile.full_name, role: viewer.profile.role, title: viewer.profile.title, division: viewer.profile.division, orgName: viewer.organization.name, leader: isLeader(viewer), usesDb: usesDb(viewer) };
   const demo = isDemoMode();
   const [counts, trainingDays] = await withUser(viewer.session.userId, (tx) => Promise.all([getNavCounts(tx, viewer.session.userId, isManager(viewer)), listTrainingDays(tx)]));
-  const personas = demo
-    // One of each role (컨설턴트 3명) keeps the bar short; the current user is always included.
-    ? await withService((tx) => tx<Persona[]>`
-        select id, name, role, title from (
-          select id, full_name as name, role, title, division,
-            -- one 컨설턴트 per 본부 (plain 컨설턴트 first), both 본부장, 단장·비서·콜팀
-            row_number() over (partition by role, case when role = 'CONSULTANT' then division end order by title nulls first, full_name) as rn
-          from profiles where organization_id = ${viewer.profile.organization_id} and is_active
-        ) p
-        where rn <= case role when 'LEADER' then 2 else 1 end or id = ${viewer.session.userId}
-        order by case role when 'OWNER' then 0 when 'MANAGER' then 1 when 'CALLER' then 2 when 'LEADER' then 3 else 4 end, (select sort from divisions d where d.name = p.division) nulls last, name
-        limit 12`)
-    : [];
-  // 사이드바 이름 메뉴: everyone in the 사업단 (본부장·지점장·팀장·컨설턴트 …) + how many DBs exist.
+  // 체험 도구: everyone in the 사업단 (사용자 변경하기) + how many DBs exist (샘플 DB 추가·삭제).
   const [people, leadCount] = demo
     ? await withService((tx) => Promise.all([
         tx<Persona[]>`select id, full_name as name, role, title, division from profiles
@@ -39,10 +26,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         tx<{ n: number }[]>`select count(*)::int as n from leads where organization_id = ${viewer.profile.organization_id}`.then((r) => r[0].n),
       ]))
     : [[], 0];
+  const tools = demo ? { people, currentId: viewer.session.userId, leadCount, ephemeral: isEphemeralDb() } : undefined;
   return (
     <ServerRenderProvider renderId={randomUUID()}>
     <DeviceViewProvider>
-      <AppShell user={user} counts={counts} trainingDays={trainingDays} demo={demo} switcher={demo ? { people, currentId: viewer.session.userId } : undefined} topBar={demo ? <DemoBar personas={personas} currentId={viewer.session.userId} ephemeral={isEphemeralDb()} instanceId={DB_INSTANCE_ID} leadCount={leadCount} /> : null}>
+      <AppShell user={user} counts={counts} trainingDays={trainingDays} demo={demo} tools={tools} topBar={tools ? <DemoBar tools={tools} instanceId={DB_INSTANCE_ID} /> : null}>
         {children}
       </AppShell>
     </DeviceViewProvider>

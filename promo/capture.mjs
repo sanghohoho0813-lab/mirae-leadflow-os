@@ -65,6 +65,17 @@ p = await as(ID.owner, { width: 1440, height: 900 }, 1.5);
 await open(p, "/");
 await snap(p, "d-owner-home");
 
+// 3-1) 단장: 콜팀이 올린 DB → [공개하기] 한 번 (PC)
+await open(p, "/leads/30000000-0000-4000-8000-000000000001");
+await snap(p, "d-publish");
+
+// 3-2) 단장: 교육 확인 현황 (누가 읽었는지)
+await open(p, `/trainings/${T1}`);
+await p.getByTestId("read-status").scrollIntoViewIfNeeded();
+await p.evaluate(() => { document.querySelector('[data-testid="read-status"]')?.scrollIntoView({ block: "center" }); });
+await p.waitForTimeout(300);
+await snap(p, "d-reads");
+
 // 4) 2차·3차 미팅: 같은 DB에 차수별로 (PC)
 await open(p, `/leads/${DAEHAN}`);
 const tomorrow = new Date(Date.now() + 86400000 + 9 * 3600000).toISOString().slice(0, 10);

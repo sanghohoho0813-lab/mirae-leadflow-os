@@ -48,6 +48,12 @@
   .call .ic { width: 64px; height: 64px; border-radius: 50%; background: rgba(210,112,76,.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .call small { display: block; font-size: 24px; font-weight: 500; color: rgba(255,255,255,.6); margin-top: 4px; }
 
+  .clock { position: absolute; right: 150px; top: 120px; font-size: 30px; font-weight: 700; color: #f4a484; display: flex; align-items: center; gap: 12px; }
+  .memory { position: absolute; right: 170px; top: 210px; width: 660px; display: flex; flex-direction: column; gap: 20px; }
+  .memory .label { font-size: 26px; font-weight: 700; color: rgba(255,255,255,.6); }
+  .memory .card { padding: 24px 30px; border-radius: 22px; background: rgba(255,255,255,.95); color: var(--ink); font-size: 34px; font-weight: 700; }
+  .chips { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .chips span { padding: 12px 24px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.2); font-size: 28px; font-weight: 700; color: #fff; }
   .note { position: absolute; width: 330px; padding: 30px 30px 34px; background: #fff6c9; color: #3f3a1d; font-size: 32px; font-weight: 700; line-height: 1.35; box-shadow: 0 16px 40px rgba(0,0,0,.35); border-radius: 6px; }
 
   /* 기기 틀 */
@@ -80,152 +86,167 @@
 <body>
 <div id="stage">
 
-  <!-- 0. 도입 -->
-  <section class="scene dark" data-s="0" data-e="3.3">
+  <!-- 0. 도입: 관리자에게 -->
+  <section class="scene dark" data-s="0" data-e="3.4">
     <div class="center">
-      <div class="a sub" data-d="0.15" style="font-size:36px;color:rgba(255,255,255,.75)">스마트 사업단 여러분,</div>
-      <div class="a h1" data-d="0.45" style="font-size:86px">DB 배정부터 교육까지<br><em>아직 단톡방</em>에서 하고 계신가요?</div>
+      <div class="a sub" data-d="0.15" style="font-size:38px;color:rgba(255,255,255,.75)">단장님 · 본부장님,</div>
+      <div class="a h1" data-d="0.45" style="font-size:86px">비싼 DB, 나간 다음에도<br><em>관리되고</em> 있나요?</div>
     </div>
   </section>
 
-  <!-- 1. 불편함: 누가 먼저 잡았는지 -->
-  <section class="scene dark" data-s="3.3" data-e="6.8">
+  <!-- 1. 불편함: 밤늦은 DB 배분 -->
+  <section class="scene dark" data-s="3.4" data-e="7.6">
     <div class="progress"><i class="on"></i><i></i><i></i><i></i></div>
     <div class="left">
-      <div class="a" data-d="0.05"><span class="tag pain">불편함 1</span></div>
-      <div class="a h1" data-d="0.2">DB를 단톡방에 올리면<br><em>누가 먼저</em> 잡았는지<br>매번 헷갈리셨죠?</div>
+      <div class="a" data-d="0.05"><span class="tag pain">불편함 1 · DB 배분</span></div>
+      <div class="a h1" data-d="0.2">저녁마다 몰아서 나눠주다<br><em>밤늦게</em> 보내는 날,<br>있으셨죠?</div>
+      <div class="a sub" data-d="0.5">준비할 시간 없이 간 미팅은 결과도 아쉽습니다.</div>
     </div>
-    <div class="chat">
-      <div class="a bubble" data-d="0.4"><span class="who">콜팀</span>[DB] 태양금속(주) · 9/30(수) 11시 · 인천 남동구</div>
-      <div class="a bubble me" data-d="0.9"><span class="who">컨설턴트 A</span>제가 가겠습니다!</div>
-      <div class="a bubble me" data-d="1.3"><span class="who">컨설턴트 C</span>저도 방금 손 들었는데요…</div>
-      <div class="a bubble warn" data-d="1.8"><span class="who">단장</span>누가 먼저였죠? 연락처는 누구한테 드리나요?</div>
+    <div class="clock a" data-d="0.3"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#f4a484" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> 밤 11시 42분</div>
+    <div class="chat" style="top:200px">
+      <div class="a bubble" data-d="0.5"><span class="who">단장 · 오후 11:42</span>[DB] 내일 오전 10시 태양금속(주) → 컨설턴트 A</div>
+      <div class="a bubble" data-d="0.9"><span class="who">단장 · 오후 11:44</span>[DB] 내일 오후 2시 그린바이오 → 컨설턴트 C</div>
+      <div class="a bubble me warn" data-d="1.5"><span class="who">컨설턴트 A · 오후 11:58</span>지금 봤습니다… 내일 아침이라 준비가 빠듯하네요</div>
     </div>
   </section>
 
-  <!-- 1. 해결: 선착순 신청 -->
-  <section class="scene light" data-s="6.8" data-e="11.8">
+  <!-- 1. 해결: 공개하기 한 번 → 컨설턴트가 직접 신청 -->
+  <section class="scene light" data-s="7.6" data-e="12.8">
     <div class="progress"><i class="on"></i><i></i><i></i><i></i></div>
-    <div class="left">
+    <div class="left" style="width:640px">
       <div class="a" data-d="0.05"><span class="tag sol">이렇게 해결됩니다</span></div>
-      <div class="a h2" data-d="0.2"><em>[신청]</em> 한 번이면<br>선착순으로 담당이<br>바로 확정됩니다</div>
-      <div class="a sub" data-d="0.5">연락처·상세 메모는 확정된 담당자에게만 열리고,<br>한 사람당 한 건씩 진행합니다.</div>
+      <div class="a h2" data-d="0.2"><em>[공개하기]</em> 한 번이면<br>컨설턴트가<br>직접 신청합니다</div>
+      <div class="a sub" data-d="0.5">누구에게 줄지 일일이 정하지 않아도 됩니다.<br>주소·연락처·콜 코멘트가 바로 열려<br>미팅 준비 시간이 생깁니다.</div>
     </div>
-    <div class="phone a" data-d="0.25" data-from="80" style="left:1180px; top:119px">
-      <div class="screen"><img id="p1a" src="shots/m-open.png"><img id="p1b" src="shots/m-claim.png" style="opacity:0"></div>
+    <div class="browser a" data-d="0.2" data-from="60" style="left:830px; top:150px; width:1000px">
+      <div class="bar"><i></i><i></i><i></i><span>리드플로우 · 공개 대기 DB</span></div>
+      <div class="view"><img src="shots/d-publish.png" data-crop="400,200,1110,760"></div>
     </div>
-    <div class="ring" id="r1" style="left:1381px; top:876px; width:172px; height:58px; opacity:0; border-radius:16px"></div>
-    <div class="chip a" data-d="2.6" data-from="30" style="left:1606px; top:470px"><span class="dot"></span> 담당 <b>바로 확정</b></div>
+    <div class="ring" id="r1a" style="left:880px; top:673px; width:463px; height:92px; opacity:0"></div>
+    <div class="phone a" data-d="1.6" data-from="90" style="left:1480px; top:200px">
+      <div class="screen"><img src="shots/m-claim.png"></div>
+    </div>
+    <div class="ring" id="r1b" style="left:1671px; top:957px; width:175px; height:57px; opacity:0; border-radius:16px"></div>
+    <div class="chip a" data-d="3.2" data-from="30" style="left:1180px; top:920px"><span class="dot"></span> 미팅 준비 시간 <b>확보</b></div>
   </section>
 
-  <!-- 2. 불편함: 결과 전화 -->
-  <section class="scene dark" data-s="11.8" data-e="15.0">
+  <!-- 2. 불편함: 후기 독촉 -->
+  <section class="scene dark" data-s="12.8" data-e="16.8">
     <div class="progress"><i class="on"></i><i class="on"></i><i></i><i></i></div>
     <div class="left">
-      <div class="a" data-d="0.05"><span class="tag pain">불편함 2</span></div>
-      <div class="a h1" data-d="0.2">미팅 다녀온 결과,<br><em>일일이 전화로</em><br>물어보셨죠?</div>
+      <div class="a" data-d="0.05"><span class="tag pain">불편함 2 · 결과 보고</span></div>
+      <div class="a h1" data-d="0.2">미팅 후기,<br><em>한 명 한 명</em><br>다시 물어보셨죠?</div>
+      <div class="a sub" data-d="0.5">컨설턴트는 잊고, 단장님은 바쁘고,<br>콜팀은 기다립니다.</div>
     </div>
-    <div class="calls">
-      <div class="a call" data-d="0.4"><span class="ic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f4a484" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span><span>컨설턴트 A<small>“하나정밀 미팅 어떻게 됐어요?” · 부재중</small></span></div>
-      <div class="a call" data-d="0.8"><span class="ic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f4a484" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span><span>컨설턴트 C<small>“그린바이오는요?” · 이따 다시 전화</small></span></div>
-      <div class="a call" data-d="1.2"><span class="ic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f4a484" stroke-width="2.2" stroke-linecap="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span><span>컨설턴트 D<small>“결과 좀 알려주세요” · 3일째</small></span></div>
+    <div class="chat" style="top:170px">
+      <div class="a bubble" data-d="0.4"><span class="who">콜팀 → 단장</span>태양금속·그린바이오 미팅 후기 전달 부탁드려요</div>
+      <div class="a bubble me" data-d="0.9"><span class="who">단장 → 컨설턴트 A</span>어제 태양금속 미팅 어땠어요?</div>
+      <div class="a bubble me" data-d="1.3"><span class="who">단장 → 컨설턴트 C</span>그린바이오는요?</div>
+      <div class="a bubble warn" data-d="1.8"><span class="who">컨설턴트 A</span>아, 깜빡했습니다. 이따 정리해서 드릴게요</div>
     </div>
   </section>
 
-  <!-- 2. 해결: 클릭형 결과 + 단장 화면 -->
-  <section class="scene light" data-s="15.0" data-e="20.5">
+  <!-- 2. 해결: 결과 입력해야 다음 DB, 미입력은 자동 표시 -->
+  <section class="scene light" data-s="16.8" data-e="22.0">
     <div class="progress"><i class="on"></i><i class="on"></i><i></i><i></i></div>
     <div class="left" style="width:640px">
       <div class="a" data-d="0.05"><span class="tag sol">이렇게 해결됩니다</span></div>
-      <div class="a h2" data-d="0.2">결과는 <em>버튼 몇 번</em>.<br>입력 안 된 건은<br>단장 화면에 먼저</div>
-      <div class="a sub" data-d="0.5">미팅이 지났는데 결과가 없으면<br>따로 챙기지 않아도 자동으로 뜹니다.</div>
+      <div class="a h2" data-d="0.2">결과를 입력해야<br><em>다음 DB</em>를<br>신청할 수 있습니다</div>
+      <div class="a sub" data-d="0.5">빠진 건은 단장님 화면에 자동으로 뜨고,<br>콜팀도 결과를 바로 봅니다.<br>중간에서 전달할 일이 사라집니다.</div>
     </div>
     <div class="browser a" data-d="0.2" data-from="60" style="left:830px; top:150px; width:1000px">
       <div class="bar"><i></i><i></i><i></i><span>리드플로우 · 단장 홈</span></div>
       <div class="view"><img src="shots/d-owner-home.png" data-crop="378,100,1782,1250"></div>
     </div>
     <div class="ring" id="r2" style="left:852px; top:282px; width:240px; height:139px; opacity:0"></div>
-    <div class="phone a" data-d="0.8" data-from="90" style="left:1470px; top:300px; transform-origin: top left">
+    <div class="phone a" data-d="0.8" data-from="90" style="left:1470px; top:300px">
       <div class="screen"><img src="shots/m-report.png"></div>
     </div>
   </section>
 
-  <!-- 3. 불편함: 2차·3차 이력 -->
-  <section class="scene dark" data-s="20.5" data-e="23.6">
+  <!-- 3. 불편함: 1차 이후를 모름, 인수인계 없음 -->
+  <section class="scene dark" data-s="22.0" data-e="25.8">
     <div class="progress"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
     <div class="left">
-      <div class="a" data-d="0.05"><span class="tag pain">불편함 3</span></div>
-      <div class="a h1" data-d="0.2">2차·3차 미팅 이야기,<br><em>어디 적어두셨는지</em><br>기억나세요?</div>
+      <div class="a" data-d="0.05"><span class="tag pain">불편함 3 · 미팅 이력</span></div>
+      <div class="a h1" data-d="0.2">1차 이후 어떻게 됐는지,<br><em>계약까지 가는지</em><br>알 길이 없었죠?</div>
+      <div class="a sub" data-d="0.5">담당이 바뀌면 그 고객 이야기는 처음부터 다시.</div>
     </div>
-    <div class="note a" data-d="0.45" data-rot="-6" style="left:1150px; top:190px">2차 미팅 때<br>세무사 동석?</div>
-    <div class="note a" data-d="0.75" data-rot="5" style="left:1480px; top:330px; background:#ffe0d4">견적은<br>언제 드리기로…</div>
-    <div class="note a" data-d="1.05" data-rot="-3" style="left:1210px; top:560px; background:#dff3f4">1차 메모는<br>단톡방 어디쯤?</div>
+    <div class="note a" data-d="0.45" data-rot="-6" style="left:1150px; top:190px">2차 미팅은<br>다녀왔나?</div>
+    <div class="note a" data-d="0.75" data-rot="5" style="left:1480px; top:330px; background:#ffe0d4">견적은<br>나갔나…?</div>
+    <div class="note a" data-d="1.05" data-rot="-3" style="left:1210px; top:560px; background:#dff3f4">담당이 바뀌면<br>인수인계는?</div>
   </section>
 
-  <!-- 3. 해결: 차수별 결과 -->
-  <section class="scene light" data-s="23.6" data-e="28.6">
+  <!-- 3. 해결: 차수별 이력 -->
+  <section class="scene light" data-s="25.8" data-e="31.0">
     <div class="progress"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
     <div class="left" style="width:660px">
       <div class="a" data-d="0.05"><span class="tag sol">이렇게 해결됩니다</span></div>
-      <div class="a h2" data-d="0.2">같은 DB에<br><em>1차 · 2차 · 3차</em>가<br>차수별로 쌓입니다</div>
-      <div class="a sub" data-d="0.5">결과 입력에서 ‘재방문’을 고르면<br>다음 차수 미팅이 바로 잡힙니다.</div>
+      <div class="a h2" data-d="0.2">1차·2차·3차가<br><em>한 DB에 차수별로</em><br>쌓입니다</div>
+      <div class="a sub" data-d="0.5">다음에 누가 이 DB를 받아도 이력을 보고 이어갑니다.<br>컨설턴트는 버튼 몇 번과 한 줄이면 충분합니다.</div>
     </div>
     <div class="browser a" data-d="0.2" data-from="60" style="left:850px; top:170px; width:980px">
       <div class="bar"><i></i><i></i><i></i><span>리드플로우 · (주)대한테크</span></div>
-      <div class="view"><img id="img3" src="shots/d-rounds.png" data-crop="430,569,1082,702"></div>
+      <div class="view"><img src="shots/d-rounds.png" data-crop="430,569,1082,702"></div>
     </div>
     <div class="ring" id="r3a" style="left:897px; top:314px; width:122px; height:55px; opacity:0; border-radius:14px"></div>
     <div class="ring" id="r3b" style="left:897px; top:565px; width:122px; height:55px; opacity:0; border-radius:14px"></div>
+    <div class="chip a" data-d="3.0" data-from="30" style="left:1330px; top:860px"><span class="dot"></span> 다음 담당자도 <b>이력 그대로</b></div>
   </section>
 
-  <!-- 4. 불편함: 교육 자료 -->
-  <section class="scene dark" data-s="28.6" data-e="31.6">
+  <!-- 4. 불편함: 교육이 휘발된다 -->
+  <section class="scene dark" data-s="31.0" data-e="34.8">
     <div class="progress"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
     <div class="left">
-      <div class="a" data-d="0.05"><span class="tag pain">불편함 4</span></div>
-      <div class="a h1" data-d="0.2">교육 자료,<br><em>단톡방에서 찾느라</em><br>힘드셨죠?</div>
+      <div class="a" data-d="0.05"><span class="tag pain">불편함 4 · 교육</span></div>
+      <div class="a h1" data-d="0.2">교육 땐 다 알 것 같은데,<br><em>일주일 지나면</em><br>남는 게 없죠?</div>
+      <div class="a sub" data-d="0.5">복습하려면 자료를 다시 뒤져야 하는데,<br>계약 챙기느라 볼 시간이 없습니다.</div>
     </div>
-    <div class="chat" style="top:230px">
-      <div class="a bubble file" data-d="0.4"><span class="fileicon">PPT</span>교육자료_최종.pptx</div>
-      <div class="a bubble file" data-d="0.7"><span class="fileicon">PPT</span>교육자료_최종_수정본.pptx</div>
-      <div class="a bubble file" data-d="1.0"><span class="fileicon">녹음</span>0921_월요교육_녹음.m4a</div>
-      <div class="a bubble warn" data-d="1.4"><span class="who">컨설턴트</span>지난주 그 자료 어디 있죠…?</div>
+    <div class="memory">
+      <div class="a label" data-d="0.3">월요일 교육에서 들은 것</div>
+      <div class="a card fadeout" data-d="0.45" data-blur="1.3">한도보다 ‘준비 순서’</div>
+      <div class="a card fadeout" data-d="0.65" data-blur="1.6">첫 미팅 질문 7가지</div>
+      <div class="a card fadeout" data-d="0.85" data-blur="1.9">가지급금 대화 시작법</div>
+      <div class="a card fadeout" data-d="1.05" data-blur="2.2">개인투자조합 → 벤처인증 구조</div>
+      <div class="a label" data-d="2.4" style="color:#f4a484">…일주일 뒤</div>
     </div>
   </section>
 
-  <!-- 4. 해결: 교육 일정 + AI 정리 -->
-  <section class="scene light" data-s="31.6" data-e="36.8">
+  <!-- 4. 해결: 교육이 글로 남는 자산 -->
+  <section class="scene light" data-s="34.8" data-e="40.0">
     <div class="progress"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div>
     <div class="left" style="width:640px">
       <div class="a" data-d="0.05"><span class="tag sol">이렇게 해결됩니다</span></div>
-      <div class="a h2" data-d="0.2">교육 일정은 <em>달력</em>으로,<br>자료와 <em>AI 핵심 정리</em>는<br>한 곳에</div>
-      <div class="a sub" data-d="0.5">월요일 단장 교육 · 수요일 본부장 교육.<br>녹취를 올리면 핵심·할 일·상담 멘트로 정리됩니다.</div>
+      <div class="a h2" data-d="0.2">교육이 <em>글로 남아</em><br>사업단의<br>자산이 됩니다</div>
+      <div class="a sub" data-d="0.5">녹취록을 올리면 AI가 핵심·할 일·<br>상담 멘트로 정리합니다. 이동 중 3분 복습,<br>누가 읽었는지도 한눈에.</div>
     </div>
     <div class="browser a" data-d="0.2" data-from="60" style="left:830px; top:150px; width:1000px">
-      <div class="bar"><i></i><i></i><i></i><span>리드플로우 · 교육 일정</span></div>
-      <div class="view"><img src="shots/d-schedule.png" data-crop="378,95,1782,1000"></div>
+      <div class="bar"><i></i><i></i><i></i><span>리드플로우 · 교육 자료실</span></div>
+      <div class="view"><img src="shots/d-reads.png" data-crop="583,356,1566,886"></div>
     </div>
+    <div class="ring" id="r4" style="left:826px; top:624px; width:240px; height:44px; opacity:0; border-radius:12px"></div>
     <div class="phone a" data-d="0.8" data-from="90" style="left:1470px; top:300px">
       <div class="screen"><img src="shots/m-training.png"></div>
     </div>
   </section>
 
   <!-- 5. 마무리 -->
-  <section class="scene dark" data-s="36.8" data-e="41.2">
+  <section class="scene dark" data-s="40.0" data-e="44.4">
     <div class="center">
       <div class="brand a" data-d="0.1">
-        <svg width="120" height="120" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="11" fill="#087a83"/><path d="M9 28 L16 12 L20.5 21 L24 14 L31 28" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="28" r="3" fill="#E7C873"/></svg>
+        <svg width="112" height="112" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="11" fill="#087a83"/><path d="M9 28 L16 12 L20.5 21 L24 14 L31 28" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="28" r="3" fill="#E7C873"/></svg>
         <span class="name">리드플로우</span>
       </div>
-      <div class="a" data-d="0.35"><span class="pill">스마트 사업단</span></div>
-      <div class="a h2" data-d="0.6" style="font-size:54px; font-weight:700">DB 배정 · 미팅 · 결과 · 후속 · 교육<br><em>한 곳에서</em> 끝냅니다</div>
+      <div class="a h2" data-d="0.4" style="font-size:56px; font-weight:750">단장님은 <em>관리</em>하고,<br>컨설턴트는 <em>미팅</em>에 집중합니다</div>
+      <div class="a chips" data-d="0.8"><span>DB 배분</span><span>결과 보고</span><span>미팅 이력</span><span>교육 복습</span></div>
     </div>
-    <div class="credit a" data-d="1.0">미래AI랩 · 김상호 기획 및 제작</div>
+    <div class="credit a" data-d="1.1">스마트 사업단 · 미래AI랩 · 김상호 기획 및 제작</div>
   </section>
 
 </div>
 <script>
-  const DURATION = 41.2;
+  const DURATION = 44.4;
+  window.DURATION = DURATION;
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const easeOut = (x) => 1 - Math.pow(1 - clamp(x), 3);
   const easeInOut = (x) => { x = clamp(x); return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
@@ -260,17 +281,22 @@
         el.style.transform = `translateY(${(1 - p) * from}px) rotate(${rot * p}deg) scale(${0.97 + 0.03 * p})${base}`;
       }
     }
-    // Scene 1 해결: 목록 → 신청 확인창, 신청하기 버튼 강조
-    const s1 = t - 6.8;
-    const p1b = document.getElementById("p1b");
-    p1b.style.opacity = String(easeInOut((s1 - 1.7) / 0.5));
-    document.getElementById("p1a").style.transform = `translateY(${-easeInOut((s1 - 0.4) / 1.2) * 60}px)`;
-    pulse(document.getElementById("r1"), t, 6.8 + 2.3, 11.6);
-    // Scene 2 해결: 결과 미입력 카드 강조
-    pulse(document.getElementById("r2"), t, 15.0 + 1.3, 20.3);
-    // Scene 3 해결: 2차 → 1차 순서로 강조
-    pulse(document.getElementById("r3a"), t, 23.6 + 1.2, 28.4);
-    pulse(document.getElementById("r3b"), t, 23.6 + 2.2, 28.4);
+    // 1 해결: [공개하기] 강조 → 폰의 [신청하기] 강조
+    pulse(document.getElementById("r1a"), t, 7.6 + 0.9, 7.6 + 2.6);
+    pulse(document.getElementById("r1b"), t, 7.6 + 2.6, 12.6);
+    // 2 해결: 결과 미입력 카드
+    pulse(document.getElementById("r2"), t, 16.8 + 1.3, 21.8);
+    // 3 해결: 2차 → 1차
+    pulse(document.getElementById("r3a"), t, 25.8 + 1.2, 30.8);
+    pulse(document.getElementById("r3b"), t, 25.8 + 2.2, 30.8);
+    // 4 불편함: 들은 내용이 흐려진다
+    for (const el of document.querySelectorAll(".fadeout")) {
+      const k = clamp((t - 31.0 - +el.dataset.blur) / 1.4);
+      el.style.filter = `blur(${k * 7}px)`;
+      el.style.opacity = String(+el.style.opacity * (1 - 0.65 * k));
+    }
+    // 4 해결: 확인 현황
+    pulse(document.getElementById("r4"), t, 34.8 + 1.4, 39.8);
   };
 
   // 캡처 크기(2160px 폭)의 일부만 확대해서 보여준다: data-crop="x,y,w,h"

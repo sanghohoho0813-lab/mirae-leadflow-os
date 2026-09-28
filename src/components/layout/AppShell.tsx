@@ -2,11 +2,11 @@
 
 import { MiniCalendar, type TrainingDays } from "./MiniCalendar";
 import { PersonaMenu } from "./PersonaMenu";
-import type { Persona } from "./DemoBar";
+import { PersonaDialog, SampleDbPanel, personaLabel, type DemoTools } from "./DemoTools";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { Home, Database, CalendarCheck, RefreshCw, History, Users, PlusCircle, MoreHorizontal, LogOut, X, Menu, Inbox, Megaphone, GraduationCap, Settings, CalendarDays, Building } from "lucide-react";
+import { UserRound, ChevronRight, Home, Database, CalendarCheck, RefreshCw, History, Users, PlusCircle, MoreHorizontal, LogOut, X, Menu, Inbox, Megaphone, GraduationCap, Settings, CalendarDays, Building } from "lucide-react";
 import { NavProgress } from "./NavProgress";
 import { LiveClock } from "./LiveClock";
 import { personLabel, ROLE_LABEL } from "@/lib/labels";
@@ -125,9 +125,10 @@ function MadeBy({ dark }: { dark?: boolean }) {
   return <div className={`text-center text-[0.75rem] tracking-wide ${dark ? "text-white/40" : "text-ink-3/80"}`} data-testid="made-by">미래AI랩 · 김상호 기획 및 제작</div>;
 }
 
-export function AppShell({ user, children, demo = false, topBar, counts, trainingDays, switcher }: { user: ShellUser; children: ReactNode; demo?: boolean; topBar?: ReactNode; counts: NavCounts; trainingDays?: TrainingDays;
-  /** 체험 모드: 이름을 누르면 다른 사람(본부장·지점장·팀장…) 화면으로. */
-  switcher?: { people: Persona[]; currentId: string } }) {
+export function AppShell({ user, children, demo = false, topBar, counts, trainingDays, tools }: { user: ShellUser; children: ReactNode; demo?: boolean; topBar?: ReactNode; counts: NavCounts; trainingDays?: TrainingDays;
+  /** 체험 모드: 사용자 변경하기 · 샘플 DB 추가·삭제. */
+  tools?: DemoTools }) {
+  const [whoOpen, setWhoOpen] = useState(false);
   const pathname = usePathname();
   const search = useSearchParams();
   const [drawer, setDrawer] = useState(false);
@@ -210,10 +211,10 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
                 </div>
               </>
             );
-            return switcher
+            return tools
               ? <div className="mb-3 -mx-1.5">
-                  <PersonaMenu people={switcher.people} currentId={switcher.currentId} dark testId="sidebar-persona">{me}</PersonaMenu>
-                  <div className="mt-0.5 px-1.5 text-[0.75rem] text-white/45">이름을 누르면 다른 역할 화면으로</div>
+                  <PersonaMenu people={tools.people} currentId={tools.currentId} testId="sidebar-persona">{me}</PersonaMenu>
+                  <div className="mt-0.5 px-1.5 text-[0.75rem] text-white/45">이름을 누르면 사용자 변경</div>
                 </div>
               : <div className="mb-3 flex items-center gap-3">{me}</div>;
           })()}
@@ -283,6 +284,7 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
         </button>
       </nav>
 
+      {tools && <PersonaDialog people={tools.people} currentId={tools.currentId} open={whoOpen} onClose={() => setWhoOpen(false)} onSwitched={() => setDrawer(false)} />}
       {/* Mobile menu: slides in from the left, under the ☰ button */}
       {drawer && (
         <div className="drawer-backdrop fixed inset-0 z-40 bg-ink/45 lg:hidden" onClick={() => setDrawer(false)} data-testid="drawer">
@@ -298,13 +300,26 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
                     </div>
                   </>
                 );
-                return switcher
-                  ? <div className="min-w-0 flex-1"><PersonaMenu people={switcher.people} currentId={switcher.currentId} dark testId="drawer-persona">{me}</PersonaMenu></div>
-                  : <div className="flex min-w-0 items-center gap-3">{me}</div>;
+                return <div className="flex min-w-0 items-center gap-3">{me}</div>;
               })()}
               <button type="button" onClick={() => setDrawer(false)} aria-label="닫기" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/80 hover:bg-white/10"><X size={22} /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-3 pb-3 pt-3">
+              {tools && (
+                <section className="mb-3 grid gap-3 rounded-2xl border-2 border-warning/30 bg-warning-bg/40 p-3" data-testid="drawer-demo-tools">
+                  <div className="text-[0.875rem] font-bold text-warning">체험 도구</div>
+                  <button type="button" onClick={() => setWhoOpen(true)} data-testid="drawer-switch-user"
+                    className="press flex min-h-[3.5rem] items-center gap-3 rounded-xl bg-primary px-4 text-left text-white">
+                    <UserRound size={22} className="shrink-0" />
+                    <span className="min-w-0 flex-1 leading-tight">
+                      <span className="block text-[1.0625rem] font-bold">사용자 변경하기</span>
+                      <span className="block truncate text-[0.875rem] text-white/80">지금: {personaLabel(tools.people.find((p) => p.id === tools.currentId))}</span>
+                    </span>
+                    <ChevronRight size={20} className="shrink-0" />
+                  </button>
+                  <div className="rounded-xl bg-white p-3"><SampleDbPanel leadCount={tools.leadCount} ephemeral={tools.ephemeral} /></div>
+                </section>
+              )}
               {nav.cta && (
                 <Link prefetch={false} href={nav.cta.href} className="mb-1 flex items-center gap-3 rounded-xl bg-primary px-3 text-[1rem] font-bold text-white" style={{ height: 52 }}>
                   <PlusCircle size={20} /> {nav.cta.label}
