@@ -23,7 +23,7 @@ export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now 
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="truncate text-[1.125rem] font-bold text-ink group-hover:text-primary">{lead.company_name}</span>
+          <span className="break-keep text-[1.125rem] font-bold leading-snug text-ink group-hover:text-primary">{lead.company_name}</span>
           <StatusBadge status={lead.status} needsReport={lead.needs_report} />
           {lead.division_name && <Badge tone="purple">{lead.division_name} DB</Badge>}
           {lead.meeting_round > 1 && <Badge tone="info">{lead.meeting_round}차 미팅</Badge>}

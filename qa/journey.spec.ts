@@ -894,7 +894,9 @@ test("28. 사이드바 이름 누르기 → 본부장·지점장·팀장 화면�
   await shot(p, "28-persona-menu", false);
   await expect(menu).toContainText("홍승희");
   await expect(menu).toContainText("변해영");
-  await expect(menu).toContainText("유상철");
+  await expect(menu).toContainText("오상철");
+  await expect(menu).not.toContainText("유상철");
+  for (const n of ["신선화", "안금숙", "김병철"]) await expect(menu).toContainText(n);
   await menu.getByTestId("persona-menu-10000000-0000-4000-8000-000000000013").click(); // 2본부 김태정 지점장
   await expect(p.getByRole("heading", { name: /김태정 지점장님/ })).toBeVisible();
   await expect(p.getByTestId("persona-menu")).toHaveCount(0);

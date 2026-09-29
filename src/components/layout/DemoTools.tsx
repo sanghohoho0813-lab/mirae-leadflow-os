@@ -51,7 +51,7 @@ export function usePersonaSwitch(currentId: string) {
 }
 
 const DIVISION_ORDER = ["직할본부", "2본부", "3본부", "광주 상무본부"];
-const TITLE_RANK: Record<string, number> = { 본부장: 0, 지점장: 1, 팀장: 2 };
+const TITLE_RANK: Record<string, number> = { 본부장: 0, 상무: 1, 지점장: 2, 팀장: 3 };
 
 /**
  * 아주 연한 색으로만 구분 (고정 색 — 테마와 무관): 사업단 운영은 사람마다 다른 색,
@@ -82,7 +82,7 @@ function groups(people: Persona[]): { title: string; people: Persona[] }[] {
   const divs = [...new Set(people.map((p) => p.division).filter(Boolean) as string[])].sort((a, b) => rank(a) - rank(b));
   for (const d of divs) {
     const list = people.filter((p) => p.division === d && (p.role === "LEADER" || p.role === "CONSULTANT"))
-      .sort((a, b) => (TITLE_RANK[titleOf(a.role, a.title)] ?? 3) - (TITLE_RANK[titleOf(b.role, b.title)] ?? 3) || a.name.localeCompare(b.name, "ko"));
+      .sort((a, b) => (TITLE_RANK[titleOf(a.role, a.title)] ?? 4) - (TITLE_RANK[titleOf(b.role, b.title)] ?? 4) || a.name.localeCompare(b.name, "ko"));
     if (list.length) out.push({ title: d, people: list });
   }
   return out.filter((g) => g.people.length);

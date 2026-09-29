@@ -23,6 +23,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Korean-only app: stop auto-translate from rewriting the page under React. */}
         <meta name="google" content="notranslate" />
+        {/* 글꼴 서버에 미리 연결 — 글꼴이 늦게 바뀌며 글자가 흔들리는 시간을 줄인다. */}
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>

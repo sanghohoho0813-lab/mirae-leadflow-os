@@ -1,5 +1,7 @@
 // Full stability crawl: every page x role x viewport (+ PC+Mobile dual).
-// Reports page errors, recovery screens, 404s, and horizontal overflow.
+// Reports page errors, recovery screens, 404s, horizontal overflow, and text layout
+// problems (short labels cut off with "…", text squeezed into a narrow column,
+// button text spilling out of its button).
 // Usage: node qa/crawl.mjs   (server on :3000, seeded DB, AUTH_SECRET from .env.local)
 //        FONT=xlarge node qa/crawl.mjs   (same, with the largest 글자 크기)
 import { chromium } from "@playwright/test";
@@ -42,6 +44,25 @@ for (const [role, cfg] of Object.entries(ROLES)) {
           recovery: !!document.querySelector('[data-testid="recovery-screen"]'),
           notFound: document.body.innerText.includes("페이지를 찾을 수 없습니다"),
           appError: document.body.innerText.includes("Application error"),
+          text: (() => {
+            const out = [];
+            const vis = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden" && el.closest("[aria-hidden='true'],.leaflet-container,[data-testid='page-skeleton']") === null; };
+            for (const el of document.querySelectorAll("body *")) {
+              if (!vis(el)) continue;
+              const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join("").trim();
+              const cs = getComputedStyle(el);
+              const fs = parseFloat(cs.fontSize);
+              const full = (el.innerText || "").trim();
+              // 1) 짧은 이름표가 "…"로 잘림 (긴 설명문은 줄임 허용)
+              const clamps = cs.textOverflow === "ellipsis" || cs.webkitLineClamp !== "none";
+              if (clamps && full.length > 0 && full.length <= 14 && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 2)) out.push(`잘림 "${full.slice(0, 20)}"`);
+              // 2) 글자가 좁은 칸에 세로로 쌓임
+              if (own.length >= 4 && el.clientWidth > 0 && el.clientWidth < fs * 2.6 && el.getBoundingClientRect().height > fs * 3.2) out.push(`세로 "${own.slice(0, 12)}"`);
+              // 3) 버튼·링크 글자가 칸 밖으로 넘침
+              if ((el.tagName === "BUTTON" || el.tagName === "A") && cs.overflow !== "visible" ? false : (el.tagName === "BUTTON" && el.scrollWidth > el.clientWidth + 2 && !clamps)) out.push(`넘침 "${full.slice(0, 16)}"`);
+            }
+            return [...new Set(out)].slice(0, 6);
+          })(),
         }));
         let frameRecovery = false;
         if (mode === "dual") {
@@ -54,6 +75,7 @@ for (const [role, cfg] of Object.entries(ROLES)) {
         if (info.recovery || info.appError) bad.push("ERROR SCREEN");
         if (frameRecovery) bad.push("ERROR SCREEN IN MOBILE PREVIEW");
         if (info.notFound) bad.push("404");
+        if (info.text.length) bad.push(...info.text);
         if (errs.length) bad.push(...errs);
         if (bad.length) { problems++; console.log(`✘ ${role} ${vp.w}${mode === "dual" ? " dual" : ""} ${path}: ${bad.join(" | ")}`); }
         if (vp.w === 390 || (vp.w === 1440 && mode === "pc")) {

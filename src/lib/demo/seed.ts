@@ -26,8 +26,11 @@ export const USERS = {
   branchB2:    { id: "10000000-0000-4000-8000-000000000019", email: "branch-b2@leadflow.local", name: "변해영",    role: "CONSULTANT", phone: "010-1000-0019", title: "지점장", division: "2본부" },
   teamB:       { id: "10000000-0000-4000-8000-000000000014", email: "team-b@leadflow.local",   name: "팀장 B",     role: "CONSULTANT", phone: "010-1000-0014", title: "팀장", division: "2본부" },
   branchC:     { id: "10000000-0000-4000-8000-000000000015", email: "branch-c@leadflow.local", name: "유정옥",     role: "CONSULTANT", phone: "010-1000-0015", title: "지점장", division: "3본부" },
-  branchC2:    { id: "10000000-0000-4000-8000-000000000020", email: "branch-c2@leadflow.local", name: "유상철",    role: "CONSULTANT", phone: "010-1000-0020", title: "지점장", division: "3본부" },
+  branchC2:    { id: "10000000-0000-4000-8000-000000000020", email: "branch-c2@leadflow.local", name: "오상철",    role: "CONSULTANT", phone: "010-1000-0020", title: "지점장", division: "3본부" },
   teamC:       { id: "10000000-0000-4000-8000-000000000016", email: "team-c@leadflow.local",   name: "팀장 C",     role: "CONSULTANT", phone: "010-1000-0016", title: "팀장", division: "3본부" },
+  gwangjuLeader: { id: "10000000-0000-4000-8000-000000000023", email: "leader-gj@leadflow.local", name: "김병철", role: "LEADER", phone: "010-1000-0023", division: "광주 상무본부" },
+  gwangjuSangmu: { id: "10000000-0000-4000-8000-000000000022", email: "sangmu-gj@leadflow.local", name: "안금숙", role: "CONSULTANT", phone: "010-1000-0022", title: "상무", division: "광주 상무본부" },
+  gwangjuBranch: { id: "10000000-0000-4000-8000-000000000021", email: "branch-gj@leadflow.local", name: "신선화", role: "CONSULTANT", phone: "010-1000-0021", title: "지점장", division: "광주 상무본부" },
   gwangju:     { id: "10000000-0000-4000-8000-000000000017", email: "gwangju@leadflow.local",  name: "컨설턴트 G", role: "CONSULTANT", phone: "010-1000-0017", division: "광주 상무본부" },
   otherOwner:  { id: "20000000-0000-4000-8000-000000000001", email: "other@leadflow.local",    name: "다른단장",   role: "OWNER",      phone: "010-2000-0001", org: ORG2_ID },
 } satisfies Record<string, SeedUser>;

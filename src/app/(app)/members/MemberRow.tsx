@@ -8,7 +8,7 @@ import { ROLE_LABEL } from "@/lib/labels";
 import type { MemberRole, Profile } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 
-const TITLES = ["", "팀장", "지점장"];
+const TITLES = ["", "팀장", "지점장", "상무"];
 
 /**
  * mode "owner": 역할·본부·직함 모두 · "leader": 자기 본부원의 직함과 활성 · "view": 보기만 (비서 등).
@@ -62,6 +62,7 @@ export function MemberRow({ member, isSelf, mode, divisions }: {
               <option value="">컨설턴트</option>
               <option value="팀장">팀장</option>
               <option value="지점장">지점장</option>
+              <option value="상무">상무</option>
               {!TITLES.includes(title) && <option value="__other">{title}</option>}
             </select>
           )}

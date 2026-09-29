@@ -31,6 +31,18 @@ interface NavItem {
   badge?: { key: BadgeKey; urgent?: boolean };
 }
 interface NavSection { title: string; items: NavItem[] }
+
+/**
+ * 목차 묶음마다 한 가지 연한 색 (아이콘 칸에만). 오늘 업무 = 하늘 · DB = 초록 · 교육 = 라벤더 ·
+ * 관리/본부 = 금색 · 설정 = 회색. 지금 위치 표시(살구색)는 그대로 두고 색만 더한다.
+ */
+function navTone(title: string): string {
+  if (title === "오늘 업무" || title === "내 업무") return "work";
+  if (title === "DB") return "db";
+  if (title === "교육") return "edu";
+  if (title === "설정") return "settings";
+  return "admin";
+}
 interface NavConfig { sections: NavSection[]; bottom: NavItem[]; cta?: { href: string; label: string } }
 
 const I = 20;
@@ -77,7 +89,9 @@ function navFor(user: ShellUser): NavConfig {
   }
   // 광주 상무본부 등 교육만 쓰는 본부
   if (!user.usesDb) {
-    return { sections: [{ title: "내 업무", items: [home] }, education, settings], bottom: [home, training, schedule] };
+    // 이 본부의 본부장은 본부원 관리(직함)만 더한다.
+    const mgmt: NavSection[] = user.leader ? [{ title: user.division ?? "우리 본부", items: [{ ...members, label: "본부원 관리" }] }] : [];
+    return { sections: [{ title: "내 업무", items: [home] }, education, ...mgmt, settings], bottom: [home, training, schedule] };
   }
   const open: NavItem = { href: "/leads?tab=open", label: "신청 가능 DB", short: "신청 가능", icon: <Database size={I} />, match: (p, q) => p === "/leads" && (q.get("tab") ?? "open") === "open", badge: { key: "open" } };
   const mine: NavItem = { href: "/leads?tab=mine", label: "내 미팅", icon: <CalendarCheck size={I} />, match: (p, q) => isLeadsTab(p, q, "mine") || /^\/leads\/[^/]+/.test(p), badge: { key: "needs_report", urgent: true } };
@@ -139,7 +153,27 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
   // Highlight the tapped tab immediately, before the server responds.
   const [tapped, setTapped] = useState<string | null>(null);
   const nav = navFor(user);
-  useEffect(() => { setDrawer(false); setTapped(null); }, [pathname, search]);
+  useEffect(() => { setDrawer(false); setTapped(null); setPending(false); }, [pathname, search]);
+  // 링크를 누르는 순간 이전 화면을 치우고 자리표시를 띄운다 (서버 응답을 기다리며 멈춘 느낌 없애기).
+  const [pending, setPending] = useState(false);
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as HTMLElement | null)?.closest?.("a");
+      if (!a || a.target === "_blank" || a.hasAttribute("download") || !a.href) return;
+      const url = new URL(a.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+      setPending(true);
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+  useEffect(() => {
+    if (!pending) return;
+    const t = setTimeout(() => setPending(false), 12000); // 절대 멈춰 있지 않게
+    return () => clearTimeout(t);
+  }, [pending]);
   // A login form submitted from a scrolled page must not carry its scroll offset into the app.
   useEffect(() => window.scrollTo(0, 0), []);
   useEffect(() => {
@@ -160,7 +194,7 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
     <div className="flex min-h-dvh w-full bg-canvas">
       <NavProgress />
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh w-[252px] shrink-0 flex-col bg-shell text-white lg:flex" data-testid="sidebar">
+      <aside className="sticky top-0 hidden h-dvh w-[15.75rem] shrink-0 flex-col bg-shell text-white lg:flex" data-testid="sidebar">
         <div className="px-5 pb-4 pt-6">
           <Link prefetch={false} href="/" className="flex items-center gap-2.5">
             <Logo size={34} />
@@ -179,7 +213,7 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
         )}
         <nav className="flex flex-1 flex-col overflow-y-auto px-3 pb-3" aria-label="메뉴">
           {nav.sections.map((sec) => (
-            <div key={sec.title} className="mt-3 first:mt-1">
+            <div key={sec.title} className="mt-3 first:mt-1" data-tone={navTone(sec.title)}>
               <div className="px-3 pb-1.5 text-[0.7812rem] font-semibold tracking-wide text-white/50">{sec.title}</div>
               <div className="flex flex-col gap-0.5">
                 {sec.items.map((item) => {
@@ -190,10 +224,10 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
                       href={item.href}
                       onClick={tap(item.href)}
                       aria-current={active ? "page" : undefined}
-                      className={`press group relative flex h-12 items-center gap-3 rounded-xl px-2.5 text-[1rem] font-semibold ${active ? "bg-white/[0.12] text-white" : "text-white/85 hover:bg-white/[0.06] hover:text-white"}`}
+                      className={`press group relative flex min-h-12 items-center gap-3 rounded-xl px-2.5 py-1 text-[1rem] font-semibold ${active ? "bg-white/[0.12] text-white" : "text-white/85 hover:bg-white/[0.06] hover:text-white"}`}
                     >
                       <span className={`nav-icon ${active ? "nav-icon-active" : ""}`}>{item.icon}</span>
-                      <span className="truncate">{item.label}</span>
+                      <span className="min-w-0 flex-1 break-keep leading-tight">{item.label}</span>
                       {item.badge && <Count n={counts[item.badge.key]} urgent={item.badge.urgent} variant="dark" />}
                     </Link>
                   );
@@ -211,7 +245,7 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-[1rem] font-bold">{user.name.slice(0, 1)}</span>
                 <div className="min-w-0 leading-tight">
                   <div className="truncate text-[1rem] font-bold text-white">{user.name}</div>
-                  <div className="truncate text-[0.8438rem] text-white/60">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")}</div>
+                  <div className="break-keep text-[0.8438rem] leading-snug text-white/60">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")}</div>
                 </div>
               </>
             );
@@ -268,7 +302,10 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
           </div>
         </header>
 
-        <main className="@container mx-auto w-full max-w-[1400px] flex-1 px-4 pb-28 pt-5 lg:px-8 lg:pb-12 lg:pt-7">{children}</main>
+        <main className="@container mx-auto w-full max-w-[1400px] flex-1 px-4 pb-28 pt-5 lg:px-8 lg:pb-12 lg:pt-7">
+          {pending && <PageSkeleton />}
+          <div key={pathname} className={pending ? "hidden" : "page-enter"} data-testid="page">{children}</div>
+        </main>
       </div>
 
       {/* Mobile bottom nav */}
@@ -296,7 +333,7 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
       {/* Mobile menu: slides in from the left, under the ☰ button */}
       {drawer && (
         <div className="drawer-backdrop fixed inset-0 z-40 bg-ink/45 lg:hidden" onClick={() => setDrawer(false)} data-testid="drawer">
-          <div className="drawer-panel absolute inset-y-0 left-0 flex w-[86%] max-w-[340px] flex-col bg-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="메뉴">
+          <div className="drawer-panel absolute inset-y-0 left-0 flex w-[88%] max-w-[21.25rem] flex-col bg-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="메뉴">
             <div className="flex items-center justify-between bg-shell px-4 pb-4 pt-[calc(16px+env(safe-area-inset-top))] text-white">
               {(() => {
                 const me = (
@@ -304,7 +341,7 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-[1.0625rem] font-bold">{user.name.slice(0, 1)}</span>
                     <div className="min-w-0 leading-tight">
                       <div className="truncate text-[1.0625rem] font-bold">{user.name}</div>
-                      <div className="truncate text-[0.875rem] text-white/65">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")} · {user.orgName}</div>
+                      <div className="break-keep text-[0.875rem] leading-snug text-white/65">{[user.division, user.title ?? ROLE_LABEL[user.role]].filter(Boolean).join(" ")} · {user.orgName}</div>
                     </div>
                   </>
                 );
@@ -319,7 +356,7 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
                 </Link>
               )}
               {nav.sections.map((sec) => (
-                <div key={sec.title}>
+                <div key={sec.title} data-tone={navTone(sec.title)}>
                   <div className="px-3 pb-1 pt-3 text-[0.8125rem] font-semibold text-ink-3">{sec.title}</div>
                   {sec.items.map((item) => (
                     <Link prefetch={false} key={item.href} href={item.href} className={`press flex items-center gap-3 rounded-xl px-3 text-[1.0312rem] font-semibold ${isActive(item) ? "bg-soft text-primary" : "text-ink hover:bg-neutral-bg"}`} style={{ height: 52 }}>
@@ -349,6 +386,22 @@ export function AppShell({ user, children, demo = false, topBar, counts, trainin
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** 화면을 불러오는 동안 보이는 자리표시: 제목 + 카드 몇 장. */
+function PageSkeleton() {
+  return (
+    <div className="page-skeleton grid gap-4" aria-busy="true" aria-label="불러오는 중" data-testid="page-skeleton">
+      <div className="grid gap-2">
+        <div className="skeleton h-9 w-56 max-w-full rounded-xl" />
+        <div className="skeleton h-5 w-80 max-w-full rounded-lg" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 @4xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton h-24 rounded-2xl" />)}
+      </div>
+      {[0, 1, 2].map((i) => <div key={i} className="skeleton h-20 rounded-2xl" />)}
     </div>
   );
 }

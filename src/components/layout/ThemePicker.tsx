@@ -59,7 +59,7 @@ export function DisplaySettings() {
   return (
     <div className="grid gap-4">
       <Section title="글자 크기" desc="화면 전체의 글자와 버튼이 함께 커집니다. 바로 적용되고 이 기기에 저장됩니다." testId="font-settings">
-        <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="글자 크기">
+        <div className="grid gap-2 @2xl:grid-cols-3" role="radiogroup" aria-label="글자 크기">
           {FONT_SIZES.map((f, i) => {
             const active = font === f.key;
             return (
@@ -83,19 +83,19 @@ export function DisplaySettings() {
           <Info size={18} className="mt-0.5 shrink-0" />
           전체 화면의 색을 9가지 중에서 고릅니다. 고르면 바로 바뀌고 다음 접속에도 유지됩니다. 글자·표의 읽기 편한 색은 그대로입니다.
         </p>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2 @xl:grid-cols-2 @4xl:grid-cols-3">
           {THEMES.map((t) => {
             const active = t.key === theme;
             return (
               <button key={t.key} type="button" data-testid={`theme-${t.key}`} aria-pressed={active}
                 onClick={() => { setTheme(t.key); applyTheme(t.key, true); write(THEME_STORAGE_KEY, t.key); toast("success", `${t.name}(으)로 바꿨습니다`); }}
                 className={`press flex items-center gap-3 rounded-xl border bg-white p-3 text-left transition-base ${active ? "border-ink ring-1 ring-ink" : "border-line hover:border-line-strong"}`}>
-                <span className="flex h-7 w-[112px] shrink-0 overflow-hidden rounded-md" aria-hidden>
+                <span className="flex h-7 w-20 shrink-0 overflow-hidden rounded-md" aria-hidden>
                   {t.colors.map((c, i) => <span key={i} className="flex-1" style={{ background: c }} />)}
                 </span>
                 <span className="min-w-0 flex-1 leading-tight">
-                  <span className="block truncate text-[0.96875rem] font-bold text-ink">{t.name}</span>
-                  <span className="block truncate text-[0.84375rem] text-ink-3">{t.desc}</span>
+                  <span className="block text-[0.96875rem] font-bold leading-snug text-ink">{t.name}</span>
+                  <span className="block text-[0.84375rem] leading-snug text-ink-3">{t.desc}</span>
                 </span>
                 {active && <Check size={18} className="shrink-0 text-ink" />}
               </button>

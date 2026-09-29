@@ -81,7 +81,7 @@ export default async function HomePage() {
                   {d.drafts.map((l) => (
                     <div key={l.id} className="flex items-center gap-3 rounded-2xl border border-line bg-white px-4 py-3">
                       <Link prefetch={false} href={`/leads/${l.id}`} className="min-w-0 flex-1">
-                        <div className="truncate text-[1.0625rem] font-bold text-ink hover:text-primary">{l.company_name}</div>
+                        <div className="break-keep text-[1.0625rem] font-bold leading-snug text-ink hover:text-primary">{l.company_name}</div>
                         <div className="text-[0.9062rem] text-ink-2">{l.region} · {fmtDate(l.meeting_at)} · 등록 {l.creator_name}</div>
                       </Link>
                       <PublishButton id={l.id} size="sm" />
@@ -176,7 +176,7 @@ export default async function HomePage() {
           <AlertCircle size={26} className="shrink-0 text-danger" />
           <div className="min-w-0 flex-1">
             <div className="text-[0.9375rem] font-semibold text-danger">결과 입력이 필요한 미팅 {d.needsReport.length}건 · 입력해야 다음 DB를 신청할 수 있어요</div>
-            <div className="truncate text-[1.25rem] font-extrabold text-ink">{d.needsReport[0].company_name} · {d.needsReport[0].region}</div>
+            <div className="break-keep text-[1.25rem] font-extrabold leading-snug text-ink">{d.needsReport[0].company_name} · {d.needsReport[0].region}</div>
           </div>
           <span className="hidden shrink-0 rounded-xl bg-danger px-4 py-2.5 text-[1rem] font-bold text-white sm:inline">결과 입력</span>
           <ChevronRight size={24} className="shrink-0 text-danger sm:hidden" />

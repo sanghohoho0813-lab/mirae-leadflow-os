@@ -75,7 +75,7 @@ export function canManageLead(v: Viewer, lead: { division_id: string | null }) {
 }
 /** 광주 상무본부 etc.: education only, no shared Seoul/Gyeonggi DBs. */
 export function usesDb(v: Viewer) {
-  if (v.profile.role === "CONSULTANT") return v.division?.claims_org_leads ?? true;
+  if (v.profile.role === "CONSULTANT" || v.profile.role === "LEADER") return v.division?.claims_org_leads ?? true;
   return true;
 }
 export function canClaim(v: Viewer) {
