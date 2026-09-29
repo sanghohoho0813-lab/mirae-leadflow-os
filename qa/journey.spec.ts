@@ -892,10 +892,13 @@ test("28. 사이드바 이름 누르기 → 본부장·지점장·팀장 화면�
   await expect(menu).toContainText("2본부");
   await expect(menu).toContainText("지점장");
   await shot(p, "28-persona-menu", false);
-  await menu.getByTestId("persona-menu-10000000-0000-4000-8000-000000000013").click(); // 2본부 지점장 B
-  await expect(p.getByRole("heading", { name: /지점장 B님/ })).toBeVisible();
+  await expect(menu).toContainText("홍승희");
+  await expect(menu).toContainText("변해영");
+  await expect(menu).toContainText("유상철");
+  await menu.getByTestId("persona-menu-10000000-0000-4000-8000-000000000013").click(); // 2본부 김태정 지점장
+  await expect(p.getByRole("heading", { name: /김태정 지점장님/ })).toBeVisible();
   await expect(p.getByTestId("persona-menu")).toHaveCount(0);
-  await expect(p.getByTestId("sidebar")).toContainText("2본부 지점장");
+  await expect(p.getByTestId("sidebar")).toContainText("김태정");
   // 위쪽 막대 방식도 그대로
   await switchUser(p, U.leader2);
   await expect(p.getByRole("heading", { name: /서인수 본부장님/ })).toBeVisible();

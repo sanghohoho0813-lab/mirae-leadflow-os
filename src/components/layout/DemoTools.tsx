@@ -19,7 +19,7 @@ export function refreshFrames() {
   document.querySelectorAll("iframe").forEach((f) => f.contentWindow?.postMessage({ type: "lf:refresh" }, window.location.origin));
 }
 
-/** "단장 송하균", "2본부 지점장 B" — who you are looking as. */
+/** "단장 송하균", "2본부 지점장 김태정" — who you are looking as. */
 export function personaLabel(p: Persona | undefined): string {
   if (!p) return "";
   const t = titleOf(p.role, p.title);
@@ -53,6 +53,26 @@ export function usePersonaSwitch(currentId: string) {
 const DIVISION_ORDER = ["직할본부", "2본부", "3본부", "광주 상무본부"];
 const TITLE_RANK: Record<string, number> = { 본부장: 0, 지점장: 1, 팀장: 2 };
 
+/**
+ * 아주 연한 색으로만 구분 (고정 색 — 테마와 무관): 사업단 운영은 사람마다 다른 색,
+ * 본부는 본부마다 한 색 (같은 본부 사람은 같은 색).
+ */
+const STAFF_TONE: Record<string, { card: string; dot: string }> = {
+  OWNER: { card: "border-amber-200 bg-amber-50", dot: "bg-amber-400" },
+  MANAGER: { card: "border-rose-200 bg-rose-50", dot: "bg-rose-400" },
+  CALLER: { card: "border-sky-200 bg-sky-50", dot: "bg-sky-400" },
+};
+const DIVISION_TONE: Record<string, { card: string; dot: string }> = {
+  직할본부: { card: "border-emerald-200 bg-emerald-50", dot: "bg-emerald-500" },
+  "2본부": { card: "border-indigo-200 bg-indigo-50", dot: "bg-indigo-400" },
+  "3본부": { card: "border-fuchsia-200 bg-fuchsia-50", dot: "bg-fuchsia-400" },
+  "광주 상무본부": { card: "border-stone-300 bg-stone-100", dot: "bg-stone-400" },
+};
+const NEUTRAL_TONE = { card: "border-line bg-white", dot: "bg-line-strong" };
+export function personaTone(p: Persona) {
+  return STAFF_TONE[p.role] ?? (p.division ? DIVISION_TONE[p.division] : undefined) ?? NEUTRAL_TONE;
+}
+
 /** 운영진 first, then each 본부: 본부장 › 지점장 › 팀장 › 컨설턴트. */
 function groups(people: Persona[]): { title: string; people: Persona[] }[] {
   const staffOrder = ["OWNER", "MANAGER", "CALLER"];
@@ -79,7 +99,9 @@ export function PersonaDialog({ people, currentId, open, onClose, onSwitched }: 
       <div className="grid max-h-[62vh] gap-4 overflow-y-auto pr-1">
         {groups(people).map((g) => (
           <section key={g.title}>
-            <h3 className="mb-1.5 text-[0.9375rem] font-bold text-ink-3">{g.title}</h3>
+            <h3 className="mb-1.5 flex items-center gap-1.5 text-[0.9375rem] font-bold text-ink-2">
+              {DIVISION_TONE[g.title] && <span className={`h-2.5 w-2.5 rounded-full ${DIVISION_TONE[g.title].dot}`} />}{g.title}
+            </h3>
             <div className="grid grid-cols-2 gap-2">
               {g.people.map((p) => {
                 const active = p.id === (target ?? currentId);
@@ -87,9 +109,9 @@ export function PersonaDialog({ people, currentId, open, onClose, onSwitched }: 
                 return (
                   <button key={p.id} type="button" disabled={pending && target === p.id} onClick={() => pick(p.id, () => { onClose(); onSwitched?.(); })}
                     data-testid={`persona-menu-${p.id}`} aria-pressed={active}
-                    className={`press flex min-h-[3.5rem] items-center gap-2 rounded-xl border-2 px-3 text-left ${active ? "border-primary bg-soft" : "border-line bg-white hover:border-primary/40"}`}>
+                    className={`press flex min-h-[3.5rem] items-center gap-2 rounded-xl border-2 px-3 text-left ${personaTone(p).card} ${active ? "!border-primary ring-2 ring-primary/25" : "hover:brightness-[0.97]"}`}>
                     <span className="min-w-0 flex-1 leading-tight">
-                      <span className={`block text-[0.875rem] font-semibold ${active ? "text-primary" : "text-ink-3"}`}>{t}</span>
+                      <span className={`block text-[0.875rem] font-semibold ${active ? "text-primary" : "text-ink-2"}`}>{t}</span>
                       <span className="block truncate text-[1.0625rem] font-bold text-ink">{p.name.startsWith(t) ? p.name.slice(t.length).trim() || p.name : p.name}</span>
                     </span>
                     {active && <Check size={18} className="shrink-0 text-primary" />}

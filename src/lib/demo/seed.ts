@@ -20,11 +20,13 @@ export const USERS = {
   consultant4: { id: "10000000-0000-4000-8000-000000000009", email: "c-d@leadflow.local",      name: "컨설턴트 D", role: "CONSULTANT", phone: "010-1000-0009", division: "2본부" },
   consultant5: { id: "10000000-0000-4000-8000-000000000010", email: "c-e@leadflow.local",      name: "컨설턴트 E", role: "CONSULTANT", phone: "010-1000-0010", division: "3본부" },
   secretary:   { id: "10000000-0000-4000-8000-000000000018", email: "secretary@leadflow.local", name: "이미라",    role: "MANAGER",    phone: "010-1000-0018", title: "비서 팀장" },
-  branchA:     { id: "10000000-0000-4000-8000-000000000011", email: "branch-a@leadflow.local", name: "지점장 A",   role: "CONSULTANT", phone: "010-1000-0011", title: "지점장", division: "직할본부" },
+  branchA:     { id: "10000000-0000-4000-8000-000000000011", email: "branch-a@leadflow.local", name: "홍승희",     role: "CONSULTANT", phone: "010-1000-0011", title: "지점장", division: "직할본부" },
   teamA:       { id: "10000000-0000-4000-8000-000000000012", email: "team-a@leadflow.local",   name: "팀장 A",     role: "CONSULTANT", phone: "010-1000-0012", title: "팀장", division: "직할본부" },
-  branchB:     { id: "10000000-0000-4000-8000-000000000013", email: "branch-b@leadflow.local", name: "지점장 B",   role: "CONSULTANT", phone: "010-1000-0013", title: "지점장", division: "2본부" },
+  branchB:     { id: "10000000-0000-4000-8000-000000000013", email: "branch-b@leadflow.local", name: "김태정",     role: "CONSULTANT", phone: "010-1000-0013", title: "지점장", division: "2본부" },
+  branchB2:    { id: "10000000-0000-4000-8000-000000000019", email: "branch-b2@leadflow.local", name: "변해영",    role: "CONSULTANT", phone: "010-1000-0019", title: "지점장", division: "2본부" },
   teamB:       { id: "10000000-0000-4000-8000-000000000014", email: "team-b@leadflow.local",   name: "팀장 B",     role: "CONSULTANT", phone: "010-1000-0014", title: "팀장", division: "2본부" },
-  branchC:     { id: "10000000-0000-4000-8000-000000000015", email: "branch-c@leadflow.local", name: "지점장 C",   role: "CONSULTANT", phone: "010-1000-0015", title: "지점장", division: "3본부" },
+  branchC:     { id: "10000000-0000-4000-8000-000000000015", email: "branch-c@leadflow.local", name: "유정옥",     role: "CONSULTANT", phone: "010-1000-0015", title: "지점장", division: "3본부" },
+  branchC2:    { id: "10000000-0000-4000-8000-000000000020", email: "branch-c2@leadflow.local", name: "유상철",    role: "CONSULTANT", phone: "010-1000-0020", title: "지점장", division: "3본부" },
   teamC:       { id: "10000000-0000-4000-8000-000000000016", email: "team-c@leadflow.local",   name: "팀장 C",     role: "CONSULTANT", phone: "010-1000-0016", title: "팀장", division: "3본부" },
   gwangju:     { id: "10000000-0000-4000-8000-000000000017", email: "gwangju@leadflow.local",  name: "컨설턴트 G", role: "CONSULTANT", phone: "010-1000-0017", division: "광주 상무본부" },
   otherOwner:  { id: "20000000-0000-4000-8000-000000000001", email: "other@leadflow.local",    name: "다른단장",   role: "OWNER",      phone: "010-2000-0001", org: ORG2_ID },
@@ -435,12 +437,12 @@ function trainings(): TrainingSeed[] {
         "상담에서 끝나지 않고 실제 계약으로 이어지는 연결고리까지 단계별로 짚어드립니다.",
         "오늘은 평소보다 훨씬 디테일하게 진행합니다. 놓치면 후회할 시간, 꼭 함께하세요!",
       ].join("\n\n"),
-      // 2026-09-28 강의 원문(노트 그대로)과 핵심 정리. 노트에 서로 다른 숫자가 섞인 곳은 '확인'으로 표시.
+      // 2026-09-28 강의 원문(노트 그대로)과 핵심 정리. 벤처 요건은 단장 확인(10%·5천만 원 중 큰 금액), 소득공제 구간은 아직 '확인'.
       content: LECTURE_0928, summary: {
         "one_line": "벤처인증과 투자자 소득공제는 요건·절차가 다른 별개의 일 — 개인투자조합으로 둘을 함께 설계하되, 대표님께는 이 차이부터 쉽게 풀어 준다.",
         "key_points": [
                 "벤처인증 ≠ 소득공제: 소득공제는 직접 유상증자 참여로도 가능하지만, 투자형 벤처인증은 적격투자기관(벤처투자조합·개인투자조합 등)의 투자가 있어야 한다",
-                "투자형 벤처 요건: 투자금 합계 5천만 원 이상 + 자본금 대비 일정 비율 (강의 노트에 5%·10%가 함께 적혀 있음 → 고객 안내 전 최신 기준 확인)",
+                "투자형 벤처 요건: 투자금이 5천만 원 이상이면서 자본금의 10% 이상 — 둘 중 큰 금액이 기준 (예: 자본금 10억 원이면 최소 1억 원 투자)",
                 "투자로 인정: 신규 발행 주식 인수·전환사채(CB)·RCPS 인수. 기존 주식(구주) 매입은 투자로 보지 않는다. 유한회사는 주식 수가 아니라 출자금액이 기준",
                 "개인투자조합은 세금을 내지 않는 '통로': 이자·배당은 지분율대로 배분하고, 투자받은 법인은 15.4% 원천징수 후 다음 해 2월 말까지 지급명세서를 낸다",
                 "일정: 조합결성계획 승인 약 3주(VICS 신청) → 등록·결산 → 벤처인증까지 약 3개월. 올해 소득공제는 어렵고, 벤처인증·내년 소득공제 목적은 가능",
@@ -451,7 +453,7 @@ function trainings(): TrainingSeed[] {
         ],
         "action_items": [
                 "벤처인증과 소득공제를 헷갈리는 대표님께 '두 가지는 따로 움직인다'부터 설명하기",
-                "투자형 벤처 요건(투자금·자본금 비율)과 소득공제 구간을 최신 기준으로 확인해 한 장짜리 체크리스트로 만들기",
+                "상담 전에 고객 자본금부터 확인하기: 자본금 × 10%와 5천만 원 중 큰 금액이 최소 투자금 (소득공제 구간은 최신 기준 확인)",
                 "올해 소득공제를 원하는 고객에게는 일정(약 3개월)상 어렵다는 점을 먼저 알리고, 내년 공제·벤처인증으로 방향 잡기",
                 "창업 감면 상담 때는 사업장·대표·직원 실체와 임대차 계약서부터 확인하기",
                 "자녀가 최대주주인 가족법인 고객을 따로 추려 개인투자조합 활용안을 제안하기",
@@ -472,7 +474,7 @@ function trainings(): TrainingSeed[] {
                 "가족법인"
         ]
 },
-      file: { name: "0928_법인영업_실전교육_체크리스트.txt", text: "[0928 법인영업 실전 교육 — 확인 체크리스트]\n\n□ 고객이 원하는 것: 벤처인증 / 소득공제 / 둘 다\n□ 투자 방식: 신주 · 전환사채 · RCPS (구주 매입은 투자 아님)\n□ 투자형 벤처 요건: 투자금 5천만 원 이상 + 자본금 대비 비율 (최신 기준 확인)\n□ 일정: 조합결성계획 승인 약 3주 → 벤처인증까지 약 3개월\n□ 원천징수 15.4% · 지급명세서 다음 해 2월 말\n□ 창업 감면: 사업장 · 대표이사 · 직원 실체, 임대차 계약서\n□ 벤처인증 후 법인세 감면은 직접 신청\n" },
+      file: { name: "0928_법인영업_실전교육_체크리스트.txt", text: "[0928 법인영업 실전 교육 — 확인 체크리스트]\n\n□ 고객이 원하는 것: 벤처인증 / 소득공제 / 둘 다\n□ 투자 방식: 신주 · 전환사채 · RCPS (구주 매입은 투자 아님)\n□ 투자형 벤처 요건: 5천만 원과 자본금의 10% 중 큰 금액 이상 투자 (예: 자본금 10억 → 1억 이상)\n□ 일정: 조합결성계획 승인 약 3주 → 벤처인증까지 약 3개월\n□ 원천징수 15.4% · 지급명세서 다음 해 2월 말\n□ 창업 감면: 사업장 · 대표이사 · 직원 실체, 임대차 계약서\n□ 벤처인증 후 법인세 감면은 직접 신청\n" },
       readers: [U.secretary, U.leader, U.leaderB, U.consultant1], sample: false },
     { id: T(8), title: "월요일 정기 교육 (주제 추후 공지)", day: monday + 7, hour: 19, instructor: U.owner, content: null, summary: null, readers: [] },
     { id: T(9), title: "3본부 상담 사례 공유", day: monday + 9, hour: 19, instructor: U.leaderB,
