@@ -17,11 +17,13 @@ export interface TrainingInput {
   content: string;
   links: { label: string; url: string }[];
   notice?: string;
+  location?: string;
 }
 
 function validate(input: TrainingInput): string | null {
   if (!input.title.trim()) return "교육 제목을 입력해 주세요.";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date) || !/^\d{2}:\d{2}$/.test(input.time)) return "교육 날짜와 시간을 선택해 주세요.";
+  if ((input.location ?? "").length > 40) return "장소는 40자 이하로 입력해 주세요.";
   if ((input.notice ?? "").length > 2000) return "교육 공지는 2,000자 이하로 입력해 주세요.";
   if (input.content.length > 400_000) return "강의 내용이 너무 깁니다. 40만 자 이하로 나눠 올려 주세요.";
   for (const l of input.links) if (l.url && !/^https?:\/\//i.test(l.url)) return "링크는 http:// 또는 https:// 로 시작해야 합니다.";
@@ -51,9 +53,9 @@ export async function createTraining(input: TrainingInput): Promise<ActionResult
   if (err) return { ok: false, code: "VALIDATION", message: err };
   try {
     const id = await withUser(viewer.session.userId, async (tx) => (await tx<{ id: string }[]>`
-      insert into trainings(organization_id, title, held_at, instructor_id, content, links, notice, created_by)
+      insert into trainings(organization_id, title, held_at, instructor_id, content, links, notice, location, created_by)
       values (${viewer.profile.organization_id}, ${input.title.trim()}, ${kstToDate(input.date, input.time)}, ${input.instructor_id || viewer.session.userId},
-        ${input.content.trim() || null}, ${tx.json(cleanLinks(input.links))}, ${input.notice?.trim() || null}, ${viewer.session.userId})
+        ${input.content.trim() || null}, ${tx.json(cleanLinks(input.links))}, ${input.notice?.trim() || null}, ${input.location?.trim() || null}, ${viewer.session.userId})
       returning id`)[0].id);
     revalidateTrainings(id);
     return { ok: true, id };
@@ -68,7 +70,7 @@ export async function updateTraining(id: string, input: TrainingInput): Promise<
     const rows = await withUser(viewer.session.userId, (tx) => tx`
       update trainings set title = ${input.title.trim()}, held_at = ${kstToDate(input.date, input.time)},
         instructor_id = ${input.instructor_id || null}, content = ${input.content.trim() || null}, links = ${tx.json(cleanLinks(input.links))},
-        notice = ${input.notice?.trim() || null}
+        notice = ${input.notice?.trim() || null}, location = ${input.location?.trim() || null}
       where id = ${id} returning id`);
     if (!rows.length) return { ok: false, code: "FORBIDDEN", message: "이 교육을 수정할 권한이 없습니다." };
     revalidateTrainings(id);
@@ -86,7 +88,7 @@ export async function deleteTraining(id: string): Promise<ActionResult> {
   } catch (e) { return fail(e); }
 }
 
-export interface ScheduleRow { date: string; time: string; title: string; instructor_id: string | null }
+export interface ScheduleRow { date: string; time: string; title: string; instructor_id: string | null; location?: string }
 
 /**
  * 한 달 교육 일정 한꺼번에 등록 (비서·단장). Days that already have a session
@@ -107,8 +109,8 @@ export async function createTrainingSchedule(rows: ScheduleRow[]): Promise<Actio
           and (held_at at time zone 'Asia/Seoul')::date = ${r.date}::date limit 1`;
         if (dup) continue;
         const title = r.title.trim() || "정기 교육";
-        await tx`insert into trainings(organization_id, title, held_at, instructor_id, created_by)
-          values (${viewer.profile.organization_id}, ${title.slice(0, 120)}, ${at}, ${inst}, ${viewer.session.userId})`;
+        await tx`insert into trainings(organization_id, title, held_at, instructor_id, location, created_by)
+          values (${viewer.profile.organization_id}, ${title.slice(0, 120)}, ${at}, ${inst}, ${r.location?.trim().slice(0, 40) || null}, ${viewer.session.userId})`;
         created++;
       }
     });

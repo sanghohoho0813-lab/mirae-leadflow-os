@@ -6,6 +6,7 @@ import addressSql from "../../../supabase/migrations/0002_lead_address.sql";
 import trainingSql from "../../../supabase/migrations/0003_training_and_limits.sql";
 import divisionsSql from "../../../supabase/migrations/0004_divisions_rounds.sql";
 import trainingSampleSql from "../../../supabase/migrations/0005_training_sample.sql";
+import trainingLocationSql from "../../../supabase/migrations/0006_training_location.sql";
 
 // Bundled as strings (webpack asset/source) so they exist on Vercel.
 // Names match scripts/migrate.mjs so both record into the same _migrations table.
@@ -17,6 +18,7 @@ const MIGRATIONS = [
   { name: "supabase/migrations/0003_training_and_limits.sql", sql: trainingSql },
   { name: "supabase/migrations/0004_divisions_rounds.sql", sql: divisionsSql },
   { name: "supabase/migrations/0005_training_sample.sql", sql: trainingSampleSql },
+  { name: "supabase/migrations/0006_training_location.sql", sql: trainingLocationSql },
 ];
 
 // Same check as the shim, re-run on every start so a DB set up by an older

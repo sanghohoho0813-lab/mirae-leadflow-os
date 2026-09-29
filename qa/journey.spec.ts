@@ -1064,3 +1064,22 @@ test("31. 교육: 예시는 점선·'예시', 9/28 단장 교육은 '실제 교�
   await expect(p.getByTestId("file-library")).toContainText("예시");
   await p.context().close();
 });
+
+test("32. 10월 4층 교육: 월 12·19·26일 · 수 7·14·21일 저녁 7시, 실제 교육, 장소 4층", async ({ browser }) => {
+  const p = await loginAs(browser, U.cA, { width: 390, height: 844 });
+  await go(p, "/trainings/schedule?m=2026-10");
+  const items = p.getByTestId("schedule-item").filter({ hasText: "4층" });
+  await expect(items).toHaveCount(6);
+  for (const d of ["7", "12", "14", "19", "21", "26"]) await expect(p.locator(`li[id="d-2026-10-${d.padStart(2, "0")}"]`)).toContainText("19:00");
+  for (const d of ["05", "28"]) await expect(p.locator(`li[id="d-2026-10-${d}"]`)).toHaveCount(0);
+  await expect(p.locator('[data-testid="schedule-item"][data-sample="1"]')).toHaveCount(0);
+  expect(await p.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await shot(p, "m390-32-oct-schedule");
+  await p.close();
+
+  // 등록 화면: 장소 기본값 4층 · 저장한 장소가 상세에 보임
+  const sec = await loginAs(browser, U.secretary, { width: 1280, height: 900 });
+  await go(sec, "/trainings/schedule/bulk?m=2026-11");
+  await expect(sec.getByTestId("bulk-place")).toHaveValue("4층");
+  await sec.context().close();
+});

@@ -24,7 +24,7 @@ Supabase 없이도 배포 주소에서 전체 흐름을 체험할 수 있습니�
 npm install
 # 로컬 PostgreSQL 16이 5432에서 실행 중이어야 합니다 (superuser postgres, trust)
 cp .env.example .env.local   # DATABASE_URL=postgres://postgres@localhost:5432/leadflow, AUTH_MODE=demo
-npm run db:reset             # 마이그레이션 + 시드(스마트 사업단 10명, 상태별 DB 15건, 교육 6회)
+npm run db:reset             # 마이그레이션 + 시드(스마트 사업단 10명, 상태별 DB 15건, 교육 9회, 10월 4층 일정 포함)
 npm run dev                  # http://localhost:3000 → 체험 모드로 바로 시작
 ```
 

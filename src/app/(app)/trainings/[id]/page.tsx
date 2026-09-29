@@ -129,7 +129,7 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
         <DateBlock d={t.held_at} muted={t.is_sample} />
         <div className="leading-snug">
           <div className="text-[1.0625rem] font-bold text-ink">{fmtDateTime(t.held_at)}</div>
-          <div className="text-[1rem] text-ink-2">강사 {t.instructor_name ?? "미정"}</div>
+          <div className="text-[1rem] text-ink-2">강사 {t.instructor_name ?? "미정"}{t.location ? ` · 장소 ${t.location}` : ""}</div>
           {t.summarized_at && <div className="text-[0.875rem] text-ink-3">요약 {fmtRelativeTime(t.summarized_at)} · {t.summary_source === "AI" ? "AI 정리" : "기본 요약"}</div>}
         </div>
       </div>

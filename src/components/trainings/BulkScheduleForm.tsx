@@ -49,6 +49,7 @@ export function BulkScheduleForm({ ym, today, me, instructors, existing }: {
   const taken = useMemo(() => new Map(existing.map((e) => [e.date, e])), [existing]);
   const [rows, setRows] = useState<Row[]>(() => defaultRows(ym, today, instructors, me, new Set(taken.keys())));
   const [allTime, setAllTime] = useState("19:00");
+  const [place, setPlace] = useState("4층");
   const [extra, setExtra] = useState("");
   const [busy, setBusy] = useState(false);
   const toast = useToast();
@@ -60,7 +61,7 @@ export function BulkScheduleForm({ ym, today, me, instructors, existing }: {
 
   const save = async () => {
     setBusy(true);
-    const r = await createTrainingSchedule(picked.map((x) => ({ date: x.date, time: x.time, title: x.title, instructor_id: x.instructor_id })));
+    const r = await createTrainingSchedule(picked.map((x) => ({ date: x.date, time: x.time, title: x.title, instructor_id: x.instructor_id, location: place })));
     setBusy(false);
     if (!r.ok) { toast("error", r.message ?? "저장하지 못했습니다."); return; }
     toast("success", `교육 일정 ${r.created}건을 등록했습니다.${r.skipped ? ` (이미 있던 ${r.skipped}건은 건너뜀)` : ""}`);
@@ -78,6 +79,10 @@ export function BulkScheduleForm({ ym, today, me, instructors, existing }: {
       <section className="rounded-2xl border border-line bg-white p-4 shadow-card">
         <div className="mb-2 text-[1rem] font-bold text-ink">시간 한 번에 바꾸기</div>
         <TimePicker value={allTime} onChange={(v) => { setAllTime(v); setRows(rows.map((r) => (r.on ? { ...r, time: v } : r))); }} hours={[10, 14, 18, 19, 20]} testId="bulk-all-time" />
+        <label className="mt-3 flex flex-wrap items-center gap-2.5">
+          <span className="text-[1rem] font-bold text-ink">장소</span>
+          <Input value={place} onChange={(e) => setPlace(e.target.value)} maxLength={40} placeholder="예: 4층 (비워 두면 표시 안 함)" className="w-auto min-w-[12rem] flex-1" aria-label="교육 장소" data-testid="bulk-place" />
+        </label>
       </section>
 
       <ul className="grid gap-2" data-testid="bulk-rows">

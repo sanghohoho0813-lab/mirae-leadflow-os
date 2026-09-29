@@ -52,7 +52,7 @@ export function TrainingCard({ t, upcoming, showKind }: { t: TrainingListItem; u
           {t.is_mine && <span className="text-ink-3">· 내가 진행</span>}
         </div>
         <h3 className="text-[1.125rem] font-bold leading-snug text-ink group-hover:text-primary">{t.title}</h3>
-        <p className="mt-0.5 text-[0.9375rem] text-ink-2">{t.instructor_name ?? "강사 미정"} · {fmtTime(t.held_at)}</p>
+        <p className="mt-0.5 text-[0.9375rem] text-ink-2">{t.instructor_name ?? "강사 미정"} · {fmtTime(t.held_at)}{t.location ? ` · ${t.location}` : ""}</p>
         {t.summary ? (
           <p className="mt-2 flex gap-1.5 rounded-xl bg-canvas px-3 py-2 text-[0.9688rem] leading-snug text-ink">
             <Sparkles size={16} className="mt-0.5 shrink-0 text-gold" />

@@ -12,7 +12,7 @@ export function scheduleTone(t: { instructor_role: MemberRole | null; instructor
     if (d.startsWith("3")) return { chip: "bg-violet-50 text-violet-700", dot: "bg-violet-600", label: `${d} 본부장 교육` };
     return { chip: "bg-amber-50 text-amber-800", dot: "bg-amber-600", label: `${d ? `${d} ` : ""}본부장 교육` };
   }
-  return { chip: "bg-neutral-bg text-ink-2", dot: "bg-gold", label: "특별 교육" };
+  return { chip: "bg-neutral-bg text-ink-2", dot: "bg-gold", label: t.instructor_role ? "특별 교육" : "정기 교육" };
 }
 
 /** "YYYY-MM" ± n months. */

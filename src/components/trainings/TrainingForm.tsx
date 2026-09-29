@@ -35,6 +35,7 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
   const [date, setDate] = useState(initial?.date ?? nextWeekday(1));
   const [time, setTime] = useState(initial?.time ?? "19:00");
   const [notice, setNotice] = useState(initial?.notice ?? "");
+  const [location, setLocation] = useState(initial?.location ?? (mode === "create" ? "4층" : ""));
   const [instructor, setInstructor] = useState(initial?.instructor_id ?? me);
   const [content, setContent] = useState(initial?.content ?? "");
   const [links, setLinks] = useState(initial?.links?.length ? initial.links : []);
@@ -81,7 +82,7 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
   const submit = async () => {
     setError(null);
     if (!title.trim()) { setError("교육 제목을 입력해 주세요."); return; }
-    const input: TrainingInput = { title, date, time, instructor_id: instructor || null, content, links: links.filter((l) => l.url.trim()), notice };
+    const input: TrainingInput = { title, date, time, instructor_id: instructor || null, content, links: links.filter((l) => l.url.trim()), notice, location };
     setPhase({ label: "저장하는 중" });
     try {
       const r = mode === "create" ? await createTraining(input) : await updateTraining(trainingId!, input);
@@ -126,6 +127,9 @@ export function TrainingForm({ mode, trainingId, initial, instructors, me }: {
           </Field>
           <Field label="교육 시간" required>
             <TimePicker value={time} onChange={setTime} hours={[10, 14, 18, 19, 20]} testId="training-time" />
+          </Field>
+          <Field label="장소 (선택)" htmlFor="t-loc" hint="예: 4층 · 비워 두면 표시하지 않습니다.">
+            <Input id="t-loc" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={40} placeholder="예: 4층" data-testid="training-location-input" />
           </Field>
           <Field label="강사" htmlFor="t-inst">
             <Select id="t-inst" value={instructor} onChange={(e) => setInstructor(e.target.value)}>

@@ -30,7 +30,7 @@ export function TrainingHomeCard({ h, showReads, className = "" }: { h: Training
           <Link prefetch={false} href={`/trainings/${next.id}`} className="flex items-center gap-3 rounded-xl bg-canvas px-4 py-3 hover:bg-soft">
             <CalendarClock size={20} className="shrink-0 text-primary" />
             <div className="min-w-0 flex-1 leading-snug">
-              <div className="text-[0.875rem] font-semibold text-ink-3">다음 교육 · {fmtShortDate(next.held_at)} {fmtTime(next.held_at)} · {next.instructor_name}</div>
+              <div className="text-[0.875rem] font-semibold text-ink-3">다음 교육 · {fmtShortDate(next.held_at)} {fmtTime(next.held_at)}{next.location ? ` · ${next.location}` : ""} · {next.instructor_name ?? "강사 미정"}</div>
               <div className="truncate text-[1rem] font-bold text-ink">{next.title}</div>
               {next.notice && <div className="mt-0.5 line-clamp-2 text-[0.9375rem] text-ink-2" data-testid="home-training-notice">{next.notice.split("\n")[0]}</div>}
             </div>

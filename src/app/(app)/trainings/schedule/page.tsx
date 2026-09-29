@@ -112,7 +112,7 @@ export default async function TrainingSchedulePage({ searchParams }: { searchPar
                         {d === today && <span className="rounded-md bg-primary px-1.5 py-0.5 text-white">오늘</span>}
                       </div>
                       <h3 className="text-[1.125rem] font-bold leading-snug text-ink">{t.title}</h3>
-                      <p className="mt-0.5 text-[0.9375rem] text-ink-2">{t.instructor_name ?? "강사 미정"} · {fmtTime(t.held_at)}</p>
+                      <p className="mt-0.5 text-[0.9375rem] text-ink-2">{t.instructor_name ?? "강사 미정"} · {fmtTime(t.held_at)}{t.location ? ` · ${t.location}` : ""}</p>
                       {t.notice && !past && <p className="mt-2 line-clamp-2 flex gap-1.5 rounded-xl bg-canvas px-3 py-2 text-[0.9375rem] text-ink"><Megaphone size={16} className="mt-0.5 shrink-0 text-primary" /> {t.notice.split("\n")[0]}</p>}
                       <div className="mt-1.5 flex flex-wrap gap-3 text-[0.875rem] font-semibold text-ink-3">
                         {t.has_summary && <span className="inline-flex items-center gap-1 text-success"><Sparkles size={14} /> 핵심 요약</span>}

@@ -151,6 +151,8 @@ export interface TrainingListItem {
   held_at: Date;
   /** 교육 공지 (예: "오늘 저녁 7시, …") shown on the upcoming card. */
   notice: string | null;
+  /** 교육 장소 (예: "4층"). */
+  location: string | null;
   /** 체험용 예시 교육 (실제 진행한 교육은 false). */
   is_sample: boolean;
   instructor_id: string | null;
