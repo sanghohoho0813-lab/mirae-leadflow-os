@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { Sparkles, ListChecks, MessageSquareQuote, Paperclip, Link2, NotebookText, Users, Pencil, Info, ExternalLink, Megaphone } from "lucide-react";
+import { NotFoundView } from "@/components/ui/NotFoundView";
+import { Lightbulb, Sparkles, ListChecks, MessageSquareQuote, Paperclip, Link2, NotebookText, Users, Pencil, Info, ExternalLink, Megaphone } from "lucide-react";
 import { canTeach, isManager, requireViewer } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
 import { getReadStatus, getTraining, getTrainingFiles } from "@/lib/trainings";
@@ -9,6 +9,7 @@ import { LinkButton } from "@/components/ui/Button";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { DeleteTrainingButton, FileRow, ReadButton, SummarizeButton } from "@/components/trainings/TrainingClient";
 import { DateBlock, KindBadge, sessionKind } from "@/components/trainings/TrainingCard";
+import { Rich, plain } from "@/components/trainings/Rich";
 import { isDemoMode } from "@/lib/auth/mode";
 import { fmtDateTime, fmtRelativeTime } from "@/lib/time";
 import type { Training } from "@/lib/types";
@@ -17,11 +18,22 @@ export const dynamic = "force-dynamic";
 // AI summaries can take up to ~50s.
 export const maxDuration = 60;
 
+/** "쉽게 말하면" — 노란색 한 가지를 더해 핵심(청록)과 설명(노랑)이 한눈에 나뉘게. */
+function Easy({ text }: { text?: string }) {
+  if (!text) return null;
+  return (
+    <div className="mt-2 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[0.9844rem] font-normal leading-relaxed text-ink" data-testid="summary-easy">
+      <Lightbulb size={18} className="mt-1 shrink-0 text-amber-600" />
+      <span><b className="mr-1 font-bold text-amber-800">쉽게 말하면</b>{text}</span>
+    </div>
+  );
+}
+
 function summaryText(t: Training): string {
   const s = t.summary!;
-  const lines = [`[교육 핵심 정리] ${t.title}`, `${fmtDateTime(t.held_at)} · ${t.instructor_name ?? ""}`, "", `한 줄 요약: ${s.one_line}`, "", "■ 핵심 내용", ...s.key_points.map((p, i) => `${i + 1}. ${p}`)];
-  for (const m of s.materials ?? []) lines.push("", `■ 첨부 자료 핵심 — ${m.title}`, ...m.points.map((p, i) => `${i + 1}. ${p}`));
-  if (s.action_items.length) lines.push("", "■ 현장에서 바로 할 일", ...s.action_items.map((a) => `□ ${a}`));
+  const lines = [`[교육 핵심 정리] ${t.title}`, `${fmtDateTime(t.held_at)} · ${t.instructor_name ?? ""}`, "", `한 줄 요약: ${plain(s.one_line)}`, "", "■ 핵심 내용", ...s.key_points.flatMap((p, i) => [`${i + 1}. ${plain(p)}`, ...(s.easy?.[i] ? [`   → 쉽게: ${s.easy[i]}`] : [])])];
+  for (const m of s.materials ?? []) lines.push("", `■ 첨부 자료 핵심 — ${m.title}`, ...m.points.map((p, i) => `${i + 1}. ${plain(p)}`));
+  if (s.action_items.length) lines.push("", "■ 현장에서 바로 할 일", ...s.action_items.map((a) => `□ ${plain(a)}`));
   if (s.talk_tracks.length) lines.push("", "■ 상담에 쓰는 말", ...s.talk_tracks.map((a) => `- ${a}`));
   return lines.join("\n");
 }
@@ -36,7 +48,7 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
     const [files, reads] = await Promise.all([getTrainingFiles(tx, id), isManager(viewer) || t.instructor_id === uid || t.created_by === uid ? getReadStatus(tx, id) : Promise.resolve(null)]);
     return { t, files, reads };
   });
-  if (!data) notFound();
+  if (!data) return <NotFoundView />;
   const { t, files, reads } = data;
   const teacher = canTeach(viewer);
   const canEdit = teacher && (isManager(viewer) || t.created_by === uid || t.instructor_id === uid);
@@ -53,14 +65,19 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
         </header>
         {s ? (
           <div className="grid gap-5 p-5">
-            <p className="rounded-xl bg-soft px-4 py-3.5 text-[1.1562rem] font-bold leading-snug text-ink" data-testid="summary-one-line">{s.one_line}</p>
+            <p className="rounded-xl bg-soft px-4 py-3.5 text-[1.1562rem] font-bold leading-snug text-ink" data-testid="summary-one-line"><Rich text={s.one_line} /></p>
             <div>
-              <h3 className="mb-2 text-[1.0625rem] font-bold text-ink">핵심 내용</h3>
-              <ol className="grid gap-2">
+              <h3 className="mb-2 flex flex-wrap items-baseline gap-x-2 text-[1.0625rem] font-bold text-ink">핵심 내용
+                {s.easy?.some(Boolean) && <span className="text-[0.875rem] font-semibold text-ink-3"><b className="hl">굵은 글씨</b>가 꼭 기억할 부분 · <span className="text-amber-700">노란 상자</span>는 쉬운 설명</span>}
+              </h3>
+              <ol className="grid gap-3">
                 {s.key_points.map((p, i) => (
-                  <li key={i} className="flex gap-3 text-[1.0312rem] leading-snug text-ink">
+                  <li key={i} className="flex gap-3 border-b border-line pb-3 text-[1.0312rem] leading-relaxed text-ink last:border-0 last:pb-0" data-testid="summary-point">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-[0.875rem] font-bold text-white">{i + 1}</span>
-                    <span className="pt-0.5">{p}</span>
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <Rich text={p} />
+                      <Easy text={s.easy?.[i]} />
+                    </div>
                   </li>
                 ))}
               </ol>
@@ -72,9 +89,12 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
                 {m.source && <p className="mb-2.5 mt-0.5 text-[0.875rem] leading-snug text-ink-3">{m.source}</p>}
                 <ol className="grid gap-2">
                   {m.points.map((p, i) => (
-                    <li key={i} className="flex gap-3 rounded-xl bg-white px-3.5 py-3 text-[1.0312rem] font-semibold leading-snug text-ink">
+                    <li key={i} className="flex gap-3 rounded-xl bg-white px-3.5 py-3 text-[1.0312rem] leading-relaxed text-ink">
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-[0.875rem] font-bold text-white">{i + 1}</span>
-                      <span className="pt-0.5">{p}</span>
+                      <div className="min-w-0 flex-1 pt-0.5">
+                        <Rich text={p} />
+                        <Easy text={m.easy?.[i]} />
+                      </div>
                     </li>
                   ))}
                 </ol>
@@ -94,7 +114,7 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
                 <ul className="grid gap-1.5">
                   {s.action_items.map((a, i) => (
                     <li key={i} className="flex gap-2.5 rounded-xl border border-line px-3.5 py-2.5 text-[1rem] text-ink">
-                      <span className="mt-1 h-4 w-4 shrink-0 rounded border-2 border-primary/60" aria-hidden /> {a}
+                      <span className="mt-1 h-4 w-4 shrink-0 rounded border-2 border-primary/60" aria-hidden /> <span><Rich text={a} /></span>
                     </li>
                   ))}
                 </ul>

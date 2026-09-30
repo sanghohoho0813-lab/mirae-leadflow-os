@@ -1,3 +1,4 @@
+import { plain } from "@/components/trainings/Rich";
 import { GraduationCap, PlusCircle, Search, CalendarClock, BookOpen, Sparkles, ChevronRight } from "lucide-react";
 import { canTeach, requireViewer } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
@@ -101,7 +102,7 @@ export default async function TrainingsPage({ searchParams }: { searchParams: Pr
               {!review.read_by_me && !review.is_mine && <span className="rounded-md bg-danger px-1.5 py-0.5 text-[0.8125rem] text-white" data-testid="training-new">아직 안 봄</span>}
             </div>
             <h3 className="text-[1.25rem] font-extrabold leading-snug text-ink group-hover:text-primary">{review.title}</h3>
-            <p className="mt-2 rounded-xl bg-soft px-4 py-3 text-[1.0625rem] font-bold leading-snug text-ink">{review.summary!.one_line}</p>
+            <p className="mt-2 rounded-xl bg-soft px-4 py-3 text-[1.0625rem] font-bold leading-snug text-ink">{plain(review.summary!.one_line)}</p>
             <ol className="mt-3 grid gap-1.5">
               {review.summary!.key_points.slice(0, 3).map((p, i) => (
                 <li key={i} className="flex gap-2.5 text-[1rem] leading-snug text-ink">

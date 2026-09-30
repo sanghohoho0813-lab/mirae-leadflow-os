@@ -5,6 +5,7 @@ import { NEXT_ACTION_LABEL } from "@/lib/labels";
 import { fmtShortDate, fmtTime, relativeDay, daysSince } from "@/lib/time";
 import type { LeadListItem } from "@/lib/types";
 import { QuickClaim } from "./LeadActions";
+import { SampleTag } from "@/components/ui/SampleTag";
 
 /** One lead as a large tappable card row (works in table-like lists and mobile). */
 export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now = new Date() }: { lead: LeadListItem; showAssignee?: boolean; emphasizeTime?: boolean; now?: Date }) {
@@ -23,6 +24,7 @@ export function LeadRow({ lead, showAssignee = true, emphasizeTime = false, now 
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          {lead.is_sample && <SampleTag />}
           <span className="break-keep text-[1.125rem] font-bold leading-snug text-ink group-hover:text-primary">{lead.company_name}</span>
           <StatusBadge status={lead.status} needsReport={lead.needs_report} />
           {lead.division_name && <Badge tone="purple">{lead.division_name} DB</Badge>}

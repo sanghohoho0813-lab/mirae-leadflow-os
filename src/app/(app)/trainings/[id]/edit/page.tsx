@@ -1,4 +1,5 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
+import { NotFoundView } from "@/components/ui/NotFoundView";
 import { canTeach, isManager, requireViewer } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
 import { getTraining, listInstructors } from "@/lib/trainings";
@@ -14,7 +15,7 @@ export default async function EditTrainingPage({ params }: { params: Promise<{ i
   const viewer = await requireViewer();
   const uid = viewer.session.userId;
   const data = await withUser(uid, async (tx) => ({ t: await getTraining(tx, id, uid), instructors: await listInstructors(tx) }));
-  if (!data.t) notFound();
+  if (!data.t) return <NotFoundView />;
   const t = data.t;
   if (!canTeach(viewer) || !(isManager(viewer) || t.created_by === uid || t.instructor_id === uid)) redirect(`/trainings/${id}`);
   return (

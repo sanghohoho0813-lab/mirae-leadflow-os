@@ -112,7 +112,7 @@ export async function listMembers(tx: Tx): Promise<(Profile & { active_leads: nu
 export async function listFollowUps(tx: Tx, opts: { scope: "mine" | "all"; userId: string; status: "PENDING" | "DONE" }): Promise<FollowUp[]> {
   const mine = opts.scope === "mine";
   return tx<FollowUp[]>`
-    select f.*, f.due_date::text as due_date, p.full_name as assignee_name, l.company_name, l.region, l.status as lead_status
+    select f.*, f.due_date::text as due_date, p.full_name as assignee_name, l.company_name, l.is_sample, l.region, l.status as lead_status
     from follow_ups f join profiles p on p.id = f.assignee_id join leads l on l.id = f.lead_id
     where f.status = ${opts.status} ${mine ? tx`and f.assignee_id = ${opts.userId}` : tx``}
     order by ${opts.status === "PENDING" ? tx`f.due_date asc` : tx`f.done_at desc`} limit 200`;
@@ -148,7 +148,7 @@ export async function getManagerDashboard(tx: Tx, userId: string): Promise<Manag
     listLeads(tx, { tab: "today", userId, limit: 20 }),
     listLeads(tx, { tab: "draft", userId, limit: 10 }),
     tx<FollowUp[]>`
-      select f.*, f.due_date::text as due_date, p.full_name as assignee_name, l.company_name, l.region, l.status as lead_status
+      select f.*, f.due_date::text as due_date, p.full_name as assignee_name, l.company_name, l.is_sample, l.region, l.status as lead_status
       from follow_ups f join profiles p on p.id = f.assignee_id join leads l on l.id = f.lead_id
       where f.status = 'PENDING' and f.due_date <= ${kstToday(tx)} order by f.due_date asc limit 20`,
   ]);
@@ -182,7 +182,7 @@ export async function getConsultantDashboard(tx: Tx, userId: string): Promise<Co
   const upcoming = mine.filter((l) => l.status === "ASSIGNED" && l.meeting_at.getTime() >= now && kstDate(l.meeting_at) !== todayStr).slice(0, 10);
   const [followUpsDue, open] = await Promise.all([
     tx<FollowUp[]>`
-      select f.*, f.due_date::text as due_date, p.full_name as assignee_name, l.company_name, l.region, l.status as lead_status
+      select f.*, f.due_date::text as due_date, p.full_name as assignee_name, l.company_name, l.is_sample, l.region, l.status as lead_status
       from follow_ups f join profiles p on p.id = f.assignee_id join leads l on l.id = f.lead_id
       where f.status = 'PENDING' and f.assignee_id = ${userId} and f.due_date <= ${kstToday(tx)} order by f.due_date asc limit 20`,
     listLeads(tx, { tab: "open", userId, limit: 5 }),

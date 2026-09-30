@@ -240,3 +240,13 @@ html.theme-switching, html.theme-switching * { transition: background-color 320m
 @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 .drawer-panel { animation: drawer-in 240ms var(--ease-out) both; }
 .drawer-backdrop { animation: backdrop-in 200ms var(--ease-out) both; }
+
+/* 교육 요약: **굵게** = 굵은 글씨 + 아래쪽 노란 형광펜. 테마와 무관한 고정 색. */
+.hl {
+  font-weight: 800;
+  color: var(--color-ink, #111);
+  background: linear-gradient(transparent 58%, #fde68a 58%);
+  padding: 0 0.08em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}

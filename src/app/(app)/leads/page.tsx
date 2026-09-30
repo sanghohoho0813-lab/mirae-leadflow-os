@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SampleTag } from "@/components/ui/SampleTag";
 import { PlusCircle, Search, List, Map as MapIcon, Lock } from "lucide-react";
 import { requireViewer, isManager, canCreateLead, isLeader, usesDb } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
@@ -94,6 +95,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         </form>
       </div>
 
+      {leads.some((l) => l.is_sample) && (
+        <div className="mb-3 flex items-start gap-2.5 rounded-2xl border-2 border-red-300 bg-red-50 px-4 py-3 text-[1rem] text-ink" data-testid="lead-sample-banner">
+          <SampleTag />
+          <span><b className="text-red-700">빨간 ‘예시’가 붙은 DB는 체험용 가짜 DB입니다.</b> 실제 업체가 아니니 연락하지 마세요. 앱에서 직접 등록한 DB에는 이 표시가 붙지 않습니다.</span>
+        </div>
+      )}
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-[0.9375rem] font-semibold text-ink-3">{leads.length}건</p>
         <div className="inline-flex rounded-xl border border-line bg-white p-1" role="tablist" aria-label="보기 방식">
@@ -106,7 +113,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         </div>
       </div>
       {view === "map" ? (
-        <LeadMap leads={leads.map((l) => ({ id: l.id, company_name: l.company_name, region: l.region, status: l.status, needs_report: l.needs_report, meeting_at: l.meeting_at, assignee_name: l.assignee_name }))} />
+        <LeadMap leads={leads.map((l) => ({ id: l.id, company_name: l.company_name, is_sample: l.is_sample, region: l.region, status: l.status, needs_report: l.needs_report, meeting_at: l.meeting_at, assignee_name: l.assignee_name }))} />
       ) : (
         <>
           {claimer && tab === "open" && !claimable && limit > 0 && leads.length > 0 && (

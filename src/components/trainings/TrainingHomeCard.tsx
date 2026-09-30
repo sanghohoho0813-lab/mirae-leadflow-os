@@ -1,3 +1,4 @@
+import { plain } from "@/components/trainings/Rich";
 import Link from "next/link";
 import { GraduationCap, ChevronRight, Sparkles, CalendarClock } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -19,7 +20,7 @@ export function TrainingHomeCard({ h, showReads, className = "" }: { h: Training
               {!latest.read_by_me && <span className="rounded-md bg-danger px-1.5 py-0.5 text-[0.7812rem] text-white">새 요약</span>}
             </div>
             <div className="text-[1.0625rem] font-bold text-ink group-hover:text-primary">{latest.title}</div>
-            <p className="mt-1 line-clamp-2 text-[0.9688rem] text-ink-2">{latest.summary.one_line}</p>
+            <p className="mt-1 line-clamp-2 text-[0.9688rem] text-ink-2">{plain(latest.summary.one_line)}</p>
             <div className="mt-2 flex items-center justify-between text-[0.9062rem]">
               {showReads ? <span className="font-semibold text-ink-3">{Math.max(h.members - 1, 0)}명 중 {latest.read_count}명 확인</span> : <span />}
               <span className="inline-flex items-center font-semibold text-primary">요약 보기 <ChevronRight size={16} /></span>

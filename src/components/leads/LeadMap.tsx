@@ -14,6 +14,7 @@ import type { LeadStatus } from "@/lib/types";
 export interface MapLead {
   id: string;
   company_name: string;
+  is_sample?: boolean;
   region: string;
   status: LeadStatus;
   needs_report: boolean;
@@ -146,7 +147,7 @@ export function LeadMap({ leads }: { leads: MapLead[] }) {
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {outside.map((l) => (
               <Link prefetch={false} key={l.id} href={`/leads/${l.id}`} className="text-[0.9375rem] font-medium text-primary hover:underline">
-                {l.company_name} <span className="text-ink-3">({l.region})</span>
+                {l.is_sample && <b className="mr-1 text-red-600">[예시]</b>}{l.company_name} <span className="text-ink-3">({l.region})</span>
               </Link>
             ))}
           </div>
@@ -162,7 +163,7 @@ function popupContent(lead: MapLead, statusLabel: string, go: (href: string) => 
   root.className = "lf-popup";
   const title = document.createElement("div");
   title.className = "lf-popup-title";
-  title.textContent = lead.company_name;
+  title.textContent = lead.is_sample ? `[예시] ${lead.company_name}` : lead.company_name;
   const status = document.createElement("div");
   status.className = "lf-popup-status";
   status.textContent = lead.needs_report ? statusLabel : STATUS_LABEL[lead.status];

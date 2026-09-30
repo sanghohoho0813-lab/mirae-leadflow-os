@@ -46,6 +46,8 @@ export interface Lead {
   cancel_reason: string | null;
   division_id: string | null;
   meeting_round: number;
+  /** 체험용 예시 DB (앱에서 등록한 실제 DB는 false). */
+  is_sample: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -108,6 +110,7 @@ export interface FollowUp {
   created_at: Date;
   done_at: Date | null;
   company_name?: string;
+  is_sample?: boolean;
   region?: string;
   lead_status?: LeadStatus;
 }
@@ -143,8 +146,10 @@ export interface TrainingSummary {
   action_items: string[];
   talk_tracks: string[];
   keywords: string[];
+  /** key_points와 같은 순서의 "쉽게 말하면" 설명 (중학생도 이해할 수준). */
+  easy?: string[];
   /** 첨부 자료(법령·자료 파일)에서 뽑은 핵심. points = 가장 중요한 부분, extra = 참고. */
-  materials?: { title: string; source?: string; points: string[]; extra?: string[] }[];
+  materials?: { title: string; source?: string; points: string[]; easy?: string[]; extra?: string[] }[];
 }
 
 export interface TrainingListItem {

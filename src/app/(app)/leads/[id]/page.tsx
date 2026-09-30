@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { SampleTag } from "@/components/ui/SampleTag";
+import { NotFoundView } from "@/components/ui/NotFoundView";
 import { Suspense } from "react";
 import { MapPin, Clock, Building2, User, Lock, Phone, FileText, MessageSquare, History, ClipboardList, Users, AlertTriangle, Sparkles, Navigation, ClipboardCopy } from "lucide-react";
 import { CopyButton } from "@/components/ui/CopyButton";
@@ -40,7 +41,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
     const blockedBy = limit > 0 && active.length >= limit ? active[0] : null;
     return { lead, priv, reports, followUps, assignments, logs, consultants, blockedBy, manager };
   });
-  if (!data) notFound();
+  if (!data) return <NotFoundView />;
   const { lead, priv, reports, followUps, assignments, logs, consultants, blockedBy, manager } = data;
   const rel = relativeDay(lead.meeting_at);
   const mine = lead.assigned_to === uid;
@@ -52,7 +53,7 @@ export default async function LeadDetailPage({ params, searchParams }: { params:
       <PageHeader
         back={consultantRole ? (lead.status === "OPEN" ? "/leads?tab=open" : "/leads?tab=mine") : "/leads"}
         backLabel="목록"
-        eyebrow={<div className="flex flex-wrap items-center gap-2"><StatusBadge status={lead.status} needsReport={lead.needs_report} size="lg" />{lead.needs_report && daysSince(lead.meeting_at) >= 1 && <Badge tone="danger" size="lg">{daysSince(lead.meeting_at)}일 경과</Badge>}{mine && <Badge tone="info" size="lg">내 담당</Badge>}{lead.division_name && <Badge tone="purple" size="lg">{lead.division_name} 전용 DB</Badge>}{lead.meeting_round > 1 && <Badge tone="info" size="lg">{lead.meeting_round}차 미팅</Badge>}</div>}
+        eyebrow={<div className="flex flex-wrap items-center gap-2">{lead.is_sample && <SampleTag size="lg" />}<StatusBadge status={lead.status} needsReport={lead.needs_report} size="lg" />{lead.needs_report && daysSince(lead.meeting_at) >= 1 && <Badge tone="danger" size="lg">{daysSince(lead.meeting_at)}일 경과</Badge>}{mine && <Badge tone="info" size="lg">내 담당</Badge>}{lead.division_name && <Badge tone="purple" size="lg">{lead.division_name} 전용 DB</Badge>}{lead.meeting_round > 1 && <Badge tone="info" size="lg">{lead.meeting_round}차 미팅</Badge>}</div>}
         title={lead.company_name}
         sub={<span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">{lead.industry && <span className="inline-flex items-center gap-1"><Building2 size={15} /> {lead.industry}</span>}<span className="inline-flex items-center gap-1"><MapPin size={15} /> {lead.region}</span></span>}
       />

@@ -1,4 +1,5 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
+import { NotFoundView } from "@/components/ui/NotFoundView";
 import { requireViewer, canManageLead } from "@/lib/auth/session";
 import { withUser } from "@/lib/db";
 import { getLead, getLeadPrivate } from "@/lib/queries";
@@ -13,7 +14,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const viewer = await requireViewer();
   const data = await withUser(viewer.session.userId, async (tx) => ({ lead: await getLead(tx, id), priv: await getLeadPrivate(tx, id) }));
-  if (!data.lead) notFound();
+  if (!data.lead) return <NotFoundView />;
   const lead = data.lead;
   const allowed = (canManageLead(viewer, lead) || lead.assigned_to === viewer.session.userId) && ["ASSIGNED", "FOLLOW_UP"].includes(lead.status) && lead.assigned_to;
   if (!allowed) redirect(`/leads/${id}`);

@@ -31,9 +31,11 @@ const SYSTEM = `당신은 중소기업 경영컨설팅 사업단의 사내 교�
 - 교육 자료와 녹취에 실제로 있는 내용만 근거로 씁니다. 자료에 없는 수치·지원 요건·기관명을 지어내지 않습니다.
 - 쉬운 우리말, 짧은 문장. 영어 약어는 필요할 때만.
 - 과장·공포 표현 금지.
+- key_points와 one_line에서 가장 중요한 말(요건·숫자·결론)은 **두 별표**로 감싸 굵게 표시합니다. 항목당 1~2곳만.
 반드시 아래 JSON 하나만 출력합니다(설명·코드블록 없이).
 {"one_line":"교육 전체를 한 문장으로(60자 이내)",
  "key_points":["핵심 내용 3~6개, 각 70자 이내"],
+ "easy":["key_points와 같은 순서·같은 개수로, 중학생도 알아듣게 풀어 쓴 설명 한두 문장(비유·예시 환영, 전문용어 없이)"],
  "action_items":["이번 주 현장에서 바로 할 일 2~5개, '~하기'로 끝냄"],
  "talk_tracks":["대표님께 그대로 쓸 수 있는 말 0~3개, 큰따옴표로 감쌈"],
  "keywords":["검색용 핵심 단어 3~6개"]}`;
@@ -47,7 +49,8 @@ function normalise(x: unknown): TrainingSummary | null {
   const one = typeof o.one_line === "string" ? o.one_line.trim() : "";
   const key = arr(o.key_points, 8);
   if (!one || key.length === 0) return null;
-  return { one_line: one, key_points: key, action_items: arr(o.action_items, 6), talk_tracks: arr(o.talk_tracks, 4), keywords: arr(o.keywords, 8) };
+  const easy = arr(o.easy, 8);
+  return { one_line: one, key_points: key, ...(easy.length ? { easy: key.map((_, i) => easy[i] ?? "") } : {}), action_items: arr(o.action_items, 6), talk_tracks: arr(o.talk_tracks, 4), keywords: arr(o.keywords, 8) };
 }
 
 function parseJson(text: string): unknown {

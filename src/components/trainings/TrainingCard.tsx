@@ -1,3 +1,4 @@
+import { plain } from "@/components/trainings/Rich";
 import Link from "next/link";
 import { ChevronRight, Paperclip, Sparkles, CheckCircle2, Megaphone } from "lucide-react";
 import type { TrainingListItem } from "@/lib/types";
@@ -56,7 +57,7 @@ export function TrainingCard({ t, upcoming, showKind }: { t: TrainingListItem; u
         {t.summary ? (
           <p className="mt-2 flex gap-1.5 rounded-xl bg-canvas px-3 py-2 text-[0.9688rem] leading-snug text-ink">
             <Sparkles size={16} className="mt-0.5 shrink-0 text-gold" />
-            <span className="line-clamp-2">{t.summary.one_line}</span>
+            <span className="line-clamp-2">{plain(t.summary.one_line)}</span>
           </p>
         ) : upcoming && t.notice ? (
           <div className={`mt-2 flex gap-1.5 rounded-xl px-3 py-2.5 text-[0.9688rem] leading-relaxed ${isToday ? "bg-soft text-ink" : "bg-canvas text-ink"}`} data-testid="training-notice">

@@ -1,5 +1,6 @@
 "use client";
 
+import { SampleTag } from "@/components/ui/SampleTag";
 import { useSafeTransition, useSafeRefresh } from "@/components/providers/SafeActions";
 import Link from "next/link";
 import { useState} from "react";
@@ -35,6 +36,7 @@ export function FollowUpCard({ item, canComplete, showAssignee }: { item: Follow
       </span>
       <div className="min-w-[200px] flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          {item.is_sample && <SampleTag />}
           {item.company_name ? (
             <Link prefetch={false} href={`/leads/${item.lead_id}`} className="truncate text-[1.0625rem] font-bold text-ink hover:text-primary">{item.company_name}</Link>
           ) : null}

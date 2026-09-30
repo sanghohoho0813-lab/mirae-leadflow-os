@@ -845,7 +845,7 @@ test("27. 교육 일정: 달력·한 달 일정 등록·메뉴 속 작은 달력
   // 오늘(9/28) 단장 교육: 강의가 끝나 원문·핵심 정리가 올라와 '지난 교육'으로
   await go(sec, "/trainings/50000000-0000-4000-8000-000000000007");
   await expect(sec.getByTestId("training-notice")).toContainText("법인영업의 판을 바꿀 실전 교육");
-  await expect(sec.getByRole("main")).toContainText("벤처인증과 투자자 소득공제는 요건·절차가 다른 별개의 일");
+  await expect(sec.getByRole("main")).toContainText("벤처인증은 회사가, 소득공제는 투자한 개인이 받는다");
   await expect(sec.getByRole("main")).toContainText("0928_법인영업_실전교육_체크리스트.txt");
   await shot(sec, "27-lecture-0928");
   await go(sec, "/trainings");
@@ -1123,4 +1123,28 @@ test("33. 9/28 단장 교육: 시행령(한글)·PPT 원본 첨부, 첨부 자�
   await expect(p.getByTestId("file-preview-text")).toContainText("투자형 벤처기업 인증과");
   await shot(p, "33-training-attachments");
   await p.context().close();
+});
+
+test("34. 예시 DB는 빨간 '예시' 표시 · 9/28 교육 요약은 굵은 글씨 + '쉽게 말하면'", async ({ browser }) => {
+  const p = await loginAs(browser, U.owner, { width: 390, height: 844 });
+  await go(p, "/leads");
+  await expect(p.getByTestId("lead-sample-banner")).toBeVisible();
+  expect(await p.getByTestId("lead-sample-tag").count()).toBeGreaterThanOrEqual(5);
+  // 앱에서 직접 등록한 DB(1번 테스트의 QA테스트기업)에는 예시 표시가 없다
+  const qa = p.locator('[data-testid^="lead-row-"]').filter({ hasText: "QA테스트기업" });
+  if (await qa.count()) await expect(qa.first().getByTestId("lead-sample-tag")).toHaveCount(0);
+  expect(await p.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await shot(p, "m390-34-leads-sample");
+  await go(p, "/leads/30000000-0000-4000-8000-000000000001");
+  await expect(p.getByTestId("lead-sample-tag").first()).toBeVisible();
+
+  await go(p, "/trainings/50000000-0000-4000-8000-000000000007");
+  await expect(p.getByTestId("summary-point")).toHaveCount(9);
+  await expect(p.getByTestId("summary-easy")).toHaveCount(13); // 핵심 9 + 첨부 자료 4
+  await expect(p.getByTestId("summary-point").first().locator("b.hl").first()).toContainText("벤처인증은 '회사'가 받고");
+  await expect(p.getByTestId("summary-point").nth(1).locator("b.hl").first()).toContainText("투자형 벤처 요건");
+  await expect(p.getByTestId("summary-one-line")).not.toContainText("**");
+  expect(await p.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await shot(p, "m390-34-summary-easy");
+  await p.close();
 });
