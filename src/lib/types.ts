@@ -143,6 +143,8 @@ export interface TrainingSummary {
   action_items: string[];
   talk_tracks: string[];
   keywords: string[];
+  /** 첨부 자료(법령·자료 파일)에서 뽑은 핵심. points = 가장 중요한 부분, extra = 참고. */
+  materials?: { title: string; source?: string; points: string[]; extra?: string[] }[];
 }
 
 export interface TrainingListItem {

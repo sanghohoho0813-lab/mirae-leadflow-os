@@ -1083,3 +1083,44 @@ test("32. 10월 4층 교육: 월 12·19·26일 · 수 7·14·21일 저녁 7시, 
   await expect(sec.getByTestId("bulk-place")).toHaveValue("4층");
   await sec.context().close();
 });
+
+test("33. 9/28 단장 교육: 시행령(한글)·PPT 원본 첨부, 첨부 자료 핵심 요약", async ({ browser }) => {
+  const REAL = "50000000-0000-4000-8000-000000000007";
+  const p = await loginAs(browser, U.secretary, { width: 1280, height: 900 });
+  await go(p, `/trainings/${REAL}`);
+  const files = p.getByTestId("training-file");
+  await expect(files).toHaveCount(3);
+  const hwp = files.filter({ hasText: "벤처투자법_시행령" });
+  const ppt = files.filter({ hasText: "투자형_벤처기업_인증과_세제혜택" });
+  await expect(hwp).toContainText("한글");
+  await expect(ppt).toContainText("PPT");
+
+  // 첨부 자료 핵심: 파란 굵은 글씨 조항(3호·4호·전원 사전 동의)이 맨 위 요약에 들어 있다
+  const mat = p.getByTestId("summary-material");
+  await expect(mat).toBeVisible();
+  await expect(mat).toContainText("조합원 전원의 '사전' 동의");
+  await expect(mat).toContainText("신용공여");
+  await expect(mat).toContainText("10% 이상");
+
+  // 원본 그대로 받아진다 (한글 파일 = OLE 헤더, PPT = zip 헤더)
+  const head = async (row: typeof hwp) => {
+    const [dl] = await Promise.all([p.waitForEvent("download"), row.getByTestId("file-download").click()]);
+    const path = await dl.path();
+    const buf = (await import("node:fs")).readFileSync(path!);
+    return { name: dl.suggestedFilename(), size: buf.length, head: buf.subarray(0, 4).toString("hex") };
+  };
+  const h = await head(hwp);
+  expect(h.name).toContain(".hwp");
+  expect(h.size).toBe(84992);
+  expect(h.head).toBe("d0cf11e0");
+  const q = await head(ppt);
+  expect(q.name).toContain(".pptx");
+  expect(q.size).toBe(116695);
+  expect(q.head).toBe("504b0304");
+
+  // PPT는 앱 안에서 글자로 미리 볼 수 있다
+  await ppt.getByTestId("file-preview").click();
+  await expect(p.getByTestId("file-preview-text")).toContainText("투자형 벤처기업 인증과");
+  await shot(p, "33-training-attachments");
+  await p.context().close();
+});

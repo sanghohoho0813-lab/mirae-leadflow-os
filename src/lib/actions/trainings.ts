@@ -207,7 +207,8 @@ export async function summarizeTraining(id: string): Promise<SummarizeResponse> 
     if ("error" in r) return { ok: false, code: "VALIDATION", message: r.error };
 
     const saved = await withUser(viewer.session.userId, (tx) => tx`
-      update trainings set summary = ${tx.json(r.summary as unknown as Parameters<typeof tx.json>[0])}, summary_source = ${r.source}, summarized_at = now()
+      update trainings set summary = case when summary->'materials' is null then ${tx.json(r.summary as unknown as Parameters<typeof tx.json>[0])}::jsonb
+          else ${tx.json(r.summary as unknown as Parameters<typeof tx.json>[0])}::jsonb || jsonb_build_object('materials', summary->'materials') end, summary_source = ${r.source}, summarized_at = now()
       where id = ${id} returning id`);
     if (!saved.length) return { ok: false, code: "FORBIDDEN", message: "이 교육을 정리할 권한이 없습니다." };
     revalidateTrainings(id);

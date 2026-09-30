@@ -20,6 +20,7 @@ export const maxDuration = 60;
 function summaryText(t: Training): string {
   const s = t.summary!;
   const lines = [`[교육 핵심 정리] ${t.title}`, `${fmtDateTime(t.held_at)} · ${t.instructor_name ?? ""}`, "", `한 줄 요약: ${s.one_line}`, "", "■ 핵심 내용", ...s.key_points.map((p, i) => `${i + 1}. ${p}`)];
+  for (const m of s.materials ?? []) lines.push("", `■ 첨부 자료 핵심 — ${m.title}`, ...m.points.map((p, i) => `${i + 1}. ${p}`));
   if (s.action_items.length) lines.push("", "■ 현장에서 바로 할 일", ...s.action_items.map((a) => `□ ${a}`));
   if (s.talk_tracks.length) lines.push("", "■ 상담에 쓰는 말", ...s.talk_tracks.map((a) => `- ${a}`));
   return lines.join("\n");
@@ -64,6 +65,29 @@ export default async function TrainingDetailPage({ params }: { params: Promise<{
                 ))}
               </ol>
             </div>
+            {(s.materials ?? []).map((m, mi) => (
+              <div key={mi} className="rounded-2xl border-2 border-primary/30 bg-soft/50 p-4" data-testid="summary-material">
+                <h3 className="flex items-center gap-1.5 text-[1.0625rem] font-bold text-ink"><Paperclip size={19} className="shrink-0 text-primary" /> 첨부 자료 핵심</h3>
+                <p className="mt-1 text-[1rem] font-semibold leading-snug text-ink-2">{m.title}</p>
+                {m.source && <p className="mb-2.5 mt-0.5 text-[0.875rem] leading-snug text-ink-3">{m.source}</p>}
+                <ol className="grid gap-2">
+                  {m.points.map((p, i) => (
+                    <li key={i} className="flex gap-3 rounded-xl bg-white px-3.5 py-3 text-[1.0312rem] font-semibold leading-snug text-ink">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-[0.875rem] font-bold text-white">{i + 1}</span>
+                      <span className="pt-0.5">{p}</span>
+                    </li>
+                  ))}
+                </ol>
+                {m.extra && m.extra.length > 0 && (
+                  <details className="mt-3 text-[0.9688rem] text-ink-2">
+                    <summary className="cursor-pointer select-none py-1 font-semibold text-ink-2">참고로 알아둘 것 {m.extra.length}가지 보기</summary>
+                    <ul className="mt-1.5 grid gap-1.5 pl-1">
+                      {m.extra.map((e, i) => <li key={i} className="flex gap-2 leading-snug"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-ink-3" />{e}</li>)}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            ))}
             {s.action_items.length > 0 && (
               <div>
                 <h3 className="mb-2 flex items-center gap-1.5 text-[1.0625rem] font-bold text-ink"><ListChecks size={19} className="text-primary" /> 현장에서 바로 할 일</h3>
